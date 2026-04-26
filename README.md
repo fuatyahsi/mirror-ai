@@ -62,11 +62,14 @@ Swiss Ephemeris is dual licensed under AGPL or the paid Swiss Ephemeris Professi
 5. Add function secrets when real providers are enabled:
 
 ```bash
-supabase secrets set AI_PROVIDER=mock
-supabase secrets set OPENAI_API_KEY=...
+supabase secrets set AI_PROVIDER=gemini
+supabase secrets set GEMINI_API_KEY=...
+supabase secrets set GEMINI_MODEL=gemini-2.5-flash-lite
 supabase secrets set ASTROLOGY_SERVICE_URL=https://your-astrology-service.example.com
 supabase secrets set ASTROLOGY_SERVICE_TOKEN=...
 ```
+
+Gemini is wired through the Supabase Edge Function provider layer, not the mobile app. The default model is `gemini-2.5-flash-lite` because it has a practical Free Tier quota for prototyping.
 
 ## Product Safety
 

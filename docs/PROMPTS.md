@@ -7,6 +7,8 @@ Mirror AI uses a four-layer prompt structure:
 3. Reading-specific context
 4. JSON output schema
 
+The first real provider is Gemini through Supabase Edge Functions. The default model is `gemini-2.5-flash-lite`; it is selected through `GEMINI_MODEL` and can be changed without touching mobile code.
+
 ## System Rules
 
 - Do not claim certainty about the future.
