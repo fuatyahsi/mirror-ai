@@ -9,6 +9,17 @@ function id(prefix: string) {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
+function personalContextSection(profile?: MysticProfile) {
+  if (!profile) return [];
+
+  return [
+    {
+      title: "Kişisel bağlam",
+      body: `${profile.profile_title} profilin ve "${profile.preferred_reading_style}" yorum stilin dikkate alındı. Bu yüzden yorum kesin hükümden çok netlik, sınır ve duygu ayrımı üzerinden kişiselleştirildi.`
+    }
+  ];
+}
+
 function baseReading(args: {
   type: ReadingType;
   topic: string;
@@ -28,7 +39,7 @@ function baseReading(args: {
     title: args.title,
     summary: args.summary,
     tone: "reflective",
-    sections: args.sections,
+    sections: [...personalContextSection(args.profile), ...args.sections],
     advice: args.advice,
     reflection_question: "Bugün hangi küçük seçim sana daha fazla iç açıklığı verebilir?",
     explanation: {
@@ -199,4 +210,3 @@ export function generateRelationshipMock(
     }
   };
 }
-

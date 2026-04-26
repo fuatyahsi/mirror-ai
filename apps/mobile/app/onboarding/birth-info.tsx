@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Screen } from "@/components/layout/Screen";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { BackButton } from "@/components/layout/BackButton";
 import { TextField } from "@/components/forms/TextField";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { useUserStore } from "@/stores/useUserStore";
@@ -16,9 +17,27 @@ export default function BirthInfoScreen() {
   const [longitude, setLongitude] = useState("28.9784");
   const [timezone, setTimezone] = useState("Europe/Istanbul");
 
+  function normalizeBirthDate(value: string) {
+    const clean = value.trim().replace(/\//g, ".").replace(/-/g, ".");
+    const parts = clean.split(".").filter(Boolean);
+
+    if (parts.length !== 3) return value.trim();
+
+    const [first, second, third] = parts;
+    if (first.length === 4) {
+      return `${first}-${second.padStart(2, "0")}-${third.padStart(2, "0")}`;
+    }
+
+    if (third.length === 4) {
+      return `${third}-${second.padStart(2, "0")}-${first.padStart(2, "0")}`;
+    }
+
+    return value.trim();
+  }
+
   function next() {
     setBirthInfo({
-      birth_date: birthDate,
+      birth_date: normalizeBirthDate(birthDate),
       birth_time: birthTime,
       birth_city: birthCity,
       birth_country: birthCountry,
@@ -31,6 +50,7 @@ export default function BirthInfoScreen() {
 
   return (
     <Screen>
+      <BackButton fallbackHref="/onboarding" />
       <PageHeader
         eyebrow="Doğum bilgileri"
         title="İlk bağlamı kuralım"
@@ -38,7 +58,7 @@ export default function BirthInfoScreen() {
       />
       <TextField
         label="Doğum tarihi"
-        placeholder="1998-08-24"
+        placeholder="1983-02-21 veya 21.02.1983"
         value={birthDate}
         onChangeText={setBirthDate}
       />

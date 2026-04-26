@@ -84,12 +84,27 @@ def zodiac_point(key: str, label: str, longitude: float) -> dict:
     }
 
 
+def parse_birth_date(value: str) -> str:
+    clean = value.strip().replace("/", ".").replace("-", ".")
+    parts = [part for part in clean.split(".") if part]
+    if len(parts) != 3:
+        return value.strip()
+
+    first, second, third = parts
+    if len(first) == 4:
+        return f"{first}-{second.zfill(2)}-{third.zfill(2)}"
+    if len(third) == 4:
+        return f"{third}-{second.zfill(2)}-{first.zfill(2)}"
+    return value.strip()
+
+
 def parse_local_datetime(request: NatalChartRequest) -> datetime:
     local_time = request.birth_time or "12:00"
     if len(local_time.split(":")) == 2:
         local_time = f"{local_time}:00"
 
-    naive = datetime.fromisoformat(f"{request.birth_date}T{local_time}")
+    birth_date = parse_birth_date(request.birth_date)
+    naive = datetime.fromisoformat(f"{birth_date}T{local_time}")
     return naive.replace(tzinfo=ZoneInfo(request.timezone))
 
 

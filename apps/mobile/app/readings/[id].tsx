@@ -2,6 +2,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/components/layout/Screen";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { BackButton } from "@/components/layout/BackButton";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { InsightCard } from "@/components/cards/InsightCard";
 import { useUserStore } from "@/stores/useUserStore";
@@ -36,6 +37,7 @@ export default function ReadingDetailScreen() {
 
   return (
     <Screen>
+      <BackButton fallbackHref="/tabs/home" />
       <PageHeader eyebrow={currentReading.reading_type} title={currentReading.title} subtitle={currentReading.summary} />
       {currentReading.sections.map((section) => (
         <InsightCard key={section.title} title={section.title} body={section.body} />

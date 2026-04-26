@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Text } from "react-native";
 import { Screen } from "@/components/layout/Screen";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { BackButton } from "@/components/layout/BackButton";
 import { TextField } from "@/components/forms/TextField";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -20,6 +21,7 @@ export default function RegisterScreen() {
 
   return (
     <Screen>
+      <BackButton fallbackHref="/onboarding" />
       <PageHeader
         eyebrow="Kayıt"
         title="Kişisel hafızanı başlat"
@@ -43,4 +45,3 @@ export default function RegisterScreen() {
     </Screen>
   );
 }
-

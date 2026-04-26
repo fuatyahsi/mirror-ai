@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/components/layout/Screen";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { BackButton } from "@/components/layout/BackButton";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { profileQuestions } from "@/features/onboarding/quizQuestions";
 import { calculateMysticProfile, type QuizAnswer } from "@/features/onboarding/profileScoring";
@@ -31,6 +32,7 @@ export default function ProfileQuizScreen() {
 
   return (
     <Screen>
+      <BackButton fallbackHref="/onboarding/birth-info" />
       <PageHeader
         eyebrow="Profil testi"
         title="Yorumların seni nasıl okumalı?"
@@ -98,4 +100,3 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   }
 });
-

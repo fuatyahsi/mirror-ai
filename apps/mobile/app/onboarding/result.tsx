@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/components/layout/Screen";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { BackButton } from "@/components/layout/BackButton";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { InsightCard } from "@/components/cards/InsightCard";
 import { calculateNatalChart } from "@/features/astrology/api";
@@ -43,6 +44,7 @@ export default function OnboardingResultScreen() {
 
   return (
     <Screen>
+      <BackButton label="Bilgileri düzenle" fallbackHref="/onboarding/birth-info" />
       <PageHeader
         eyebrow="Mistik profil"
         title={profile?.profile_title || "Profilin hazır"}
@@ -70,10 +72,15 @@ export default function OnboardingResultScreen() {
           chartStatus === "loading"
             ? "Swiss Ephemeris katmanı doğum haritanı hesaplıyor."
             : chart
-              ? `Güneş ${chart.sun.sign_label}, Ay ${chart.moon.sign_label}, Yükselen ${chart.ascendant.sign_label}.`
+              ? `Swiss Ephemeris sonucu: Güneş ${chart.sun.sign_label}, Ay ${chart.moon.sign_label}, Yükselen ${chart.ascendant.sign_label}.`
               : chartError || "Harita hesabı için doğum tarihi, koordinat ve timezone gerekli."
         }
       />
+      {chartError ? (
+        <PrimaryButton variant="secondary" onPress={() => router.push("/onboarding/birth-info")}>
+          Doğum bilgilerini düzelt
+        </PrimaryButton>
+      ) : null}
       <PrimaryButton onPress={() => router.replace("/tabs/home")}>Ana ekrana geç</PrimaryButton>
     </Screen>
   );

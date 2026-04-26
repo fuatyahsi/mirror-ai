@@ -30,7 +30,15 @@ export function PrimaryButton({
         style
       ]}
     >
-      <Text style={[styles.text, variant === "ghost" && styles.ghostText]}>{children}</Text>
+      <Text
+        style={[
+          styles.text,
+          variant === "secondary" && styles.secondaryText,
+          variant === "ghost" && styles.ghostText
+        ]}
+      >
+        {children}
+      </Text>
     </Pressable>
   );
 }
@@ -65,8 +73,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 15
   },
+  secondaryText: {
+    color: colors.text
+  },
   ghostText: {
     color: colors.accent
   }
 });
-
