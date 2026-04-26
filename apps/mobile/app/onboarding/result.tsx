@@ -1,14 +1,45 @@
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/components/layout/Screen";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { InsightCard } from "@/components/cards/InsightCard";
+import { calculateNatalChart } from "@/features/astrology/api";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, spacing } from "@/theme";
 
 export default function OnboardingResultScreen() {
-  const profile = useUserStore((state) => state.profile.mystic_profile);
+  const userProfile = useUserStore((state) => state.profile);
+  const profile = userProfile.mystic_profile;
+  const setNatalChart = useUserStore((state) => state.setNatalChart);
+  const [chartStatus, setChartStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [chartError, setChartError] = useState<string>();
+
+  useEffect(() => {
+    const birth = userProfile.birth;
+    if (!birth.birth_date || !birth.latitude || !birth.longitude || userProfile.natal_chart) return;
+
+    setChartStatus("loading");
+    calculateNatalChart({
+      birth_date: birth.birth_date,
+      birth_time: birth.birth_time || "12:00",
+      latitude: birth.latitude,
+      longitude: birth.longitude,
+      timezone: birth.timezone || "UTC",
+      house_system: "P"
+    })
+      .then((chart) => {
+        setNatalChart(chart);
+        setChartStatus("ready");
+      })
+      .catch((error) => {
+        setChartError(error instanceof Error ? error.message : "Doğum haritası hesaplanamadı.");
+        setChartStatus("error");
+      });
+  }, [setNatalChart, userProfile.birth, userProfile.natal_chart]);
+
+  const chart = userProfile.natal_chart;
 
   return (
     <Screen>
@@ -32,6 +63,16 @@ export default function OnboardingResultScreen() {
       <InsightCard
         title="Yorum stili"
         body={profile?.preferred_reading_style || "Sakin, açıklanabilir ve sembolik."}
+      />
+      <InsightCard
+        title="Doğum haritası"
+        body={
+          chartStatus === "loading"
+            ? "Swiss Ephemeris katmanı doğum haritanı hesaplıyor."
+            : chart
+              ? `Güneş ${chart.sun.sign_label}, Ay ${chart.moon.sign_label}, Yükselen ${chart.ascendant.sign_label}.`
+              : chartError || "Harita hesabı için doğum tarihi, koordinat ve timezone gerekli."
+        }
       />
       <PrimaryButton onPress={() => router.replace("/tabs/home")}>Ana ekrana geç</PrimaryButton>
     </Screen>
@@ -73,4 +114,3 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   }
 });
-

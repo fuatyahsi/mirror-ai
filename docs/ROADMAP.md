@@ -16,6 +16,7 @@
 - Storage setup notes
 - Edge Function stubs
 - Mock AI provider
+- Swiss Ephemeris astrology service for natal chart calculations
 
 ## Phase 3
 
@@ -33,4 +34,3 @@
 - RevenueCat
 - Push notifications
 - Advanced astrology calculations
-

@@ -12,13 +12,19 @@ export default function BirthInfoScreen() {
   const [birthTime, setBirthTime] = useState("");
   const [birthCity, setBirthCity] = useState("");
   const [birthCountry, setBirthCountry] = useState("Türkiye");
+  const [latitude, setLatitude] = useState("41.0082");
+  const [longitude, setLongitude] = useState("28.9784");
+  const [timezone, setTimezone] = useState("Europe/Istanbul");
 
   function next() {
     setBirthInfo({
       birth_date: birthDate,
       birth_time: birthTime,
       birth_city: birthCity,
-      birth_country: birthCountry
+      birth_country: birthCountry,
+      latitude: Number(latitude),
+      longitude: Number(longitude),
+      timezone
     });
     router.push("/onboarding/profile-quiz");
   }
@@ -54,10 +60,30 @@ export default function BirthInfoScreen() {
         value={birthCountry}
         onChangeText={setBirthCountry}
       />
+      <TextField
+        label="Latitude"
+        placeholder="41.0082"
+        value={latitude}
+        onChangeText={setLatitude}
+        keyboardType="decimal-pad"
+      />
+      <TextField
+        label="Longitude"
+        placeholder="28.9784"
+        value={longitude}
+        onChangeText={setLongitude}
+        keyboardType="decimal-pad"
+      />
+      <TextField
+        label="Timezone"
+        placeholder="Europe/Istanbul"
+        value={timezone}
+        onChangeText={setTimezone}
+        autoCapitalize="none"
+      />
       <PrimaryButton disabled={!birthDate || !birthCity} onPress={next}>
         Profil testine geç
       </PrimaryButton>
     </Screen>
   );
 }
-

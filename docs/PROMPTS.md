@@ -31,6 +31,9 @@ User memory:
 Reading type:
 {{READING_TYPE}}
 
+Astrology context:
+{{ASTROLOGY_CONTEXT}}
+
 User question:
 {{QUESTION}}
 
@@ -39,4 +42,3 @@ Context:
 
 Generate a personalized reading as valid JSON.
 ```
-

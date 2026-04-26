@@ -17,6 +17,7 @@ apps/mobile/android/
 .env
 .env.*
 !.env.example
+secrets.txt
 
 # logs
 *.log
@@ -24,6 +25,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+services/astrology/.venv/
+services/astrology/ephe/
 
 # system
 .DS_Store

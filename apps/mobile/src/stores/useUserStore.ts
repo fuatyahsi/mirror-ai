@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { NatalChart } from "@/types/astrology";
 import type { BirthInfo, MysticProfile, UserProfile } from "@/types/profile";
 import type { ReadingFeedback, ReadingOutput } from "@/types/readings";
 
@@ -20,6 +21,7 @@ type UserState = {
   memoryEvents: MemoryEvent[];
   setBirthInfo: (birth: BirthInfo) => void;
   completeOnboarding: (profile: MysticProfile) => void;
+  setNatalChart: (chart: NatalChart) => void;
   addReading: (reading: ReadingOutput) => void;
   submitFeedback: (feedback: Omit<ReadingFeedback, "id" | "created_at">) => void;
 };
@@ -46,6 +48,13 @@ export const useUserStore = create<UserState>((set) => ({
         ...state.profile,
         mystic_profile: mysticProfile,
         onboarding_completed: true
+      }
+    })),
+  setNatalChart: (chart) =>
+    set((state) => ({
+      profile: {
+        ...state.profile,
+        natal_chart: chart
       }
     })),
   addReading: (reading) =>
@@ -82,4 +91,3 @@ export const useUserStore = create<UserState>((set) => ({
       };
     })
 }));
-

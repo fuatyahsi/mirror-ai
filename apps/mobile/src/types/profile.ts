@@ -1,8 +1,13 @@
+import type { NatalChart } from "@/types/astrology";
+
 export type BirthInfo = {
   birth_date?: string;
   birth_time?: string;
   birth_city?: string;
   birth_country?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
 };
 
 export type PersonalityScores = {
@@ -29,6 +34,6 @@ export type UserProfile = {
   birth: BirthInfo;
   onboarding_completed: boolean;
   mystic_profile?: MysticProfile;
+  natal_chart?: NatalChart;
   credits: number;
 };
-

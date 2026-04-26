@@ -81,3 +81,33 @@ Input:
 }
 ```
 
+## calculate-natal-chart
+
+Input:
+
+```json
+{
+  "birth_date": "1998-08-24",
+  "birth_time": "14:30",
+  "latitude": 41.0082,
+  "longitude": 28.9784,
+  "timezone": "Europe/Istanbul",
+  "house_system": "P"
+}
+```
+
+Output:
+
+```json
+{
+  "chart_id": "uuid",
+  "chart": {
+    "sun": { "sign_label": "Başak", "degree": 1.4 },
+    "moon": { "sign_label": "Akrep", "degree": 8.7 },
+    "ascendant": { "sign_label": "Yay", "degree": 7.2 },
+    "planets": [],
+    "houses": [],
+    "aspects": []
+  }
+}
+```

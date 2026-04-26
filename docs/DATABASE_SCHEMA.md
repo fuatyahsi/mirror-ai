@@ -13,9 +13,9 @@ Main tables:
 - `tarot_decks`
 - `tarot_spreads`
 - `relationships`
+- `birth_charts`
 - `user_credits`
 - `credit_transactions`
 - `subscriptions`
 
 All user-owned tables are isolated with RLS through `auth.uid() = user_id`.
-

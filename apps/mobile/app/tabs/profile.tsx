@@ -31,6 +31,14 @@ export default function ProfileScreen() {
         body={`${profile.birth.birth_city || "Şehir yok"} / ${profile.birth.birth_date || "Tarih yok"}`}
       />
       <InsightCard
+        title="Astroloji özeti"
+        body={
+          profile.natal_chart
+            ? `Güneş ${profile.natal_chart.sun.sign_label}, Ay ${profile.natal_chart.moon.sign_label}, Yükselen ${profile.natal_chart.ascendant.sign_label}.`
+            : "Swiss Ephemeris hesabı onboarding sonunda veya Supabase bağlantısından sonra burada görünür."
+        }
+      />
+      <InsightCard
         title="Veri kontrolü"
         body="Veri silme talebi ve profil dışa aktarma akışları Supabase bağlantısından sonra etkinleştirilecek."
       />
@@ -75,4 +83,3 @@ const styles = StyleSheet.create({
     fontSize: 12
   }
 });
-

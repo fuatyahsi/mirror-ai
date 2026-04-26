@@ -13,6 +13,7 @@ The first build is intentionally mock-first: the mobile app, Supabase schema, Ed
 - TanStack Query
 - React Hook Form + Zod
 - Mock AI provider abstraction, ready for OpenAI/Gemini/Claude later
+- Isolated Swiss Ephemeris astrology microservice for natal chart calculations
 
 ## Getting Started
 
@@ -33,7 +34,24 @@ Set these values after creating a Supabase project:
 ```txt
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
+EXPO_PUBLIC_ASTROLOGY_SERVICE_URL=http://localhost:8010
 ```
+
+## Astrology Service
+
+Swiss Ephemeris is integrated as a separate Python API service under `services/astrology`.
+
+```bash
+cd services/astrology
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8010
+```
+
+The mobile app can call this service directly in local web development through `EXPO_PUBLIC_ASTROLOGY_SERVICE_URL`. In backend mode, Supabase Edge Function `calculate-natal-chart` calls the same service through `ASTROLOGY_SERVICE_URL`.
+
+Swiss Ephemeris is dual licensed under AGPL or the paid Swiss Ephemeris Professional License. Local testing can use the AGPL path. Public or commercial release needs a deliberate license decision.
 
 ## Supabase Setup
 
@@ -46,6 +64,8 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=
 ```bash
 supabase secrets set AI_PROVIDER=mock
 supabase secrets set OPENAI_API_KEY=...
+supabase secrets set ASTROLOGY_SERVICE_URL=https://your-astrology-service.example.com
+supabase secrets set ASTROLOGY_SERVICE_TOKEN=...
 ```
 
 ## Product Safety
@@ -59,4 +79,3 @@ apps/mobile      Expo app
 supabase         SQL migrations and Edge Functions
 docs             Product, API, schema, prompt, roadmap notes
 ```
-
