@@ -1,21 +1,27 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
-import { requireUser } from "../shared/auth.ts";
+import { getOptionalUser } from "../shared/auth.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
   try {
-    const { supabase, user } = await requireUser(req);
+    const { supabase, user } = await getOptionalUser(req);
     const body = await req.json();
 
-    const [{ data: profile }, { data: relationship }] = await Promise.all([
-      supabase.from("user_personality_profile").select("*").eq("user_id", user.id).maybeSingle(),
-      body.relationship_id
-        ? supabase.from("relationships").select("*").eq("user_id", user.id).eq("id", body.relationship_id).maybeSingle()
-        : Promise.resolve({ data: null })
-    ]);
+    const [{ data: dbProfile }, { data: relationship }] = user
+      ? await Promise.all([
+          supabase.from("user_personality_profile").select("*").eq("user_id", user.id).maybeSingle(),
+          body.relationship_id
+            ? supabase.from("relationships").select("*").eq("user_id", user.id).eq("id", body.relationship_id).maybeSingle()
+            : Promise.resolve({ data: null })
+        ])
+      : [{ data: null }, { data: body.relationship ?? null }];
+
+    const profile = dbProfile ?? body.profile ?? body.client_profile ?? null;
+    const memory = body.memory ?? body.client_memory ?? [];
+    const astrology = body.astrology ?? body.astro_context ?? body.natal_chart ?? null;
 
     const scores = {
       emotional_pull: 72,
@@ -32,10 +38,19 @@ Deno.serve(async (req) => {
       context: {
         relationship,
         recent_context: body.recent_context,
+        nickname: body.nickname,
+        status: body.status,
+        astrology_context: astrology,
         scores
       },
-      profile
+      profile,
+      memory,
+      astrology
     });
+
+    if (!user) {
+      return jsonResponse({ reading_id: crypto.randomUUID(), persisted: false, scores, ...result });
+    }
 
     const { data: reading, error } = await supabase
       .from("readings")
@@ -54,10 +69,9 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    return jsonResponse({ reading_id: reading.id, scores, ...result });
+    return jsonResponse({ reading_id: reading.id, persisted: true, scores, ...result });
   } catch (error) {
     if (error instanceof Response) return error;
     return jsonResponse({ error: error instanceof Error ? error.message : "Unexpected error" }, 500);
   }
 });
-

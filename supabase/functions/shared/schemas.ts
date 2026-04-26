@@ -22,5 +22,5 @@ export type GenerateReadingRequest = {
   context?: Record<string, unknown>;
   profile?: Record<string, unknown> | null;
   memory?: Record<string, unknown>[];
+  astrology?: Record<string, unknown> | null;
 };
-

@@ -6,17 +6,20 @@ import { Screen } from "@/components/layout/Screen";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { TextField } from "@/components/forms/TextField";
-import { generateCoffeeMock } from "@/features/readings/mockReadings";
+import { generateCoffeeReading } from "@/features/coffeeReading/api";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
 
 export default function CoffeeScreen() {
-  const profile = useUserStore((state) => state.profile.mystic_profile);
+  const userProfile = useUserStore((state) => state.profile);
+  const memoryEvents = useUserStore((state) => state.memoryEvents);
   const addReading = useUserStore((state) => state.addReading);
   const [cupImage, setCupImage] = useState<string>();
   const [topic, setTopic] = useState("love");
   const [question, setQuestion] = useState("");
   const [context, setContext] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string>();
 
   async function pickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -30,10 +33,26 @@ export default function CoffeeScreen() {
     }
   }
 
-  function generate() {
-    const result = generateCoffeeMock(topic, question, context, profile);
-    addReading(result.reading);
-    router.push(`/readings/${result.reading.id}`);
+  async function generate() {
+    setIsGenerating(true);
+    setGenerationError(undefined);
+    try {
+      const result = await generateCoffeeReading({
+        cup_image_url: cupImage,
+        topic,
+        question,
+        context,
+        profile: userProfile.mystic_profile,
+        memory: memoryEvents,
+        natalChart: userProfile.natal_chart
+      });
+      addReading(result.reading);
+      router.push(`/readings/${result.reading.id}`);
+    } catch (error) {
+      setGenerationError(error instanceof Error ? error.message : "Gemini kahve yorumu alınamadı.");
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   return (
@@ -41,7 +60,7 @@ export default function CoffeeScreen() {
       <PageHeader
         eyebrow="Kahve falı"
         title="Fincandaki sembolleri kişisel bağlamla oku"
-        subtitle="MVP'de görsel analizi mock çalışır; gerçek vision modeli Edge Function katmanında bağlanacak."
+        subtitle="Şimdilik sembol çıkarımı örnek veriyle, yorum Gemini tarafından profil, hafıza ve doğum haritasıyla yapılır."
       />
       <View style={styles.upload}>
         {cupImage ? <Image source={{ uri: cupImage }} style={styles.image} /> : null}
@@ -65,8 +84,9 @@ export default function CoffeeScreen() {
         placeholder="Son günlerde biraz uzaklaştı."
         multiline
       />
-      <PrimaryButton disabled={!question} onPress={generate}>
-        Analizi başlat
+      {generationError ? <Text style={styles.error}>{generationError}</Text> : null}
+      <PrimaryButton disabled={!question || isGenerating} onPress={generate}>
+        {isGenerating ? "Gemini yorumluyor" : "Analizi başlat"}
       </PrimaryButton>
     </Screen>
   );
@@ -91,6 +111,9 @@ const styles = StyleSheet.create({
     color: colors.faint,
     fontSize: 12,
     lineHeight: 17
+  },
+  error: {
+    color: colors.danger,
+    lineHeight: 20
   }
 });
-

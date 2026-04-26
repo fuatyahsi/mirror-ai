@@ -40,3 +40,12 @@ export async function requireUser(req: Request) {
   return { supabase, user: data.user };
 }
 
+export async function getOptionalUser(req: Request) {
+  const supabase = createUserClient(req);
+  const { data, error } = await supabase.auth.getUser();
+
+  return {
+    supabase,
+    user: error ? null : data.user
+  };
+}

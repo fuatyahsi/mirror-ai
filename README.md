@@ -71,6 +71,19 @@ supabase secrets set ASTROLOGY_SERVICE_TOKEN=...
 
 Gemini is wired through the Supabase Edge Function provider layer, not the mobile app. The default model is `gemini-2.5-flash-lite` because it has a practical Free Tier quota for prototyping.
 
+The mobile app now calls these Edge Functions for readings:
+
+```txt
+generate-daily-insight
+generate-tarot-reading
+generate-coffee-reading
+generate-relationship-reading
+submit-feedback
+calculate-natal-chart
+```
+
+Until those functions are deployed to Supabase, the app will show an Edge Function error instead of a Gemini reading. Local code is wired; deployment is the next environment step.
+
 ## Product Safety
 
 Mirror AI must not present deterministic fortune-telling, medical/legal/financial advice, manipulation, fear-based claims, or relationship certainty. Readings are symbolic, reflective, and autonomy-preserving.

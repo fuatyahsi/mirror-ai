@@ -1,23 +1,42 @@
 import { router } from "expo-router";
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/components/layout/Screen";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { InsightCard } from "@/components/cards/InsightCard";
 import { ReadingCard } from "@/components/cards/ReadingCard";
-import { generateDailyMock } from "@/features/readings/mockReadings";
+import { generateDailyInsight } from "@/features/dailyInsight/api";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
 
 export default function HomeScreen() {
   const profile = useUserStore((state) => state.profile);
   const readings = useUserStore((state) => state.readings);
+  const memoryEvents = useUserStore((state) => state.memoryEvents);
   const addReading = useUserStore((state) => state.addReading);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string>();
 
-  function createDaily() {
-    const reading = generateDailyMock("love", "calm", "Bugün nelere dikkat etmeliyim?", profile.mystic_profile);
-    addReading(reading);
-    router.push(`/readings/${reading.id}`);
+  async function createDaily() {
+    setIsGenerating(true);
+    setGenerationError(undefined);
+    try {
+      const reading = await generateDailyInsight({
+        topic: "love",
+        mood: "calm",
+        question: "Bugün nelere dikkat etmeliyim?",
+        profile: profile.mystic_profile,
+        memory: memoryEvents,
+        natalChart: profile.natal_chart
+      });
+      addReading(reading);
+      router.push(`/readings/${reading.id}`);
+    } catch (error) {
+      setGenerationError(error instanceof Error ? error.message : "Gemini yorumu alınamadı.");
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   return (
@@ -32,7 +51,12 @@ export default function HomeScreen() {
         title="Günlük enerji"
         body="Bugün netlik arayışı ile sezgisel hisleri ayırmak iyi gelebilir."
       />
-      <PrimaryButton onPress={createDaily}>Bugünkü içgörümü göster</PrimaryButton>
+      <PrimaryButton disabled={isGenerating} onPress={createDaily}>
+        {isGenerating ? "Gemini yorumluyor" : "Bugünkü içgörümü göster"}
+      </PrimaryButton>
+      {generationError ? (
+        <InsightCard title="LLM bağlantısı" body={generationError} />
+      ) : null}
       <View style={styles.actions}>
         <QuickAction title="Kahve falı" onPress={() => router.push("/tabs/coffee")} />
         <QuickAction title="Tarot" onPress={() => router.push("/tabs/tarot")} />
@@ -86,4 +110,3 @@ const styles = StyleSheet.create({
     marginTop: spacing.md
   }
 });
-

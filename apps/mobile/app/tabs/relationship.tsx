@@ -4,22 +4,43 @@ import { Screen } from "@/components/layout/Screen";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { TextField } from "@/components/forms/TextField";
-import { generateRelationshipMock } from "@/features/readings/mockReadings";
+import { generateRelationshipReading } from "@/features/relationshipReading/api";
 import { useUserStore } from "@/stores/useUserStore";
+import { colors } from "@/theme";
+import { Text } from "react-native";
 
 export default function RelationshipScreen() {
-  const profile = useUserStore((state) => state.profile.mystic_profile);
+  const userProfile = useUserStore((state) => state.profile);
+  const memoryEvents = useUserStore((state) => state.memoryEvents);
   const addReading = useUserStore((state) => state.addReading);
   const [nickname, setNickname] = useState("");
   const [relationType, setRelationType] = useState("belirsiz ilişki");
   const [status, setStatus] = useState("uzaklaştı");
   const [question, setQuestion] = useState("");
   const [recentContext, setRecentContext] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string>();
 
-  function generate() {
-    const result = generateRelationshipMock(nickname, status, question, recentContext, profile);
-    addReading(result.reading);
-    router.push(`/readings/${result.reading.id}`);
+  async function generate() {
+    setIsGenerating(true);
+    setGenerationError(undefined);
+    try {
+      const result = await generateRelationshipReading({
+        nickname,
+        status,
+        question,
+        recent_context: recentContext,
+        profile: userProfile.mystic_profile,
+        memory: memoryEvents,
+        natalChart: userProfile.natal_chart
+      });
+      addReading(result.reading);
+      router.push(`/readings/${result.reading.id}`);
+    } catch (error) {
+      setGenerationError(error instanceof Error ? error.message : "Gemini ilişki yorumu alınamadı.");
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   return (
@@ -27,7 +48,7 @@ export default function RelationshipScreen() {
       <PageHeader
         eyebrow="İlişki enerjisi"
         title="Dinamiği kesin hüküm kurmadan ayır"
-        subtitle="Bu ekran niyet okuma yapmaz; çekim, netlik, belirsizlik ve kullanıcının tekrar döngülerini yumuşak dille analiz eder."
+        subtitle="Gemini ilişkiyi profil, hafıza ve doğum haritası bağlamıyla sembolik olarak yorumlar; kesin niyet okuması yapmaz."
       />
       <TextField label="Kişi adı veya takma ad" value={nickname} onChangeText={setNickname} />
       <TextField label="İlişki tipi" value={relationType} onChangeText={setRelationType} />
@@ -46,10 +67,10 @@ export default function RelationshipScreen() {
         placeholder="Son mesajıma geç cevap verdi."
         multiline
       />
-      <PrimaryButton disabled={!question} onPress={generate}>
-        Analizi başlat
+      {generationError ? <Text style={{ color: colors.danger }}>{generationError}</Text> : null}
+      <PrimaryButton disabled={!question || isGenerating} onPress={generate}>
+        {isGenerating ? "Gemini yorumluyor" : "Analizi başlat"}
       </PrimaryButton>
     </Screen>
   );
 }
-
