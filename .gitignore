@@ -34,6 +34,8 @@ __pycache__/
 .ruff_cache/
 services/astrology/.venv/
 services/astrology/ephe/
+supabase/.temp/
+supabase/supabase/
 
 # system
 .DS_Store
