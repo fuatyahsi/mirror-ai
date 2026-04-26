@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+.expo/
+.expo-shared/
+
+# build output
+dist/
+build/
+web-build/
+coverage/
+
+# native/generated
+apps/mobile/ios/
+apps/mobile/android/
+
+# env
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# system
+.DS_Store
+Thumbs.db

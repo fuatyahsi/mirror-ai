@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Mirror AI",
+    "slug": "mirror-ai",
+    "scheme": "mirrorai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mirrorai.app"
+    },
+    "android": {
+      "package": "com.mirrorai.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0D14"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Mirror AI uses selected cup photos only to generate your symbolic coffee reading."
+        }
+      ],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
