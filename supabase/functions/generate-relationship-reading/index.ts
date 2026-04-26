@@ -1,6 +1,7 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
+import { buildSourceContext } from "../shared/sourceContext.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -31,6 +32,17 @@ Deno.serve(async (req) => {
     };
 
     const provider = getAIProvider();
+    const sourceContext = buildSourceContext({
+      readingType: "relationship",
+      profile,
+      memory,
+      astrology,
+      extra: [
+        `İlişki durumu: ${body.status ?? relationship?.status ?? "belirtilmedi"}`,
+        `Duygusal çekim skoru: ${scores.emotional_pull}`,
+        `Belirsizlik seviyesi: ${scores.uncertainty_level}`
+      ]
+    });
     const result = await provider.generateReading({
       readingType: "relationship",
       topic: "relationship",
@@ -49,7 +61,13 @@ Deno.serve(async (req) => {
     });
 
     if (!user) {
-      return jsonResponse({ reading_id: crypto.randomUUID(), persisted: false, scores, ...result });
+      return jsonResponse({
+        reading_id: crypto.randomUUID(),
+        persisted: false,
+        scores,
+        ...result,
+        source_context: sourceContext
+      });
     }
 
     const { data: reading, error } = await supabase
@@ -59,7 +77,7 @@ Deno.serve(async (req) => {
         reading_type: "relationship",
         topic: "relationship",
         question: body.question ?? null,
-        result_json: { ...result, scores },
+        result_json: { ...result, scores, source_context: sourceContext },
         explanation_json: result.explanation,
         confidence: result.explanation.confidence,
         premium_used: true
@@ -69,7 +87,7 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    return jsonResponse({ reading_id: reading.id, persisted: true, scores, ...result });
+    return jsonResponse({ reading_id: reading.id, persisted: true, scores, ...result, source_context: sourceContext });
   } catch (error) {
     if (error instanceof Response) return error;
     return jsonResponse({ error: error instanceof Error ? error.message : "Unexpected error" }, 500);

@@ -53,6 +53,19 @@ export default function ReadingDetailScreen() {
         ))}
         <Text style={styles.limitations}>{currentReading.explanation.limitations}</Text>
       </View>
+      {currentReading.source_context ? (
+        <View style={styles.explanation}>
+          <Text style={styles.explanationTitle}>Referans ve kanıt kartı</Text>
+          <Text style={styles.limitations}>
+            Sistemler: {currentReading.source_context.systems.join(", ")}
+          </Text>
+          {currentReading.source_context.references.map((item) => (
+            <Text key={item} style={styles.basedOn}>
+              {item}
+            </Text>
+          ))}
+        </View>
+      ) : null}
       <InsightCard title="Güvenlik notu" body={currentReading.safety_note} />
       <View style={styles.feedback}>
         <Text style={styles.feedbackTitle}>Bu yorum sana uydu mu?</Text>

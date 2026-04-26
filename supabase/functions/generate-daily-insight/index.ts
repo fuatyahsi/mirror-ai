@@ -1,6 +1,7 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
+import { buildSourceContext } from "../shared/sourceContext.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -23,6 +24,13 @@ Deno.serve(async (req) => {
     const astrology = body.astrology ?? body.astro_context ?? body.natal_chart ?? null;
 
     const provider = getAIProvider();
+    const sourceContext = buildSourceContext({
+      readingType: "daily",
+      profile,
+      memory,
+      astrology,
+      extra: [`Konu: ${body.topic ?? "general"}`, `Ruh hali: ${body.mood ?? "belirtilmedi"}`]
+    });
     const result = await provider.generateReading({
       readingType: "daily",
       topic: body.topic ?? "general",
@@ -38,7 +46,7 @@ Deno.serve(async (req) => {
     });
 
     if (!user) {
-      return jsonResponse({ reading_id: crypto.randomUUID(), persisted: false, ...result });
+      return jsonResponse({ reading_id: crypto.randomUUID(), persisted: false, ...result, source_context: sourceContext });
     }
 
     const { data: reading, error } = await supabase
@@ -48,7 +56,7 @@ Deno.serve(async (req) => {
         reading_type: "daily",
         topic: body.topic ?? "general",
         question: body.question ?? null,
-        result_json: result,
+        result_json: { ...result, source_context: sourceContext },
         explanation_json: result.explanation,
         confidence: result.explanation.confidence
       })
@@ -56,7 +64,7 @@ Deno.serve(async (req) => {
       .single();
     if (error) throw error;
 
-    return jsonResponse({ reading_id: reading.id, persisted: true, ...result });
+    return jsonResponse({ reading_id: reading.id, persisted: true, ...result, source_context: sourceContext });
   } catch (error) {
     if (error instanceof Response) return error;
     return jsonResponse({ error: error instanceof Error ? error.message : "Unexpected error" }, 500);

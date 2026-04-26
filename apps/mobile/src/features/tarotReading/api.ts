@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { buildAstrologyContext } from "@/features/astrology/context";
 import { generateTarotMock } from "@/features/readings/mockReadings";
 import { toReadingOutput } from "@/features/readings/readingMapper";
 import type { NatalChart } from "@/types/astrology";
@@ -24,7 +25,7 @@ export async function generateTarotReading(input: {
       question: input.question,
       profile: input.profile,
       memory: input.memory ?? [],
-      astrology: input.natalChart
+      astrology: buildAstrologyContext(input.natalChart)
     }
   });
 

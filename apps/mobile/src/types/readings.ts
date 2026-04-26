@@ -32,6 +32,11 @@ export type ReadingOutput = {
   advice: string;
   reflection_question: string;
   explanation: ReadingExplanation;
+  source_context?: {
+    systems: string[];
+    references: string[];
+    engine?: string;
+  };
   safety_note: string;
 };
 
@@ -52,4 +57,3 @@ export type ReadingFeedback = {
   comment?: string;
   created_at: string;
 };
-

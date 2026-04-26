@@ -32,9 +32,9 @@ export function toReadingOutput(
       confidence: 0.68,
       limitations: "Bu yorum sembolik ve kişisel farkındalık amaçlıdır."
     },
+    source_context: data.source_context,
     safety_note:
       data.safety_note ||
       "Bu yorum eğlence ve kişisel farkındalık amaçlıdır; kesin gelecek bilgisi veya profesyonel tavsiye değildir."
   };
 }
-

@@ -1,6 +1,7 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
+import { buildSourceContext } from "../shared/sourceContext.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -25,11 +26,21 @@ Deno.serve(async (req) => {
     const astrology = body.astrology ?? body.astro_context ?? body.natal_chart ?? null;
 
     const detectedSymbols = [
-      { symbol: "road", label: "Road", meaning: "Movement or direction shift", confidence: 0.71 },
-      { symbol: "ring", label: "Ring", meaning: "Loop, bond, or repeated theme", confidence: 0.64 }
+      { symbol: "road", label: "Yol", meaning: "Hareket, haber veya yön değişimi", confidence: 0.71 },
+      { symbol: "ring", label: "Yüzük", meaning: "Bağ, döngü veya tekrar eden ilişki teması", confidence: 0.64 }
     ];
 
     const provider = getAIProvider();
+    const sourceContext = buildSourceContext({
+      readingType: "coffee",
+      profile,
+      memory,
+      astrology,
+      extra: [
+        `Konu: ${body.topic ?? "general"}`,
+        ...detectedSymbols.map((symbol) => `Kahve sembolü: ${symbol.label} (${symbol.meaning})`)
+      ]
+    });
     const result = await provider.generateReading({
       readingType: "coffee",
       topic: body.topic ?? "general",
@@ -51,7 +62,8 @@ Deno.serve(async (req) => {
         reading_id: crypto.randomUUID(),
         persisted: false,
         detected_symbols: detectedSymbols,
-        ...result
+        ...result,
+        source_context: sourceContext
       });
     }
 
@@ -62,7 +74,7 @@ Deno.serve(async (req) => {
         reading_type: "coffee",
         topic: body.topic ?? "general",
         question: body.question ?? null,
-        result_json: result,
+        result_json: { ...result, source_context: sourceContext },
         explanation_json: result.explanation,
         confidence: result.explanation.confidence,
         premium_used: true
@@ -83,7 +95,13 @@ Deno.serve(async (req) => {
 
     if (coffeeError) throw coffeeError;
 
-    return jsonResponse({ reading_id: reading.id, persisted: true, detected_symbols: detectedSymbols, ...result });
+    return jsonResponse({
+      reading_id: reading.id,
+      persisted: true,
+      detected_symbols: detectedSymbols,
+      ...result,
+      source_context: sourceContext
+    });
   } catch (error) {
     if (error instanceof Response) return error;
     return jsonResponse({ error: error instanceof Error ? error.message : "Unexpected error" }, 500);

@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { buildAstrologyContext } from "@/features/astrology/context";
 import { generateRelationshipMock } from "@/features/readings/mockReadings";
 import { toReadingOutput } from "@/features/readings/readingMapper";
 import type { NatalChart } from "@/types/astrology";
@@ -34,7 +35,7 @@ export async function generateRelationshipReading(input: {
       recent_context: input.recent_context,
       profile: input.profile,
       memory: input.memory ?? [],
-      astrology: input.natalChart
+      astrology: buildAstrologyContext(input.natalChart)
     }
   });
 
