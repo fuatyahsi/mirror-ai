@@ -1,10 +1,11 @@
-import { useLocalSearchParams, router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { Screen } from "@/components/layout/Screen";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { BackButton } from "@/components/layout/BackButton";
-import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { InsightCard } from "@/components/cards/InsightCard";
+import { PrimaryButton } from "@/components/forms/PrimaryButton";
+import { BackButton } from "@/components/layout/BackButton";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Screen } from "@/components/layout/Screen";
+import { useI18n } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
 import type { FeedbackScore } from "@/types/readings";
@@ -13,12 +14,13 @@ export default function ReadingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const reading = useUserStore((state) => state.readings.find((item) => item.id === id));
   const submitFeedback = useUserStore((state) => state.submitFeedback);
+  const { t } = useI18n();
 
   if (!reading) {
     return (
       <Screen>
-        <PageHeader title="Yorum bulunamadı" subtitle="Bu mock prototipte geçmiş yorumlar bellekte tutulur." />
-        <PrimaryButton onPress={() => router.replace("/tabs/home")}>Ana ekrana dön</PrimaryButton>
+        <PageHeader title={t("detail.notFoundTitle")} subtitle={t("detail.notFoundSubtitle")} />
+        <PrimaryButton onPress={() => router.replace("/tabs/home")}>{t("detail.goHome")}</PrimaryButton>
       </Screen>
     );
   }
@@ -39,15 +41,15 @@ export default function ReadingDetailScreen() {
     <Screen>
       <BackButton fallbackHref="/tabs/home" />
       <PageHeader eyebrow={currentReading.reading_type} title={currentReading.title} subtitle={currentReading.summary} />
-      {currentReading.sections.map((section) => (
-        <InsightCard key={section.title} title={section.title} body={section.body} />
+      {currentReading.sections.map((section, index) => (
+        <InsightCard key={`${section.title}-${index}`} title={section.title} body={section.body} />
       ))}
-      <InsightCard title="Öneri" body={currentReading.advice} />
-      <InsightCard title="Yansıma sorusu" body={currentReading.reflection_question} />
+      <InsightCard title={t("detail.advice")} body={currentReading.advice} />
+      <InsightCard title={t("detail.reflection")} body={currentReading.reflection_question} />
       <View style={styles.explanation}>
-        <Text style={styles.explanationTitle}>Neye dayanıyor?</Text>
-        {currentReading.explanation.based_on.map((item) => (
-          <Text key={item} style={styles.basedOn}>
+        <Text style={styles.explanationTitle}>{t("detail.basedOn")}</Text>
+        {currentReading.explanation.based_on.map((item, index) => (
+          <Text key={`${item}-${index}`} style={styles.basedOn}>
             {item}
           </Text>
         ))}
@@ -55,26 +57,26 @@ export default function ReadingDetailScreen() {
       </View>
       {currentReading.source_context ? (
         <View style={styles.explanation}>
-          <Text style={styles.explanationTitle}>Referans ve kanıt kartı</Text>
+          <Text style={styles.explanationTitle}>{t("detail.proof")}</Text>
           <Text style={styles.limitations}>
-            Sistemler: {currentReading.source_context.systems.join(", ")}
+            {t("detail.systems")}: {currentReading.source_context.systems.join(", ")}
           </Text>
-          {currentReading.source_context.references.map((item) => (
-            <Text key={item} style={styles.basedOn}>
+          {currentReading.source_context.references.map((item, index) => (
+            <Text key={`${item}-${index}`} style={styles.basedOn}>
               {item}
             </Text>
           ))}
         </View>
       ) : null}
-      <InsightCard title="Güvenlik notu" body={currentReading.safety_note} />
+      <InsightCard title={t("detail.safety")} body={currentReading.safety_note} />
       <View style={styles.feedback}>
-        <Text style={styles.feedbackTitle}>Bu yorum sana uydu mu?</Text>
-        <PrimaryButton onPress={() => feedback("accurate")}>İsabetli</PrimaryButton>
+        <Text style={styles.feedbackTitle}>{t("detail.feedbackTitle")}</Text>
+        <PrimaryButton onPress={() => feedback("accurate")}>{t("detail.accurate")}</PrimaryButton>
         <PrimaryButton variant="secondary" onPress={() => feedback("partial")}>
-          Kısmen
+          {t("detail.partial")}
         </PrimaryButton>
         <PrimaryButton variant="secondary" onPress={() => feedback("inaccurate")}>
-          İsabetsiz
+          {t("detail.inaccurate")}
         </PrimaryButton>
       </View>
     </Screen>

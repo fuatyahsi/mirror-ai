@@ -1,15 +1,16 @@
 import { StyleSheet, Text, View } from "react-native";
+import { useI18n } from "@/i18n";
 import { colors, radii, spacing } from "@/theme";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 
 export function PaywallPreview() {
+  const { t } = useI18n();
+
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Premium hafıza katmanı</Text>
-      <Text style={styles.body}>
-        Detaylı kahve falı, ilişki analizleri, geçmiş trendler ve sınırsız yorum için RevenueCat entegrasyonu burada bağlanacak.
-      </Text>
-      <PrimaryButton variant="secondary">Yakında</PrimaryButton>
+      <Text style={styles.title}>{t("paywall.title")}</Text>
+      <Text style={styles.body}>{t("paywall.body")}</Text>
+      <PrimaryButton variant="secondary">{t("common.soon")}</PrimaryButton>
     </View>
   );
 }
@@ -33,4 +34,3 @@ const styles = StyleSheet.create({
     lineHeight: 21
   }
 });
-

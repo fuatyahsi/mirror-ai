@@ -1,9 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
-import { Screen } from "@/components/layout/Screen";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { InsightCard } from "@/components/cards/InsightCard";
-import { PaywallPreview } from "@/components/paywall/PaywallPreview";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Screen } from "@/components/layout/Screen";
+import { PaywallPreview } from "@/components/paywall/PaywallPreview";
+import { LanguageSwitch } from "@/components/settings/LanguageSwitch";
+import { useI18n } from "@/i18n";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
@@ -13,38 +15,44 @@ export default function ProfileScreen() {
   const profile = useUserStore((state) => state.profile);
   const feedback = useUserStore((state) => state.feedback);
   const memoryEvents = useUserStore((state) => state.memoryEvents);
+  const { t } = useI18n();
 
   return (
     <Screen>
       <PageHeader
-        eyebrow="Profil"
-        title={profile.mystic_profile?.profile_title || "Mirror profilin"}
-        subtitle={profile.mystic_profile?.profile_summary || "Onboarding tamamlandığında profil özeti burada görünür."}
+        eyebrow={t("profile.eyebrow")}
+        title={profile.mystic_profile?.profile_title || t("profile.titleFallback")}
+        subtitle={profile.mystic_profile?.profile_summary || t("profile.subtitleFallback")}
       />
       <View style={styles.stats}>
-        <Stat label="Kredi" value={profile.credits} />
-        <Stat label="Feedback" value={feedback.length} />
-        <Stat label="Hafıza" value={memoryEvents.length} />
+        <Stat label={t("profile.credits")} value={profile.credits} />
+        <Stat label={t("profile.feedback")} value={feedback.length} />
+        <Stat label={t("profile.memory")} value={memoryEvents.length} />
       </View>
       <InsightCard
-        title="Doğum bilgileri"
-        body={`${profile.birth.birth_city || "Şehir yok"} / ${profile.birth.birth_date || "Tarih yok"}`}
+        title={t("profile.birthInfo")}
+        body={`${profile.birth.birth_city || t("profile.noCity")} / ${profile.birth.birth_date || t("profile.noDate")}`}
       />
       <InsightCard
-        title="Astroloji özeti"
+        title={t("profile.astrology")}
         body={
           profile.natal_chart
-            ? `Güneş ${profile.natal_chart.sun.sign_label}, Ay ${profile.natal_chart.moon.sign_label}, Yükselen ${profile.natal_chart.ascendant.sign_label}.`
-            : "Swiss Ephemeris hesabı onboarding sonunda veya Supabase bağlantısından sonra burada görünür."
+            ? t("profile.astrologyReady", {
+                sun: profile.natal_chart.sun.sign_label,
+                moon: profile.natal_chart.moon.sign_label,
+                ascendant: profile.natal_chart.ascendant.sign_label
+              })
+            : t("profile.astrologyEmpty")
         }
       />
-      <InsightCard
-        title="Veri kontrolü"
-        body="Veri silme talebi ve profil dışa aktarma akışları Supabase bağlantısından sonra etkinleştirilecek."
-      />
+      <View style={styles.setting}>
+        <LanguageSwitch />
+        <Text style={styles.settingBody}>{t("profile.languageBody")}</Text>
+      </View>
+      <InsightCard title={t("profile.dataControl")} body={t("profile.dataControlBody")} />
       <PaywallPreview />
       <PrimaryButton variant="secondary" onPress={() => void signOut()}>
-        Çıkış yap
+        {t("profile.signOut")}
       </PrimaryButton>
     </Screen>
   );
@@ -81,5 +89,17 @@ const styles = StyleSheet.create({
   statLabel: {
     color: colors.muted,
     fontSize: 12
+  },
+  setting: {
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    gap: spacing.sm
+  },
+  settingBody: {
+    color: colors.muted,
+    lineHeight: 21
   }
 });

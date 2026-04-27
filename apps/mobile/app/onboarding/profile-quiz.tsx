@@ -1,18 +1,21 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Screen } from "@/components/layout/Screen";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { BackButton } from "@/components/layout/BackButton";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
-import { profileQuestions } from "@/features/onboarding/quizQuestions";
+import { BackButton } from "@/components/layout/BackButton";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Screen } from "@/components/layout/Screen";
 import { calculateMysticProfile, type QuizAnswer } from "@/features/onboarding/profileScoring";
+import { getProfileQuestions } from "@/features/onboarding/quizQuestions";
+import { useI18n } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
 
 export default function ProfileQuizScreen() {
   const completeOnboarding = useUserStore((state) => state.completeOnboarding);
+  const { locale, t } = useI18n();
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const questions = getProfileQuestions(locale);
 
   function select(questionId: string, optionId: string) {
     setAnswers((current) => ({ ...current, [questionId]: optionId }));
@@ -23,22 +26,18 @@ export default function ProfileQuizScreen() {
       questionId,
       optionId
     }));
-    const profile = calculateMysticProfile(quizAnswers);
+    const profile = calculateMysticProfile(quizAnswers, locale);
     completeOnboarding(profile);
     router.replace("/onboarding/result");
   }
 
-  const completed = Object.keys(answers).length === profileQuestions.length;
+  const completed = Object.keys(answers).length === questions.length;
 
   return (
     <Screen>
       <BackButton fallbackHref="/onboarding/birth-info" />
-      <PageHeader
-        eyebrow="Profil testi"
-        title="Yorumların seni nasıl okumalı?"
-        subtitle="Bu test tanı koymaz; sadece sembolik yorum stilini ve belirsizlikle ilişki kurma biçimini ayarlar."
-      />
-      {profileQuestions.map((question) => (
+      <PageHeader eyebrow={t("quiz.eyebrow")} title={t("quiz.title")} subtitle={t("quiz.subtitle")} />
+      {questions.map((question) => (
         <View key={question.id} style={styles.question}>
           <Text style={styles.questionTitle}>{question.title}</Text>
           {question.options.map((option) => {
@@ -49,16 +48,14 @@ export default function ProfileQuizScreen() {
                 style={[styles.option, active && styles.optionActive]}
                 onPress={() => select(question.id, option.id)}
               >
-                <Text style={[styles.optionText, active && styles.optionTextActive]}>
-                  {option.label}
-                </Text>
+                <Text style={[styles.optionText, active && styles.optionTextActive]}>{option.label}</Text>
               </Pressable>
             );
           })}
         </View>
       ))}
       <PrimaryButton disabled={!completed} onPress={finish}>
-        Mistik profilimi oluştur
+        {t("quiz.finish")}
       </PrimaryButton>
     </Screen>
   );

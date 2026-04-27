@@ -1,25 +1,27 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Screen } from "@/components/layout/Screen";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { TextField } from "@/components/forms/TextField";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Screen } from "@/components/layout/Screen";
 import { generateTarotReading } from "@/features/tarotReading/api";
+import { useI18n } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
 
 const spreadOptions = [
-  { id: "single", label: "Tek kart" },
-  { id: "three_card", label: "Üç kart" },
-  { id: "relationship", label: "İlişki" },
-  { id: "decision", label: "Karar" }
-];
+  { id: "single", labelKey: "tarot.single" },
+  { id: "three_card", labelKey: "tarot.three" },
+  { id: "relationship", labelKey: "tarot.relationship" },
+  { id: "decision", labelKey: "tarot.decision" }
+] as const;
 
 export default function TarotScreen() {
   const userProfile = useUserStore((state) => state.profile);
   const memoryEvents = useUserStore((state) => state.memoryEvents);
   const addReading = useUserStore((state) => state.addReading);
+  const { locale, t } = useI18n();
   const [spreadType, setSpreadType] = useState("three_card");
   const [topic, setTopic] = useState("relationship");
   const [question, setQuestion] = useState("");
@@ -36,12 +38,13 @@ export default function TarotScreen() {
         question,
         profile: userProfile.mystic_profile,
         memory: memoryEvents,
-        natalChart: userProfile.natal_chart
+        natalChart: userProfile.natal_chart,
+        locale
       });
       addReading(result.reading);
       router.push(`/readings/${result.reading.id}`);
     } catch (error) {
-      setGenerationError(error instanceof Error ? error.message : "Gemini tarot yorumu alınamadı.");
+      setGenerationError(error instanceof Error ? error.message : t("tarot.error"));
     } finally {
       setIsGenerating(false);
     }
@@ -49,11 +52,7 @@ export default function TarotScreen() {
 
   return (
     <Screen>
-      <PageHeader
-        eyebrow="Tarot"
-        title="Kartları hüküm değil ayna olarak aç"
-        subtitle="Kartlar Edge Function içinde seçilir; Gemini profil, hafıza ve doğum haritası bağlamıyla yorumlar."
-      />
+      <PageHeader eyebrow={t("tarot.eyebrow")} title={t("tarot.title")} subtitle={t("tarot.subtitle")} />
       <View style={styles.options}>
         {spreadOptions.map((option) => (
           <Pressable
@@ -62,22 +61,22 @@ export default function TarotScreen() {
             onPress={() => setSpreadType(option.id)}
           >
             <Text style={[styles.optionText, spreadType === option.id && styles.activeText]}>
-              {option.label}
+              {t(option.labelKey)}
             </Text>
           </Pressable>
         ))}
       </View>
-      <TextField label="Konu" value={topic} onChangeText={setTopic} />
+      <TextField label={t("common.topic")} value={topic} onChangeText={setTopic} />
       <TextField
-        label="Sorun"
+        label={t("common.question")}
         value={question}
         onChangeText={setQuestion}
-        placeholder="Bu kişiyle devam etmeli miyim?"
+        placeholder={t("tarot.questionPlaceholder")}
         multiline
       />
       {generationError ? <Text style={styles.error}>{generationError}</Text> : null}
       <PrimaryButton disabled={!question || isGenerating} onPress={generate}>
-        {isGenerating ? "Gemini yorumluyor" : "Kartları aç"}
+        {isGenerating ? t("common.loadingGemini") : t("tarot.openCards")}
       </PrimaryButton>
     </Screen>
   );

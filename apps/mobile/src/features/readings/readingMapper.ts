@@ -1,5 +1,6 @@
-import { nowIso } from "@/utils/date";
+import { translate, type Locale } from "@/i18n";
 import type { ReadingOutput, ReadingType } from "@/types/readings";
+import { nowIso } from "@/utils/date";
 
 type RemoteReading = Partial<ReadingOutput> & {
   reading_id?: string;
@@ -12,7 +13,8 @@ export function toReadingOutput(
     reading_type: ReadingType;
     topic: string;
     question?: string;
-  }
+  },
+  locale: Locale = "tr"
 ): ReadingOutput {
   return {
     id: data.reading_id || data.id || `${fallback.reading_type}_${Date.now()}`,
@@ -20,21 +22,23 @@ export function toReadingOutput(
     topic: fallback.topic,
     question: fallback.question,
     created_at: data.created_at || nowIso(),
-    title: data.title || "Mirror AI Yorumu",
-    summary: data.summary || "Yorum üretildi, ancak özet alanı boş döndü.",
+    title: data.title || translate(locale, "mapper.titleFallback"),
+    summary: data.summary || translate(locale, "mapper.summaryFallback"),
     tone: data.tone || "reflective",
     sections: Array.isArray(data.sections) ? data.sections : [],
-    advice: data.advice || "Bu yorumu kesin hüküm değil, farkındalık için bir başlangıç olarak kullan.",
-    reflection_question:
-      data.reflection_question || "Bu yorum sende hangi duyguyu daha görünür yaptı?",
+    advice: data.advice || translate(locale, "mapper.adviceFallback"),
+    reflection_question: data.reflection_question || translate(locale, "mapper.reflectionFallback"),
     explanation: data.explanation || {
-      based_on: ["kişisel profil", "doğum haritası", "son hafıza sinyalleri", "Gemini LLM"],
+      based_on: [
+        translate(locale, "mapper.basedProfile"),
+        translate(locale, "mapper.basedChart"),
+        translate(locale, "mapper.basedMemory"),
+        "Gemini LLM"
+      ],
       confidence: 0.68,
-      limitations: "Bu yorum sembolik ve kişisel farkındalık amaçlıdır."
+      limitations: translate(locale, "mapper.limitationsFallback")
     },
     source_context: data.source_context,
-    safety_note:
-      data.safety_note ||
-      "Bu yorum eğlence ve kişisel farkındalık amaçlıdır; kesin gelecek bilgisi veya profesyonel tavsiye değildir."
+    safety_note: data.safety_note || translate(locale, "mapper.safetyFallback")
   };
 }

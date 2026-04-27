@@ -1,7 +1,7 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
-import { buildSourceContext } from "../shared/sourceContext.ts";
+import { buildSourceContext, normalizeLocale, sourceLabels } from "../shared/sourceContext.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -10,6 +10,8 @@ Deno.serve(async (req) => {
   try {
     const { supabase, user } = await getOptionalUser(req);
     const body = await req.json();
+    const locale = normalizeLocale(body.locale);
+    const labels = sourceLabels(locale);
 
     const cupImageUrl = body.cup_image_url ?? "local-dev-coffee-image-placeholder";
 
@@ -25,20 +27,27 @@ Deno.serve(async (req) => {
     const memory = body.memory ?? body.client_memory ?? [];
     const astrology = body.astrology ?? body.astro_context ?? body.natal_chart ?? null;
 
-    const detectedSymbols = [
-      { symbol: "road", label: "Yol", meaning: "Hareket, haber veya yön değişimi", confidence: 0.71 },
-      { symbol: "ring", label: "Yüzük", meaning: "Bağ, döngü veya tekrar eden ilişki teması", confidence: 0.64 }
-    ];
+    const detectedSymbols =
+      locale === "en"
+        ? [
+            { symbol: "road", label: "Road", meaning: "Movement, news, or a change of direction", confidence: 0.71 },
+            { symbol: "ring", label: "Ring", meaning: "Bond, loop, or repeated relationship theme", confidence: 0.64 }
+          ]
+        : [
+            { symbol: "road", label: "Yol", meaning: "Hareket, haber veya yön değişimi", confidence: 0.71 },
+            { symbol: "ring", label: "Yüzük", meaning: "Bağ, döngü veya tekrar eden ilişki teması", confidence: 0.64 }
+          ];
 
     const provider = getAIProvider();
     const sourceContext = buildSourceContext({
       readingType: "coffee",
+      locale,
       profile,
       memory,
       astrology,
       extra: [
-        `Konu: ${body.topic ?? "general"}`,
-        ...detectedSymbols.map((symbol) => `Kahve sembolü: ${symbol.label} (${symbol.meaning})`)
+        `${labels.topic}: ${body.topic ?? "general"}`,
+        ...detectedSymbols.map((symbol) => `${labels.coffeeSymbol}: ${symbol.label} (${symbol.meaning})`)
       ]
     });
     const result = await provider.generateReading({
@@ -54,7 +63,8 @@ Deno.serve(async (req) => {
       },
       profile,
       memory,
-      astrology
+      astrology,
+      locale
     });
 
     if (!user) {

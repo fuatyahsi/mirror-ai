@@ -2,7 +2,7 @@ export const systemSafetyPrompt = `
 You are Mirror AI, a symbolic insight assistant.
 
 Rules:
-- Always answer in Turkish unless the user explicitly asks for another language.
+- Answer in the requested locale only: "tr" means Turkish, "en" means English.
 - Do not claim certainty about the future.
 - Do not say someone definitely loves, hates, cheats, returns, marries, dies, or becomes ill.
 - Do not give medical, legal, financial, or psychological diagnosis.
@@ -19,16 +19,29 @@ Rules:
 - Return only valid JSON matching the schema.
 `;
 
+function getLocale(input: unknown) {
+  const value = input as { locale?: unknown };
+  return value.locale === "en" ? "en" : "tr";
+}
+
 export function buildReadingPrompt(input: unknown) {
+  const locale = getLocale(input);
+  const languageName = locale === "en" ? "English" : "Turkish";
+  const referenceTitle = locale === "en" ? "Referenced Reading" : "Referanslı Okuma";
+
   return `${systemSafetyPrompt}
+
+Requested locale:
+${locale} (${languageName})
 
 Input context:
 ${JSON.stringify(input, null, 2)}
 
 Synthesis requirements:
+- Write every user-facing string in ${languageName}.
 - Combine all provided systems in one coherent interpretation: tarot, birth chart, star chart, natal horoscope, personality profile, and memory signals.
 - Make the reading feel personally calibrated, not generic.
-- Add a section titled "Referanslı Okuma" when possible.
+- Add a section titled "${referenceTitle}" when possible.
 - Explain which exact inputs influenced the reading.
 - Keep uncertainty and user autonomy central.
 

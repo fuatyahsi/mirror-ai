@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
+import { useI18n } from "@/i18n";
 import { colors, radii, spacing } from "@/theme";
 import { formatReadableDate } from "@/utils/date";
 import type { ReadingOutput } from "@/types/readings";
@@ -9,14 +10,17 @@ type ReadingCardProps = {
 };
 
 export function ReadingCard({ reading }: ReadingCardProps) {
+  const { locale, t } = useI18n();
+  const typeKey = `readingType.${reading.reading_type}` as const;
+
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       onPress={() => router.push(`/readings/${reading.id}`)}
     >
       <View style={styles.row}>
-        <Text style={styles.type}>{reading.reading_type}</Text>
-        <Text style={styles.date}>{formatReadableDate(reading.created_at)}</Text>
+        <Text style={styles.type}>{t(typeKey)}</Text>
+        <Text style={styles.date}>{formatReadableDate(reading.created_at, locale)}</Text>
       </View>
       <Text style={styles.title}>{reading.title}</Text>
       <Text numberOfLines={2} style={styles.summary}>
@@ -64,4 +68,3 @@ const styles = StyleSheet.create({
     lineHeight: 21
   }
 });
-

@@ -23,4 +23,5 @@ export type GenerateReadingRequest = {
   profile?: Record<string, unknown> | null;
   memory?: Record<string, unknown>[];
   astrology?: Record<string, unknown> | null;
+  locale?: "tr" | "en";
 };

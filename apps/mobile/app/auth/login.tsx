@@ -1,16 +1,18 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Text } from "react-native";
-import { Screen } from "@/components/layout/Screen";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { BackButton } from "@/components/layout/BackButton";
-import { TextField } from "@/components/forms/TextField";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
+import { TextField } from "@/components/forms/TextField";
+import { BackButton } from "@/components/layout/BackButton";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Screen } from "@/components/layout/Screen";
+import { useI18n } from "@/i18n";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { colors } from "@/theme";
 
 export default function LoginScreen() {
   const { signIn, isLoading, error } = useAuthStore();
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -23,24 +25,24 @@ export default function LoginScreen() {
     <Screen>
       <BackButton fallbackHref="/onboarding" />
       <PageHeader
-        eyebrow="Giriş"
-        title="Mirror AI hesabına dön"
-        subtitle="Supabase bilgileri tanımlı değilse bu ekran mock oturumla devam eder."
+        eyebrow={t("auth.loginEyebrow")}
+        title={t("auth.loginTitle")}
+        subtitle={t("auth.loginSubtitle")}
       />
       <TextField
-        label="E-posta"
+        label={t("common.email")}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
         onChangeText={setEmail}
       />
-      <TextField label="Şifre" secureTextEntry value={password} onChangeText={setPassword} />
+      <TextField label={t("common.password")} secureTextEntry value={password} onChangeText={setPassword} />
       {error ? <Text style={{ color: colors.danger }}>{error}</Text> : null}
       <PrimaryButton disabled={isLoading || !email || !password} onPress={submit}>
-        Giriş yap
+        {t("auth.loginButton")}
       </PrimaryButton>
       <PrimaryButton variant="ghost" onPress={() => router.push("/auth/register")}>
-        Hesap oluştur
+        {t("auth.createAccount")}
       </PrimaryButton>
     </Screen>
   );

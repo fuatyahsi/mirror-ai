@@ -1,7 +1,7 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
-import { buildSourceContext } from "../shared/sourceContext.ts";
+import { buildSourceContext, normalizeLocale, sourceLabels } from "../shared/sourceContext.ts";
 
 const spreadPositions: Record<string, string[]> = {
   single: ["message"],
@@ -50,6 +50,8 @@ Deno.serve(async (req) => {
   try {
     const { supabase, user } = await getOptionalUser(req);
     const body = await req.json();
+    const locale = normalizeLocale(body.locale);
+    const labels = sourceLabels(locale);
     const spreadType = body.spread_type ?? "three_card";
     const positions = spreadPositions[spreadType] ?? spreadPositions.three_card;
 
@@ -85,11 +87,12 @@ Deno.serve(async (req) => {
     const provider = getAIProvider();
     const sourceContext = buildSourceContext({
       readingType: "tarot",
+      locale,
       profile,
       memory,
       astrology,
       tarotCards: selectedCards,
-      extra: [`Açılım tipi: ${spreadType}`, `Konu: ${body.topic ?? "general"}`]
+      extra: [`${labels.spreadType}: ${spreadType}`, `${labels.topic}: ${body.topic ?? "general"}`]
     });
     const result = await provider.generateReading({
       readingType: "tarot",
@@ -98,7 +101,8 @@ Deno.serve(async (req) => {
       context: { spread_type: spreadType, selected_cards: selectedCards, astrology_context: astrology },
       profile,
       memory,
-      astrology
+      astrology,
+      locale
     });
 
     if (!user) {

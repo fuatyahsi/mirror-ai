@@ -1,7 +1,7 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
-import { buildSourceContext } from "../shared/sourceContext.ts";
+import { buildSourceContext, normalizeLocale, sourceLabels } from "../shared/sourceContext.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -10,6 +10,8 @@ Deno.serve(async (req) => {
   try {
     const { supabase, user } = await getOptionalUser(req);
     const body = await req.json();
+    const locale = normalizeLocale(body.locale);
+    const labels = sourceLabels(locale);
 
     const [{ data: dbProfile }, { data: dbMemory }, { data: recentReadings }] = user
       ? await Promise.all([
@@ -26,10 +28,14 @@ Deno.serve(async (req) => {
     const provider = getAIProvider();
     const sourceContext = buildSourceContext({
       readingType: "daily",
+      locale,
       profile,
       memory,
       astrology,
-      extra: [`Konu: ${body.topic ?? "general"}`, `Ruh hali: ${body.mood ?? "belirtilmedi"}`]
+      extra: [
+        `${labels.topic}: ${body.topic ?? "general"}`,
+        `${labels.mood}: ${body.mood ?? labels.notProvided}`
+      ]
     });
     const result = await provider.generateReading({
       readingType: "daily",
@@ -42,7 +48,8 @@ Deno.serve(async (req) => {
       },
       profile,
       memory,
-      astrology
+      astrology,
+      locale
     });
 
     if (!user) {

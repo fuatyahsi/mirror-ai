@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { Locale } from "@/i18n";
 import type { NatalChart } from "@/types/astrology";
 import type { BirthInfo, MysticProfile, UserProfile } from "@/types/profile";
 import type { ReadingFeedback, ReadingOutput } from "@/types/readings";
@@ -15,10 +16,12 @@ type MemoryEvent = {
 };
 
 type UserState = {
+  locale: Locale;
   profile: UserProfile;
   readings: ReadingOutput[];
   feedback: ReadingFeedback[];
   memoryEvents: MemoryEvent[];
+  setLocale: (locale: Locale) => void;
   setBirthInfo: (birth: BirthInfo) => void;
   completeOnboarding: (profile: MysticProfile) => void;
   setNatalChart: (chart: NatalChart) => void;
@@ -27,6 +30,7 @@ type UserState = {
 };
 
 export const useUserStore = create<UserState>((set) => ({
+  locale: "tr",
   profile: {
     birth: {},
     onboarding_completed: false,
@@ -35,6 +39,7 @@ export const useUserStore = create<UserState>((set) => ({
   readings: [],
   feedback: [],
   memoryEvents: [],
+  setLocale: (locale) => set({ locale }),
   setBirthInfo: (birth) =>
     set((state) => ({
       profile: {

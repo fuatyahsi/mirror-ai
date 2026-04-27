@@ -1,7 +1,7 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
-import { buildSourceContext } from "../shared/sourceContext.ts";
+import { buildSourceContext, normalizeLocale, sourceLabels } from "../shared/sourceContext.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -10,6 +10,8 @@ Deno.serve(async (req) => {
   try {
     const { supabase, user } = await getOptionalUser(req);
     const body = await req.json();
+    const locale = normalizeLocale(body.locale);
+    const labels = sourceLabels(locale);
 
     const [{ data: dbProfile }, { data: relationship }] = user
       ? await Promise.all([
@@ -34,13 +36,14 @@ Deno.serve(async (req) => {
     const provider = getAIProvider();
     const sourceContext = buildSourceContext({
       readingType: "relationship",
+      locale,
       profile,
       memory,
       astrology,
       extra: [
-        `İlişki durumu: ${body.status ?? relationship?.status ?? "belirtilmedi"}`,
-        `Duygusal çekim skoru: ${scores.emotional_pull}`,
-        `Belirsizlik seviyesi: ${scores.uncertainty_level}`
+        `${labels.status}: ${body.status ?? relationship?.status ?? labels.notProvided}`,
+        `${labels.pullScore}: ${scores.emotional_pull}`,
+        `${labels.uncertaintyScore}: ${scores.uncertainty_level}`
       ]
     });
     const result = await provider.generateReading({
@@ -51,13 +54,15 @@ Deno.serve(async (req) => {
         relationship,
         recent_context: body.recent_context,
         nickname: body.nickname,
+        relation_type: body.relation_type,
         status: body.status,
         astrology_context: astrology,
         scores
       },
       profile,
       memory,
-      astrology
+      astrology,
+      locale
     });
 
     if (!user) {

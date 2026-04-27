@@ -1,5 +1,7 @@
-export function formatReadableDate(value: string) {
-  return new Intl.DateTimeFormat("tr-TR", {
+import type { Locale } from "@/i18n";
+
+export function formatReadableDate(value: string, locale: Locale = "tr") {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "tr-TR", {
     day: "2-digit",
     month: "long",
     year: "numeric"
@@ -9,4 +11,3 @@ export function formatReadableDate(value: string) {
 export function nowIso() {
   return new Date().toISOString();
 }
-

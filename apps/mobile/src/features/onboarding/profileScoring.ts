@@ -1,3 +1,4 @@
+import type { Locale } from "@/i18n";
 import type { MysticProfile, PersonalityScores } from "@/types/profile";
 
 export type QuizAnswer = {
@@ -35,11 +36,38 @@ const effects: Record<string, Partial<PersonalityScores>> = {
   surprise: { intuitive_openness: 8, spiritual_openness: 6 }
 };
 
+const copy = {
+  tr: {
+    intuitiveAnxious: "Sezgisel Bağlanan Gözlemci",
+    intuitiveCalm: "Sakin Sezgisel Okuyucu",
+    analyticalAnxious: "Netlik Arayan Analitik Kalp",
+    balanced: "Dengeli Anlam Kurucu",
+    summary:
+      "Yorumlarda hem duygusal tonu hem de somut bağlamı görmek istiyorsun. Belirsizlik arttığında anlam arama eğilimin güçlenebilir; bu yüzden Mirror AI açıklanabilir, sakin ve karar hakkını sende bırakan yorumlar üretir.",
+    anxiousPattern: "Belirsizlik anlarında ipucu arama ve hızlı anlam yükleme",
+    balancedPattern: "Mesafe ve yakınlık arasında denge arama",
+    intuitiveStyle: "Sembolik ama net açıklamalı",
+    analyticalStyle: "Tutarlı, gerekçeli ve sakin"
+  },
+  en: {
+    intuitiveAnxious: "Intuitive Bonding Observer",
+    intuitiveCalm: "Calm Intuitive Reader",
+    analyticalAnxious: "Analytical Heart Seeking Clarity",
+    balanced: "Balanced Meaning Builder",
+    summary:
+      "You want readings to hold both emotional tone and concrete context. When uncertainty rises, your mind may search harder for meaning; Mirror AI will therefore favor calm, explainable readings that keep your choice in your hands.",
+    anxiousPattern: "Searching for clues and attaching meaning quickly when uncertainty rises",
+    balancedPattern: "Seeking balance between distance and closeness",
+    intuitiveStyle: "Symbolic with clear explanations",
+    analyticalStyle: "Consistent, reasoned, and calm"
+  }
+} as const;
+
 function clamp(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-export function calculateMysticProfile(answers: QuizAnswer[]): MysticProfile {
+export function calculateMysticProfile(answers: QuizAnswer[], locale: Locale = "tr"): MysticProfile {
   const scores = { ...baseScores };
 
   for (const answer of answers) {
@@ -52,25 +80,20 @@ export function calculateMysticProfile(answers: QuizAnswer[]): MysticProfile {
 
   const isIntuitive = scores.intuitive_openness >= scores.rationality_need;
   const isAnxious = scores.attachment_anxiety > 60;
+  const text = copy[locale];
   const title = isIntuitive
     ? isAnxious
-      ? "Sezgisel Bağlanan Gözlemci"
-      : "Sakin Sezgisel Okuyucu"
+      ? text.intuitiveAnxious
+      : text.intuitiveCalm
     : isAnxious
-      ? "Netlik Arayan Analitik Kalp"
-      : "Dengeli Anlam Kurucu";
+      ? text.analyticalAnxious
+      : text.balanced;
 
   return {
     ...scores,
     profile_title: title,
-    profile_summary:
-      "Yorumlarda hem duygusal tonu hem de somut bağlamı görmek istiyorsun. Belirsizlik arttığında anlam arama eğilimin güçlenebilir; bu yüzden Mirror AI açıklanabilir, sakin ve karar hakkını sende bırakan yorumlar üretir.",
-    relationship_pattern: isAnxious
-      ? "Belirsizlik anlarında ipucu arama ve hızlı anlam yükleme"
-      : "Mesafe ve yakınlık arasında denge arama",
-    preferred_reading_style: isIntuitive
-      ? "Sembolik ama net açıklamalı"
-      : "Tutarlı, gerekçeli ve sakin"
+    profile_summary: text.summary,
+    relationship_pattern: isAnxious ? text.anxiousPattern : text.balancedPattern,
+    preferred_reading_style: isIntuitive ? text.intuitiveStyle : text.analyticalStyle
   };
 }
-

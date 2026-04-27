@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
 import { Pressable, StyleSheet, Text } from "react-native";
+import { useI18n } from "@/i18n";
 import { colors, radii, spacing } from "@/theme";
 
 type BackButtonProps = {
@@ -8,7 +9,9 @@ type BackButtonProps = {
   fallbackHref?: Href;
 };
 
-export function BackButton({ label = "Geri", fallbackHref }: BackButtonProps) {
+export function BackButton({ label, fallbackHref }: BackButtonProps) {
+  const { t } = useI18n();
+
   function goBack() {
     if (router.canGoBack()) {
       router.back();
@@ -23,7 +26,7 @@ export function BackButton({ label = "Geri", fallbackHref }: BackButtonProps) {
   return (
     <Pressable accessibilityRole="button" onPress={goBack} style={styles.button}>
       <Ionicons name="chevron-back" size={18} color={colors.accent} />
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label}>{label ?? t("common.back")}</Text>
     </Pressable>
   );
 }

@@ -1,12 +1,13 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Screen } from "@/components/layout/Screen";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { InsightCard } from "@/components/cards/InsightCard";
 import { ReadingCard } from "@/components/cards/ReadingCard";
+import { PrimaryButton } from "@/components/forms/PrimaryButton";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Screen } from "@/components/layout/Screen";
 import { generateDailyInsight } from "@/features/dailyInsight/api";
+import { useI18n } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
 
@@ -15,6 +16,7 @@ export default function HomeScreen() {
   const readings = useUserStore((state) => state.readings);
   const memoryEvents = useUserStore((state) => state.memoryEvents);
   const addReading = useUserStore((state) => state.addReading);
+  const { locale, t } = useI18n();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string>();
 
@@ -25,15 +27,16 @@ export default function HomeScreen() {
       const reading = await generateDailyInsight({
         topic: "love",
         mood: "calm",
-        question: "Bugün nelere dikkat etmeliyim?",
+        question: locale === "en" ? "What should I pay attention to today?" : "Bugün nelere dikkat etmeliyim?",
         profile: profile.mystic_profile,
         memory: memoryEvents,
-        natalChart: profile.natal_chart
+        natalChart: profile.natal_chart,
+        locale
       });
       addReading(reading);
       router.push(`/readings/${reading.id}`);
     } catch (error) {
-      setGenerationError(error instanceof Error ? error.message : "Gemini yorumu alınamadı.");
+      setGenerationError(error instanceof Error ? error.message : t("home.dailyError"));
     } finally {
       setIsGenerating(false);
     }
@@ -41,34 +44,25 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <PageHeader
-        eyebrow="Mirror AI"
-        title="Bugün iç aynanda ne var?"
-        subtitle="Kişisel profilin, geri bildirimlerin ve sembolik yorumların burada birleşir."
-      />
+      <PageHeader eyebrow={t("home.eyebrow")} title={t("home.title")} subtitle={t("home.subtitle")} />
       <InsightCard
-        meta={profile.mystic_profile?.profile_title || "Mistik profil"}
-        title="Günlük enerji"
-        body="Bugün netlik arayışı ile sezgisel hisleri ayırmak iyi gelebilir."
+        meta={profile.mystic_profile?.profile_title || t("home.energyMeta")}
+        title={t("home.energyTitle")}
+        body={t("home.energyBody")}
       />
       <PrimaryButton disabled={isGenerating} onPress={createDaily}>
-        {isGenerating ? "Gemini yorumluyor" : "Bugünkü içgörümü göster"}
+        {isGenerating ? t("common.loadingGemini") : t("home.dailyButton")}
       </PrimaryButton>
-      {generationError ? (
-        <InsightCard title="LLM bağlantısı" body={generationError} />
-      ) : null}
+      {generationError ? <InsightCard title={t("home.generationErrorTitle")} body={generationError} /> : null}
       <View style={styles.actions}>
-        <QuickAction title="Kahve falı" onPress={() => router.push("/tabs/coffee")} />
-        <QuickAction title="Tarot" onPress={() => router.push("/tabs/tarot")} />
-        <QuickAction title="İlişki analizi" onPress={() => router.push("/tabs/relationship")} />
-        <QuickAction title="Profil" onPress={() => router.push("/tabs/profile")} />
+        <QuickAction title={t("home.quickCoffee")} onPress={() => router.push("/tabs/coffee")} />
+        <QuickAction title={t("home.quickTarot")} onPress={() => router.push("/tabs/tarot")} />
+        <QuickAction title={t("home.quickRelationship")} onPress={() => router.push("/tabs/relationship")} />
+        <QuickAction title={t("home.quickProfile")} onPress={() => router.push("/tabs/profile")} />
       </View>
-      <Text style={styles.sectionTitle}>Son yorumlar</Text>
+      <Text style={styles.sectionTitle}>{t("home.recent")}</Text>
       {readings.length === 0 ? (
-        <InsightCard
-          title="Henüz yorum yok"
-          body="İlk günlük içgörünü oluşturduğunda geçmiş yorumların burada görünür."
-        />
+        <InsightCard title={t("home.noReadingsTitle")} body={t("home.noReadingsBody")} />
       ) : (
         readings.slice(0, 4).map((reading) => <ReadingCard key={reading.id} reading={reading} />)
       )}

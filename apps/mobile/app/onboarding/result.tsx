@@ -1,12 +1,13 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Screen } from "@/components/layout/Screen";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { BackButton } from "@/components/layout/BackButton";
-import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { InsightCard } from "@/components/cards/InsightCard";
+import { PrimaryButton } from "@/components/forms/PrimaryButton";
+import { BackButton } from "@/components/layout/BackButton";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Screen } from "@/components/layout/Screen";
 import { calculateNatalChart } from "@/features/astrology/api";
+import { useI18n } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, spacing } from "@/theme";
 
@@ -14,6 +15,7 @@ export default function OnboardingResultScreen() {
   const userProfile = useUserStore((state) => state.profile);
   const profile = userProfile.mystic_profile;
   const setNatalChart = useUserStore((state) => state.setNatalChart);
+  const { t } = useI18n();
   const [chartStatus, setChartStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [chartError, setChartError] = useState<string>();
 
@@ -35,53 +37,57 @@ export default function OnboardingResultScreen() {
         setChartStatus("ready");
       })
       .catch((error) => {
-        setChartError(error instanceof Error ? error.message : "Doğum haritası hesaplanamadı.");
+        setChartError(error instanceof Error ? error.message : t("result.chartFallback"));
         setChartStatus("error");
       });
-  }, [setNatalChart, userProfile.birth, userProfile.natal_chart]);
+  }, [setNatalChart, t, userProfile.birth, userProfile.natal_chart]);
 
   const chart = userProfile.natal_chart;
 
   return (
     <Screen>
-      <BackButton label="Bilgileri düzenle" fallbackHref="/onboarding/birth-info" />
+      <BackButton label={t("result.edit")} fallbackHref="/onboarding/birth-info" />
       <PageHeader
-        eyebrow="Mistik profil"
-        title={profile?.profile_title || "Profilin hazır"}
+        eyebrow={t("result.eyebrow")}
+        title={profile?.profile_title || t("result.readyTitle")}
         subtitle={profile?.profile_summary}
       />
       {profile ? (
         <View style={styles.grid}>
-          <Score label="Sezgisel açıklık" value={profile.intuitive_openness} />
-          <Score label="Belirsizlik toleransı" value={profile.uncertainty_tolerance} />
-          <Score label="Duygusal yoğunluk" value={profile.emotional_intensity} />
-          <Score label="Netlik ihtiyacı" value={profile.rationality_need} />
+          <Score label={t("result.intuitive")} value={profile.intuitive_openness} />
+          <Score label={t("result.uncertainty")} value={profile.uncertainty_tolerance} />
+          <Score label={t("result.emotional")} value={profile.emotional_intensity} />
+          <Score label={t("result.clarity")} value={profile.rationality_need} />
         </View>
       ) : null}
       <InsightCard
-        title="İlişki döngüsü"
-        body={profile?.relationship_pattern || "İlk yorumlardan sonra daha netleşecek."}
+        title={t("result.relationshipPattern")}
+        body={profile?.relationship_pattern || t("result.relationshipFallback")}
       />
       <InsightCard
-        title="Yorum stili"
-        body={profile?.preferred_reading_style || "Sakin, açıklanabilir ve sembolik."}
+        title={t("result.readingStyle")}
+        body={profile?.preferred_reading_style || t("result.readingStyleFallback")}
       />
       <InsightCard
-        title="Doğum haritası"
+        title={t("result.birthChart")}
         body={
           chartStatus === "loading"
-            ? "Swiss Ephemeris katmanı doğum haritanı hesaplıyor."
+            ? t("result.chartLoading")
             : chart
-              ? `Swiss Ephemeris sonucu: Güneş ${chart.sun.sign_label}, Ay ${chart.moon.sign_label}, Yükselen ${chart.ascendant.sign_label}.`
-              : chartError || "Harita hesabı için doğum tarihi, koordinat ve timezone gerekli."
+              ? t("result.chartReady", {
+                  sun: chart.sun.sign_label,
+                  moon: chart.moon.sign_label,
+                  ascendant: chart.ascendant.sign_label
+                })
+              : chartError || t("result.chartFallback")
         }
       />
       {chartError ? (
         <PrimaryButton variant="secondary" onPress={() => router.push("/onboarding/birth-info")}>
-          Doğum bilgilerini düzelt
+          {t("result.fixBirth")}
         </PrimaryButton>
       ) : null}
-      <PrimaryButton onPress={() => router.replace("/tabs/home")}>Ana ekrana geç</PrimaryButton>
+      <PrimaryButton onPress={() => router.replace("/tabs/home")}>{t("result.toHome")}</PrimaryButton>
     </Screen>
   );
 }
