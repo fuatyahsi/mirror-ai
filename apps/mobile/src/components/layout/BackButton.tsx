@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { useI18n } from "@/i18n";
-import { colors, radii, spacing } from "@/theme";
+import { colors, spacing } from "@/theme";
 
 type BackButtonProps = {
   label?: string;
@@ -35,13 +35,10 @@ const styles = StyleSheet.create({
   button: {
     alignSelf: "flex-start",
     minHeight: 36,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    paddingHorizontal: spacing.sm
+    paddingRight: spacing.sm
   },
   label: {
     color: colors.accent,

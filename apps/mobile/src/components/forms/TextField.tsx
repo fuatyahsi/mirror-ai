@@ -24,19 +24,20 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.muted,
-    fontSize: 13,
-    fontWeight: "600"
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase"
   },
   input: {
-    minHeight: 48,
+    minHeight: 50,
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     color: colors.text,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontSize: 15
   }
 });
-

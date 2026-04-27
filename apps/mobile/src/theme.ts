@@ -21,8 +21,12 @@ export const spacing = {
 };
 
 export const radii = {
-  sm: 8,
+  sm: 10,
   md: 12,
   lg: 18
 };
 
+export const typography = {
+  display: "serif",
+  body: "System"
+};

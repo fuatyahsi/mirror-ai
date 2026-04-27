@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { MirrorMark } from "@/components/brand/MirrorMark";
 import { InsightCard } from "@/components/cards/InsightCard";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -21,6 +22,7 @@ export default function OnboardingStartScreen() {
   return (
     <Screen>
       <View style={styles.brandWrap}>
+        <MirrorMark size={58} />
         <Text style={styles.brand}>Mirror AI</Text>
         <LanguageSwitch compact />
       </View>
@@ -43,14 +45,15 @@ export default function OnboardingStartScreen() {
 
 const styles = StyleSheet.create({
   brandWrap: {
-    minHeight: 132,
+    minHeight: 176,
     justifyContent: "center",
     gap: spacing.sm
   },
   brand: {
     color: colors.text,
-    fontSize: 38,
-    fontWeight: "900",
+    fontFamily: "serif",
+    fontSize: 42,
+    fontWeight: "400",
     letterSpacing: 0
   },
   actions: {

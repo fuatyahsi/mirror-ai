@@ -45,17 +45,18 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 50,
+    minHeight: 52,
     borderRadius: radii.sm,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.md
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14
   },
   primary: {
     backgroundColor: colors.accent
   },
   secondary: {
-    backgroundColor: colors.surfaceSoft,
+    backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: colors.border
   },
@@ -71,7 +72,8 @@ const styles = StyleSheet.create({
   text: {
     color: colors.background,
     fontWeight: "800",
-    fontSize: 15
+    fontSize: 15,
+    letterSpacing: 0.2
   },
   secondaryText: {
     color: colors.text

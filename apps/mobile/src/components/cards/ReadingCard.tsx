@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useI18n } from "@/i18n";
-import { colors, radii, spacing } from "@/theme";
+import { colors, radii, spacing, typography } from "@/theme";
 import { formatReadableDate } from "@/utils/date";
 import type { ReadingOutput } from "@/types/readings";
 
@@ -36,8 +36,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    padding: spacing.md,
-    gap: spacing.sm
+    paddingHorizontal: 15,
+    paddingVertical: 13,
+    gap: 5
   },
   pressed: {
     opacity: 0.82
@@ -49,8 +50,9 @@ const styles = StyleSheet.create({
   },
   type: {
     color: colors.accent,
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
     textTransform: "uppercase"
   },
   date: {
@@ -59,12 +61,15 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: 17,
-    fontWeight: "800"
+    fontFamily: typography.display,
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: "600"
   },
   summary: {
     color: colors.muted,
-    fontSize: 14,
-    lineHeight: 21
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "300"
   }
 });

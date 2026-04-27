@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { TarotCardBack } from "@/components/brand/TarotCardBack";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { TextField } from "@/components/forms/TextField";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -66,6 +67,11 @@ export default function TarotScreen() {
           </Pressable>
         ))}
       </View>
+      <View style={styles.deckPreview}>
+        {Array.from({ length: spreadType === "single" ? 1 : 3 }).map((_, index) => (
+          <TarotCardBack key={index} />
+        ))}
+      </View>
       <TextField label={t("common.topic")} value={topic} onChangeText={setTopic} />
       <TextField
         label={t("common.question")}
@@ -87,6 +93,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm
+  },
+  deckPreview: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 12,
+    paddingVertical: spacing.xs
   },
   option: {
     width: "48%",

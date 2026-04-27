@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Stars } from "@/components/brand/Stars";
 import { colors, spacing } from "@/theme";
 
 type ScreenProps = {
@@ -12,6 +13,7 @@ export function Screen({ children, scroll = true }: ScreenProps) {
   if (!scroll) {
     return (
       <SafeAreaView style={styles.safe}>
+        <Stars />
         <View style={styles.content}>{children}</View>
       </SafeAreaView>
     );
@@ -19,6 +21,7 @@ export function Screen({ children, scroll = true }: ScreenProps) {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Stars />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {children}
       </ScrollView>
@@ -29,12 +32,14 @@ export function Screen({ children, scroll = true }: ScreenProps) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background
+    backgroundColor: colors.background,
+    overflow: "hidden"
   },
   content: {
     flexGrow: 1,
-    padding: spacing.lg,
-    gap: spacing.md
+    paddingHorizontal: 18,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    gap: 12
   }
 });
-

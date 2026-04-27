@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { MirrorMark } from "@/components/brand/MirrorMark";
 import { InsightCard } from "@/components/cards/InsightCard";
 import { ReadingCard } from "@/components/cards/ReadingCard";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
@@ -44,11 +45,17 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <PageHeader eyebrow={t("home.eyebrow")} title={t("home.title")} subtitle={t("home.subtitle")} />
+      <View style={styles.heroRow}>
+        <View style={styles.heroText}>
+          <PageHeader eyebrow={t("home.eyebrow")} title={t("home.title")} subtitle={t("home.subtitle")} />
+        </View>
+        <MirrorMark size={44} />
+      </View>
       <InsightCard
         meta={profile.mystic_profile?.profile_title || t("home.energyMeta")}
         title={t("home.energyTitle")}
         body={t("home.energyBody")}
+        accent
       />
       <PrimaryButton disabled={isGenerating} onPress={createDaily}>
         {isGenerating ? t("common.loadingGemini") : t("home.dailyButton")}
@@ -79,6 +86,15 @@ function QuickAction({ title, onPress }: { title: string; onPress: () => void })
 }
 
 const styles = StyleSheet.create({
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: spacing.md
+  },
+  heroText: {
+    flex: 1
+  },
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",

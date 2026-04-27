@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useI18n } from "@/i18n";
-import { colors, radii, spacing } from "@/theme";
+import { colors, radii, spacing, typography } from "@/theme";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 
 export function PaywallPreview() {
@@ -26,8 +26,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontWeight: "800",
-    fontSize: 17
+    fontFamily: typography.display,
+    fontWeight: "600",
+    fontSize: 18
   },
   body: {
     color: colors.muted,
