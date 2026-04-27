@@ -11,6 +11,7 @@ export type ReadingTone = "gentle" | "direct" | "reflective" | "warm";
 export type ReadingSection = {
   title: string;
   body: string;
+  references?: string[];
 };
 
 export type ReadingExplanation = {

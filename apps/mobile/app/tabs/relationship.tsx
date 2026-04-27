@@ -73,7 +73,7 @@ export default function RelationshipScreen() {
       />
       {generationError ? <Text style={{ color: colors.danger }}>{generationError}</Text> : null}
       <PrimaryButton disabled={!question || isGenerating} onPress={generate}>
-        {isGenerating ? t("common.loadingGemini") : t("common.startAnalysis")}
+        {isGenerating ? t("common.loadingMirror") : t("common.startAnalysis")}
       </PrimaryButton>
     </Screen>
   );

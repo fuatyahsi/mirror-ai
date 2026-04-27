@@ -21,7 +21,14 @@ export default function OnboardingResultScreen() {
 
   useEffect(() => {
     const birth = userProfile.birth;
-    if (!birth.birth_date || !birth.latitude || !birth.longitude || userProfile.natal_chart) return;
+    if (
+      !birth.birth_date ||
+      typeof birth.latitude !== "number" ||
+      typeof birth.longitude !== "number" ||
+      userProfile.natal_chart
+    ) {
+      return;
+    }
 
     setChartStatus("loading");
     calculateNatalChart({

@@ -33,7 +33,32 @@ const effects: Record<string, Partial<PersonalityScores>> = {
   concrete: { rationality_need: 14, intuitive_openness: -4 },
   spiritual: { spiritual_openness: 16, intuitive_openness: 10 },
   logical: { rationality_need: 16, spiritual_openness: -6 },
-  surprise: { intuitive_openness: 8, spiritual_openness: 6 }
+  surprise: { intuitive_openness: 8, spiritual_openness: 6 },
+  body_signal: { intuitive_openness: 10, emotional_intensity: 8 },
+  evidence_map: { rationality_need: 14, control_need: 4 },
+  trusted_voice: { attachment_anxiety: 4, rationality_need: 6 },
+  symbolic_sign: { spiritual_openness: 12, intuitive_openness: 8 },
+  time_distance: { uncertainty_tolerance: 8, avoidance_tendency: 2 },
+  name_feeling: { emotional_intensity: 4, rationality_need: 8 },
+  action_step: { rationality_need: 8, control_need: 6 },
+  ritual_space: { spiritual_openness: 8, intuitive_openness: 6 },
+  talk_it_out: { attachment_anxiety: 4, emotional_intensity: 6 },
+  control_plan: { control_need: 12, rationality_need: 6 },
+  chart_reference: { rationality_need: 12, spiritual_openness: 4 },
+  life_theme: { spiritual_openness: 8, intuitive_openness: 6 },
+  relationship_axis: { attachment_anxiety: 6, romantic_idealization: 6 },
+  daily_focus: { rationality_need: 8, uncertainty_tolerance: 4 },
+  deep_symbolism: { spiritual_openness: 12, intuitive_openness: 8 },
+  specific_correction: { rationality_need: 8, uncertainty_tolerance: 4 },
+  emotional_note: { emotional_intensity: 8, intuitive_openness: 4 },
+  skip_feedback: { avoidance_tendency: 8 },
+  compare_past: { rationality_need: 6, control_need: 4 },
+  ask_deeper: { spiritual_openness: 6, rationality_need: 6 },
+  gentle_tone: { emotional_intensity: 4, uncertainty_tolerance: -2 },
+  direct_tone: { rationality_need: 8, uncertainty_tolerance: 8 },
+  reflective_tone: { intuitive_openness: 6, rationality_need: 4 },
+  evidence_tone: { rationality_need: 12, control_need: 4 },
+  mystic_tone: { spiritual_openness: 12, intuitive_openness: 6 }
 };
 
 const copy = {

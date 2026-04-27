@@ -1,4 +1,6 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { Locale } from "@/i18n";
 import type { NatalChart } from "@/types/astrology";
 import type { BirthInfo, MysticProfile, UserProfile } from "@/types/profile";
@@ -29,70 +31,86 @@ type UserState = {
   submitFeedback: (feedback: Omit<ReadingFeedback, "id" | "created_at">) => void;
 };
 
-export const useUserStore = create<UserState>((set) => ({
-  locale: "tr",
-  profile: {
-    birth: {},
-    onboarding_completed: false,
-    credits: 5
-  },
-  readings: [],
-  feedback: [],
-  memoryEvents: [],
-  setLocale: (locale) => set({ locale }),
-  setBirthInfo: (birth) =>
-    set((state) => ({
+export const useUserStore = create<UserState>()(
+  persist(
+    (set) => ({
+      locale: "tr",
       profile: {
-        ...state.profile,
-        birth
-      }
-    })),
-  completeOnboarding: (mysticProfile) =>
-    set((state) => ({
-      profile: {
-        ...state.profile,
-        mystic_profile: mysticProfile,
-        onboarding_completed: true
-      }
-    })),
-  setNatalChart: (chart) =>
-    set((state) => ({
-      profile: {
-        ...state.profile,
-        natal_chart: chart
-      }
-    })),
-  addReading: (reading) =>
-    set((state) => ({
-      readings: [reading, ...state.readings]
-    })),
-  submitFeedback: (feedbackInput) =>
-    set((state) => {
-      const createdAt = new Date().toISOString();
-      const feedback: ReadingFeedback = {
-        ...feedbackInput,
-        id: `feedback_${Date.now()}`,
-        created_at: createdAt
-      };
+        birth: {},
+        onboarding_completed: false,
+        credits: 5
+      },
+      readings: [],
+      feedback: [],
+      memoryEvents: [],
+      setLocale: (locale) => set({ locale }),
+      setBirthInfo: (birth) =>
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            birth,
+            natal_chart: undefined
+          }
+        })),
+      completeOnboarding: (mysticProfile) =>
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            mystic_profile: mysticProfile,
+            onboarding_completed: true
+          }
+        })),
+      setNatalChart: (chart) =>
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            natal_chart: chart
+          }
+        })),
+      addReading: (reading) =>
+        set((state) => ({
+          readings: [reading, ...state.readings]
+        })),
+      submitFeedback: (feedbackInput) =>
+        set((state) => {
+          const createdAt = new Date().toISOString();
+          const feedback: ReadingFeedback = {
+            ...feedbackInput,
+            id: `feedback_${Date.now()}`,
+            created_at: createdAt
+          };
 
-      const memoryEvent: MemoryEvent = {
-        id: `memory_${Date.now()}`,
-        event_type: "feedback_submitted",
-        source_type: "reading_feedback",
-        source_id: feedback.reading_id,
-        memory_key: "reading_feedback_signal",
-        memory_value: {
-          score: feedback.score,
-          accuracy_rating: feedback.accuracy_rating,
-          emotional_resonance: feedback.emotional_resonance
-        },
-        weight: feedback.score === "accurate" ? 0.9 : feedback.score === "partial" ? 0.6 : 0.3,
-        created_at: createdAt
-      };
+          const memoryEvent: MemoryEvent = {
+            id: `memory_${Date.now()}`,
+            event_type: "feedback_submitted",
+            source_type: "reading_feedback",
+            source_id: feedback.reading_id,
+            memory_key: "reading_feedback_signal",
+            memory_value: {
+              score: feedback.score,
+              accuracy_rating: feedback.accuracy_rating,
+              emotional_resonance: feedback.emotional_resonance
+            },
+            weight: feedback.score === "accurate" ? 0.9 : feedback.score === "partial" ? 0.6 : 0.3,
+            created_at: createdAt
+          };
 
-      return {
-        feedback: [feedback, ...state.feedback],
-        memoryEvents: [memoryEvent, ...state.memoryEvents]
-      };
-    })
-}));
+          return {
+            feedback: [feedback, ...state.feedback],
+            memoryEvents: [memoryEvent, ...state.memoryEvents]
+          };
+        })
+    }),
+    {
+      name: "mirror-ai-user-store",
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        locale: state.locale,
+        profile: state.profile,
+        readings: state.readings,
+        feedback: state.feedback,
+        memoryEvents: state.memoryEvents
+      })
+    }
+  )
+);

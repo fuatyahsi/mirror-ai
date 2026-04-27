@@ -13,7 +13,7 @@ const copy = {
     reflection: "Bugün hangi küçük seçim sana daha fazla iç açıklığı verebilir?",
     basedInitial: "ilk profil bilgileri",
     basedTopic: "seçilen konu",
-    basedMock: "mock AI yorum motoru",
+    basedMock: "örnek Mirror AI yorum motoru",
     limitations: "Gerçek AI ve geçmiş hafıza motoru bağlanana kadar sonuçlar örnek veriyle üretilir.",
     dailyTitle: "Bugünün İç Aynası",
     dailyConfused:
@@ -79,7 +79,7 @@ const copy = {
     reflection: "Which small choice could give you more inner clarity today?",
     basedInitial: "initial profile information",
     basedTopic: "selected topic",
-    basedMock: "mock AI reading engine",
+    basedMock: "sample Mirror AI reading engine",
     limitations: "Results use sample data until real AI and memory history are connected.",
     dailyTitle: "Today’s Inner Mirror",
     dailyConfused:

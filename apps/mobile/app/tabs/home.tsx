@@ -58,7 +58,7 @@ export default function HomeScreen() {
         accent
       />
       <PrimaryButton disabled={isGenerating} onPress={createDaily}>
-        {isGenerating ? t("common.loadingGemini") : t("home.dailyButton")}
+        {isGenerating ? t("common.loadingMirror") : t("home.dailyButton")}
       </PrimaryButton>
       {generationError ? <InsightCard title={t("home.generationErrorTitle")} body={generationError} /> : null}
       <View style={styles.actions}>

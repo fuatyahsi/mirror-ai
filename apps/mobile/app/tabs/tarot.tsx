@@ -82,7 +82,7 @@ export default function TarotScreen() {
       />
       {generationError ? <Text style={styles.error}>{generationError}</Text> : null}
       <PrimaryButton disabled={!question || isGenerating} onPress={generate}>
-        {isGenerating ? t("common.loadingGemini") : t("tarot.openCards")}
+        {isGenerating ? t("common.loadingMirror") : t("tarot.openCards")}
       </PrimaryButton>
     </Screen>
   );

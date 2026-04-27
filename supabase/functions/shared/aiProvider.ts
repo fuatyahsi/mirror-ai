@@ -69,9 +69,15 @@ const readingOutputSchema = {
         type: "object",
         properties: {
           title: { type: "string" },
-          body: { type: "string" }
+          body: { type: "string" },
+          references: {
+            type: "array",
+            minItems: 1,
+            maxItems: 7,
+            items: { type: "string" }
+          }
         },
-        required: ["title", "body"]
+        required: ["title", "body", "references"]
       }
     },
     advice: { type: "string" },
@@ -113,7 +119,7 @@ function parseGeminiText(data: Record<string, unknown>) {
 
   if (!text) {
     const feedback = firstCandidate?.finishReason ? ` Finish reason: ${firstCandidate.finishReason}.` : "";
-    throw new Error(`Gemini returned an empty response.${feedback}`);
+    throw new Error(`Mirror AI provider returned an empty response.${feedback}`);
   }
 
   return text;
@@ -184,7 +190,7 @@ export const geminiAIProvider: AIProvider = {
 
     const data = await response.json();
     if (!response.ok) {
-      const message = data?.error?.message || `Gemini request failed with status ${response.status}.`;
+      const message = data?.error?.message || `Mirror AI provider request failed with status ${response.status}.`;
       throw new Error(message);
     }
 

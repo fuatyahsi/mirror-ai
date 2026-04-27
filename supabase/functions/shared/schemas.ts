@@ -2,7 +2,7 @@ export type ReadingOutput = {
   title: string;
   summary: string;
   tone: "gentle" | "direct" | "reflective" | "warm";
-  sections: { title: string; body: string }[];
+  sections: { title: string; body: string; references?: string[] }[];
   advice: string;
   reflection_question: string;
   explanation: {

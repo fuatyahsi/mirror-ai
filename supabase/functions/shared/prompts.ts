@@ -16,6 +16,8 @@ Rules:
 - If profile or memory is provided, connect the interpretation to those signals without inventing new facts.
 - Never invent transits, houses, aspects, cities, birth data, or partner feelings that are not present in the input.
 - Include at least three concrete items in explanation.based_on when enough context is available.
+- Each item in sections must include a references array with exact supporting facts such as birth date/time, Sun/Moon/Ascendant sign-degree, planet retrograde state, house, aspect, tarot card position/orientation, profile score, or memory key.
+- Do not add a separate generic reference section. Put references inside each section.
 - Return only valid JSON matching the schema.
 `;
 
@@ -27,7 +29,6 @@ function getLocale(input: unknown) {
 export function buildReadingPrompt(input: unknown) {
   const locale = getLocale(input);
   const languageName = locale === "en" ? "English" : "Turkish";
-  const referenceTitle = locale === "en" ? "Referenced Reading" : "Referanslı Okuma";
 
   return `${systemSafetyPrompt}
 
@@ -41,8 +42,8 @@ Synthesis requirements:
 - Write every user-facing string in ${languageName}.
 - Combine all provided systems in one coherent interpretation: tarot, birth chart, star chart, natal horoscope, personality profile, and memory signals.
 - Make the reading feel personally calibrated, not generic.
-- Add a section titled "${referenceTitle}" when possible.
-- Explain which exact inputs influenced the reading.
+- Add references inside every section. Avoid a separate reference-only section.
+- Explain which exact inputs influenced the reading, using exact sign/degree/orientation/profile values from the input.
 - Keep uncertainty and user autonomy central.
 
 Generate a personalized reading.`;

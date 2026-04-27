@@ -7,6 +7,8 @@ const labels = {
     moon: "Ay",
     ascendant: "Yükselen",
     midheaven: "Tepe noktası",
+    birthData: "Doğum verisi",
+    engine: "Hesap motoru",
     birthDescription: "Doğum haritası: doğum anındaki temel gök yerleşimleri.",
     starDescription: "Yıldız haritası: kişisel gezegenler, ev başlangıçları ve majör açılar.",
     natalDescription:
@@ -20,6 +22,8 @@ const labels = {
     moon: "Moon",
     ascendant: "Ascendant",
     midheaven: "Midheaven",
+    birthData: "Birth data",
+    engine: "Calculation engine",
     birthDescription: "Birth chart: core sky placements at the moment of birth.",
     starDescription: "Star chart: personal planets, house cusps, and major aspects.",
     natalDescription:
@@ -31,7 +35,7 @@ const labels = {
 
 function pointRef(label: string, point?: ZodiacPoint) {
   if (!point) return null;
-  return `${label}: ${point.sign_label} ${point.degree.toFixed(1)}°`;
+  return `${label}: ${point.sign_label} ${point.degree.toFixed(1)}°${point.retrograde ? " R" : ""}`;
 }
 
 export function buildAstrologyContext(chart?: NatalChart, locale: Locale = "tr") {
@@ -43,6 +47,8 @@ export function buildAstrologyContext(chart?: NatalChart, locale: Locale = "tr")
   );
 
   const referencePoints = [
+    `${text.birthData}: ${chart.input.birth_date} / ${chart.input.birth_time ?? "12:00"} / ${chart.input.timezone}`,
+    `${text.engine}: ${chart.engine.name}`,
     pointRef(text.sun, chart.sun),
     pointRef(text.moon, chart.moon),
     pointRef(text.ascendant, chart.ascendant),
