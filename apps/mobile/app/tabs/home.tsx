@@ -65,6 +65,7 @@ export default function HomeScreen() {
         <QuickAction title={t("home.quickCoffee")} onPress={() => router.push("/tabs/coffee")} />
         <QuickAction title={t("home.quickTarot")} onPress={() => router.push("/tabs/tarot")} />
         <QuickAction title={t("home.quickRelationship")} onPress={() => router.push("/tabs/relationship")} />
+        <QuickAction title={t("home.quickAstrology")} onPress={() => router.push("/tabs/astrology")} />
         <QuickAction title={t("home.quickProfile")} onPress={() => router.push("/tabs/profile")} />
       </View>
       <Text style={styles.sectionTitle}>{t("home.recent")}</Text>

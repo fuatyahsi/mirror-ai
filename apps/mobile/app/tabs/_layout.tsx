@@ -47,6 +47,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="astrology"
+        options={{
+          title: t("tabs.astrology"),
+          tabBarIcon: ({ color, size }) => <Ionicons name="planet-outline" color={color} size={size} />
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: t("tabs.profile"),

@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { InsightCard } from "@/components/cards/InsightCard";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
@@ -45,6 +46,9 @@ export default function ProfileScreen() {
             : t("profile.astrologyEmpty")
         }
       />
+      <PrimaryButton variant="secondary" onPress={() => router.push("/tabs/astrology")}>
+        {t("profile.openAstrology")}
+      </PrimaryButton>
       <View style={styles.setting}>
         <LanguageSwitch />
         <Text style={styles.settingBody}>{t("profile.languageBody")}</Text>
