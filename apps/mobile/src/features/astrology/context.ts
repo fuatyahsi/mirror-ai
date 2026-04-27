@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n";
+import { isUserFacingChartWarning } from "@/features/astrology/api";
 import type { NatalChart, ZodiacPoint } from "@/types/astrology";
 
 const labels = {
@@ -81,6 +82,6 @@ export function buildAstrologyContext(chart?: NatalChart, locale: Locale = "tr")
     },
     reference_points: referencePoints,
     engine: chart.engine,
-    warnings: chart.warnings
+    warnings: chart.warnings.filter(isUserFacingChartWarning)
   };
 }

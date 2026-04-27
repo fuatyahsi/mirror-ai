@@ -123,7 +123,7 @@ def calc_body(jd_ut: float, body_id: int) -> tuple[list[float], int, str | None]
     fallback_warning = None
     try:
         values, result_flags, error_text = unpack_calc_result(swe.calc_ut(jd_ut, body_id, flags))
-        if error_text:
+        if error_text and is_user_facing_warning(error_text):
             fallback_warning = error_text
         return list(values), result_flags, fallback_warning
     except Exception:
@@ -134,6 +134,19 @@ def calc_body(jd_ut: float, body_id: int) -> tuple[list[float], int, str | None]
         )
         fallback_warning = "Swiss ephemeris files were unavailable; Moshier fallback was used for development."
         return list(values), result_flags, fallback_warning
+
+
+def is_user_facing_warning(message: str) -> bool:
+    lower = message.lower()
+    technical_fragments = [
+        "not found in path",
+        "using moshier",
+        "sepl_",
+        "semo_",
+        "seas_",
+        ".se1",
+    ]
+    return not any(fragment in lower for fragment in technical_fragments)
 
 
 def normalize_angle_distance(a: float, b: float) -> float:

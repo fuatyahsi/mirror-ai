@@ -18,7 +18,7 @@ export async function calculateNatalChart(input: NatalChartInput): Promise<Natal
     if (!response.ok) {
       throw new Error(data.detail || data.error || "Doğum haritası hesaplanamadı.");
     }
-    return data;
+    return sanitizeNatalChart(data);
   }
 
   if (isSupabaseConfigured) {
@@ -26,9 +26,22 @@ export async function calculateNatalChart(input: NatalChartInput): Promise<Natal
       body: input
     });
     if (error) throw error;
-    return data.chart;
+    return sanitizeNatalChart(data.chart);
   }
 
-  return createMockNatalChart(input);
+  return sanitizeNatalChart(createMockNatalChart(input));
 }
 
+function sanitizeNatalChart(chart: NatalChart): NatalChart {
+  return {
+    ...chart,
+    warnings: chart.warnings.filter(isUserFacingChartWarning)
+  };
+}
+
+export function isUserFacingChartWarning(message: string) {
+  const lower = message.toLocaleLowerCase("en-US");
+  return !["not found in path", "using moshier", "sepl_", "semo_", "seas_", ".se1"].some((fragment) =>
+    lower.includes(fragment)
+  );
+}
