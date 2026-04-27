@@ -29,17 +29,20 @@ export const mockAIProvider: AIProvider = {
         {
           title: "Main Theme",
           body:
-            "The symbolic reading highlights uncertainty as a place to observe, not a place to rush into certainty."
+            "The symbolic reading highlights uncertainty as a place to observe, not a place to rush into certainty.",
+          references: ["selected reading type", "provided question"]
         },
         {
           title: "Personal Context",
           body:
-            "The profile and recent context suggest that explainable, grounded language will be more useful than dramatic predictions."
+            "The profile and recent context suggest that explainable, grounded language will be more useful than dramatic predictions.",
+          references: ["user profile", "recent context"]
         },
         {
           title: "Gentle Direction",
           body:
-            "A small, honest action may give better information than repeated checking or trying to decode every signal."
+            "A small, honest action may give better information than repeated checking or trying to decode every signal.",
+          references: ["safety rules", "autonomy-centered guidance"]
         }
       ],
       advice:

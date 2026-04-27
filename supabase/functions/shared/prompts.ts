@@ -26,9 +26,41 @@ function getLocale(input: unknown) {
   return value.locale === "en" ? "en" : "tr";
 }
 
+function readingSpecificRequirements(input: unknown, languageName: string) {
+  const value = input as { readingType?: unknown; topic?: unknown; question?: unknown; context?: unknown };
+  const topic = typeof value.topic === "string" ? value.topic : "not provided";
+  const question = typeof value.question === "string" ? value.question : "not provided";
+
+  if (value.readingType === "tarot") {
+    return `
+Tarot-specific requirements:
+- Treat the user's topic "${topic}" and question "${question}" as the center of the reading.
+- Do not write generic card meanings by themselves.
+- For each card section, explain what that card says about the exact question, what direction it suggests, and what the user should avoid doing.
+- Include at least one practical guidance sentence in every section.
+- The final advice must answer the user's question in a symbolic, non-deterministic way.`;
+  }
+
+  if (value.readingType === "relationship") {
+    return `
+Relationship-specific requirements:
+- Treat the user's question "${question}" as the central question.
+- Use relationship status, recent context, scores, profile, memory, and astrology together.
+- Do not claim what the other person definitely feels or will do.
+- Every section must include: what this suggests about the dynamic, what the user can do next, and what they should not over-interpret.
+- The final advice must be a concrete next step, not a generic self-reflection paragraph.`;
+  }
+
+  return `
+Reading-specific requirements:
+- Keep the user's topic "${topic}" and question "${question}" visible in the interpretation.
+- Include practical guidance, not only description.`;
+}
+
 export function buildReadingPrompt(input: unknown) {
   const locale = getLocale(input);
   const languageName = locale === "en" ? "English" : "Turkish";
+  const specificRequirements = readingSpecificRequirements(input, languageName);
 
   return `${systemSafetyPrompt}
 
@@ -45,6 +77,7 @@ Synthesis requirements:
 - Add references inside every section. Avoid a separate reference-only section.
 - Explain which exact inputs influenced the reading, using exact sign/degree/orientation/profile values from the input.
 - Keep uncertainty and user autonomy central.
+${specificRequirements}
 
 Generate a personalized reading.`;
 }

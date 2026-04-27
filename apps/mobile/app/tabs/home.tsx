@@ -20,6 +20,7 @@ export default function HomeScreen() {
   const { locale, t } = useI18n();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string>();
+  const hasPersonalProfile = Boolean(profile.mystic_profile);
 
   async function createDaily() {
     setIsGenerating(true);
@@ -57,9 +58,20 @@ export default function HomeScreen() {
         body={t("home.energyBody")}
         accent
       />
-      <PrimaryButton disabled={isGenerating} onPress={createDaily}>
-        {isGenerating ? t("common.loadingMirror") : t("home.dailyButton")}
-      </PrimaryButton>
+      {!hasPersonalProfile ? (
+        <>
+          <InsightCard title={t("home.profileNeededTitle")} body={t("home.profileNeededBody")} />
+          <PrimaryButton
+            onPress={() => router.push(profile.birth.birth_date ? "/onboarding/profile-quiz" : "/onboarding/birth-info")}
+          >
+            {t("home.profileNeededButton")}
+          </PrimaryButton>
+        </>
+      ) : (
+        <PrimaryButton disabled={isGenerating} onPress={createDaily}>
+          {isGenerating ? t("common.loadingMirror") : t("home.dailyButton")}
+        </PrimaryButton>
+      )}
       {generationError ? <InsightCard title={t("home.generationErrorTitle")} body={generationError} /> : null}
       <View style={styles.actions}>
         <QuickAction title={t("home.quickCoffee")} onPress={() => router.push("/tabs/coffee")} />

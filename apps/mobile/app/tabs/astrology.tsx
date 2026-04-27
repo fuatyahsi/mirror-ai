@@ -200,7 +200,13 @@ function NatalHoroscopeView({ chart, profile }: { chart: NatalChart; profile?: M
       <InsightCard title={t("astrology.natalTitle")} body={t("astrology.natalBody")} accent />
       <Section title={t("astrology.interpretationTitle")}>
         {interpretations.map((item) => (
-          <InterpretationCard key={item.title} title={item.title} body={item.body} references={item.references} />
+          <InterpretationCard
+            key={item.title}
+            title={item.title}
+            body={item.body}
+            action={item.action}
+            references={item.references}
+          />
         ))}
       </Section>
     </>
@@ -258,13 +264,27 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function InterpretationCard({ title, body, references }: { title: string; body: string; references: string[] }) {
+function InterpretationCard({
+  title,
+  body,
+  action,
+  references
+}: {
+  title: string;
+  body: string;
+  action: string;
+  references: string[];
+}) {
   const { t } = useI18n();
 
   return (
     <View style={styles.interpretationCard}>
       <Text style={styles.rowTitle}>{title}</Text>
       <Text style={styles.interpretationBody}>{body}</Text>
+      <View style={styles.actionBox}>
+        <Text style={styles.actionTitle}>{t("astrology.guidance")}</Text>
+        <Text style={styles.actionBody}>{action}</Text>
+      </View>
       <Text style={styles.referenceHeading}>{t("astrology.references")}</Text>
       {references.map((reference) => (
         <Text key={reference} style={styles.referenceBullet}>
@@ -336,6 +356,7 @@ function findPlanet(chart: NatalChart, key: string) {
 type NatalInterpretation = {
   title: string;
   body: string;
+  action: string;
   references: string[];
 };
 
@@ -370,6 +391,7 @@ function buildNatalInterpretations(
         clarity,
         spiritual
       }),
+      action: fill(copy.identityAction, { clarity, style }),
       references: [
         pointReference(t("astrology.sun"), chart.sun),
         pointReference(t("astrology.ascendant"), chart.ascendant),
@@ -387,6 +409,7 @@ function buildNatalInterpretations(
         emotional,
         style
       }),
+      action: fill(copy.emotionalAction, { uncertainty, emotional }),
       references: [
         pointReference(t("astrology.moon"), chart.moon),
         mercury ? pointReference("Mercury", mercury) : undefined,
@@ -403,6 +426,7 @@ function buildNatalInterpretations(
         uncertainty,
         aspect: mainAspect ? aspectReference(mainAspect) : copy.noMajorAspect
       }),
+      action: fill(copy.relationshipAction, { uncertainty }),
       references: [
         venus ? pointReference("Venus", venus) : undefined,
         mars ? pointReference("Mars", mars) : undefined,
@@ -419,6 +443,7 @@ function buildNatalInterpretations(
         style,
         profile: title
       }),
+      action: fill(copy.integrationAction, { style }),
       references: [
         `${t("astrology.birthData")}: ${formatBirthData(chart)}`,
         saturn ? pointReference("Saturn", saturn) : undefined,
@@ -443,12 +468,20 @@ const natalCopy = {
     integrationTitle: "Bu harita Mirror AI yorumlarını nasıl kişiselleştirir?",
     identity:
       "{{profile}} profilin, {{sun}} Güneşinin duygusal ve sezgisel tonunu {{ascendant}} yükseleninin daha seçici, gözlemci diliyle dışarı verdiğini gösteriyor. Bu yüzden Mirror AI senin için {{style}} bir anlatımı öne alır: içgörü sembolik kalır ama {{clarity}} netlik ihtiyacını karşılayacak kadar gerekçeli olur. {{spiritual}} sezgisel açıklık ise yorumlarda sadece veri değil, anlam bağı da kurulması gerektiğini gösterir.",
+    identityAction:
+      "{{clarity}} netlik ihtiyacın yüksekse, bir karar vermeden önce kendine tek cümlelik bir ölçüt koy: 'Bunu seçersem hangi değerimi koruyorum?' Mirror AI yorumlarını {{style}} tonda okurken sembolün sende uyandırdığı his ile somut davranışı ayrı not et.",
     emotional:
       "{{moon}} Ay yerleşimin, duygusal güven ihtiyacını ve ilk tepki biçimini belirleyen ana katman. {{mercury}} Merkür referansı ise zihninin duyguyu nasıl adlandırdığını gösterir. {{uncertainty}} belirsizlik toleransı ve {{emotional}} duygusal yoğunluk birlikte okunduğunda, yorumların sana en iyi {{style}} bir sakinlikte; duyguyu bastırmadan ama tek bir sonuca kilitlemeden gelmesi gerekir.",
+    emotionalAction:
+      "Duygun yükseldiğinde hemen sonuç çıkarmak yerine üç adım uygula: hissettiğin duyguyu adlandır, bedendeki etkisini yaz, sonra gerçek kanıtı ayrı listele. {{uncertainty}} belirsizlik toleransında bu ayrım özellikle koruyucu olur.",
     relationship:
       "{{venus}} Venüs ve {{mars}} Mars yerleşimleri ilişki, çekim, sınır ve hareket tarzını kişiselleştirir. Profilindeki döngü: {{pattern}}. {{uncertainty}} belirsizlik toleransı bu alanda yorumların kesin niyet okumadan, davranış verisi ve iç his ayrımıyla ilerlemesi gerektiğini gösteriyor. Öne çıkan açı referansı: {{aspect}}.",
+    relationshipAction:
+      "İlişkide belirsizlik artarsa mesaj, zamanlama ve tutarlılık gibi davranış verilerine dön. Direktif: bir varsayımı kesin kabul etmeden önce karşı tarafa sakin ve tek konulu bir soru sor; cevap davranışla desteklenmiyorsa yorumunu beklemeye al.",
     integration:
-      "{{birth}} doğum verisiyle hesaplanan haritada {{saturn}} Satürn referansı, sınır ve olgunlaşma temasını yorumlara ekler. {{profile}} profilin ve {{style}} tercih edilen yorum stilin birlikte düşünüldüğünde, Mirror AI sana sadece burç listesi göstermez; haritadaki yerleşimleri hangi konuda daha çok netlik, hangi konuda daha çok iç gözlem gerektiğini ayırmak için kullanır."
+      "{{birth}} doğum verisiyle hesaplanan haritada {{saturn}} Satürn referansı, sınır ve olgunlaşma temasını yorumlara ekler. {{profile}} profilin ve {{style}} tercih edilen yorum stilin birlikte düşünüldüğünde, Mirror AI sana sadece burç listesi göstermez; haritadaki yerleşimleri hangi konuda daha çok netlik, hangi konuda daha çok iç gözlem gerektiğini ayırmak için kullanır.",
+    integrationAction:
+      "Bu haritayı günlük kullanımda karar pusulası gibi kullan: yorumdan sonra 'neye netlik getirdi, neyi sadece his olarak bıraktı, hangi küçük eylemi öneriyor?' diye üç madde çıkar. {{style}} stilin için en sağlıklı çıktı budur."
   },
   en: {
     profile: "Mystic profile",
@@ -463,12 +496,20 @@ const natalCopy = {
     integrationTitle: "How this chart personalizes Mirror AI readings",
     identity:
       "Your {{profile}} profile shows that the emotional and intuitive tone of your Sun at {{sun}} is expressed through the more selective, observant language of your Ascendant at {{ascendant}}. Mirror AI therefore favors a {{style}} voice for you: the insight can stay symbolic, but it needs enough reasoning to meet your {{clarity}} need for clarity. Your {{spiritual}} intuitive openness also means the reading should connect meaning, not only list data.",
+    identityAction:
+      "When your {{clarity}} need for clarity is active, set one sentence before deciding: 'Which value am I protecting if I choose this?' While reading Mirror AI in a {{style}} tone, separate the feeling awakened by a symbol from the observable behavior.",
     emotional:
       "Your Moon at {{moon}} is the main layer for emotional safety needs and first reactions. Mercury at {{mercury}} shows how your mind names the feeling. Read together with {{uncertainty}} uncertainty tolerance and {{emotional}} emotional intensity, your readings should arrive in a {{style}} tone: not suppressing feeling, but also not locking it into one fixed conclusion.",
+    emotionalAction:
+      "When emotion rises, use three steps before making meaning: name the feeling, write how it appears in the body, then list the actual evidence separately. With {{uncertainty}} uncertainty tolerance, this distinction is especially protective.",
     relationship:
       "Venus at {{venus}} and Mars at {{mars}} personalize relationship style, attraction, boundaries, and movement. Your profile pattern is: {{pattern}}. {{uncertainty}} uncertainty tolerance shows that relationship readings should avoid claiming certain intent and instead separate behavior-based evidence from inner feeling. Main aspect reference: {{aspect}}.",
+    relationshipAction:
+      "When uncertainty rises in a relationship, return to behavior data: messages, timing, consistency. Directive: before treating an assumption as true, ask one calm, single-topic question; if the answer is not supported by behavior, hold the interpretation lightly.",
     integration:
-      "Using the birth data {{birth}}, Saturn at {{saturn}} adds the theme of boundaries and maturation. When your {{profile}} profile and {{style}} reading preference are combined, Mirror AI does not only show zodiac placements; it uses them to distinguish where you need more clarity and where you need more inner observation."
+      "Using the birth data {{birth}}, Saturn at {{saturn}} adds the theme of boundaries and maturation. When your {{profile}} profile and {{style}} reading preference are combined, Mirror AI does not only show zodiac placements; it uses them to distinguish where you need more clarity and where you need more inner observation.",
+    integrationAction:
+      "Use this chart as a decision compass: after each reading, write three lines: what became clearer, what remains only a feeling, and which small action is suggested. This is the healthiest output for your {{style}} style."
   }
 } as const;
 
@@ -673,6 +714,26 @@ const styles = StyleSheet.create({
   },
   interpretationBody: {
     color: colors.muted,
+    fontSize: 13,
+    lineHeight: 20
+  },
+  actionBox: {
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+    padding: spacing.sm,
+    gap: 4,
+    marginTop: spacing.xs
+  },
+  actionTitle: {
+    color: colors.accent,
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  actionBody: {
+    color: colors.text,
     fontSize: 13,
     lineHeight: 20
   },

@@ -10,7 +10,7 @@ import { calculateNatalChart } from "@/features/astrology/api";
 import { findBirthPlaceByCity, findBirthPlaces, type BirthPlace } from "@/features/astrology/birthPlaces";
 import { useI18n } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
-import { colors, radii, spacing, typography } from "@/theme";
+import { colors, radii, spacing } from "@/theme";
 
 function formatDateKey(year: number, monthIndex: number, day: number) {
   return `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -40,9 +40,9 @@ export default function BirthInfoScreen() {
   const existingPlace = findBirthPlaceByCity(userProfile.birth.birth_city, userProfile.birth.birth_country);
   const now = new Date();
 
-  const [visibleYear, setVisibleYear] = useState(existingDate?.year ?? now.getFullYear());
-  const [visibleMonth, setVisibleMonth] = useState(existingDate?.monthIndex ?? now.getMonth());
-  const [selectedDate, setSelectedDate] = useState(userProfile.birth.birth_date ?? "");
+  const [selectedYear, setSelectedYear] = useState(existingDate?.year ?? now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(existingDate?.monthIndex ?? now.getMonth());
+  const [selectedDay, setSelectedDay] = useState(existingDate?.day ?? 1);
   const [birthTime, setBirthTime] = useState(userProfile.birth.birth_time ?? "12:00");
   const [placeQuery, setPlaceQuery] = useState(userProfile.birth.birth_city ?? "");
   const [selectedPlace, setSelectedPlace] = useState<BirthPlace | undefined>(existingPlace);
@@ -50,17 +50,16 @@ export default function BirthInfoScreen() {
   const [error, setError] = useState<string>();
 
   const places = useMemo(() => findBirthPlaces(placeQuery), [placeQuery]);
-  const weekdayLabels = locale === "en" ? ["M", "T", "W", "T", "F", "S", "S"] : ["P", "S", "Ç", "P", "C", "C", "P"];
-
-  function moveMonth(step: number) {
-    const next = new Date(visibleYear, visibleMonth + step, 1);
-    setVisibleYear(next.getFullYear());
-    setVisibleMonth(next.getMonth());
-  }
-
-  function selectDate(day: number) {
-    setSelectedDate(formatDateKey(visibleYear, visibleMonth, day));
-  }
+  const monthLabels = useMemo(
+    () =>
+      Array.from({ length: 12 }).map((_, monthIndex) =>
+        new Date(2024, monthIndex, 1).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+          month: "short"
+        })
+      ),
+    [locale]
+  );
+  const selectedDate = formatDateKey(selectedYear, selectedMonth, Math.min(selectedDay, daysInMonth(selectedYear, selectedMonth)));
 
   function selectPlace(place: BirthPlace) {
     setSelectedPlace(place);
@@ -114,6 +113,7 @@ export default function BirthInfoScreen() {
     ? `${selectedPlace.city}, ${selectedPlace.country} / ${selectedPlace.timezone}`
     : t("birth.placeRequired");
   const selectedDateLabel = selectedDate || t("birth.dateRequired");
+  const currentMonthDays = daysInMonth(selectedYear, selectedMonth);
 
   return (
     <Screen>
@@ -121,41 +121,60 @@ export default function BirthInfoScreen() {
       <PageHeader eyebrow={t("birth.eyebrow")} title={t("birth.title")} subtitle={t("birth.subtitle")} />
 
       <View style={styles.calendar}>
-        <View style={styles.calendarHeader}>
-          <Pressable onPress={() => moveMonth(-1)} style={styles.monthButton}>
-            <Text style={styles.monthButtonText}>‹</Text>
-          </Pressable>
-          <Text style={styles.monthTitle}>
-            {new Date(visibleYear, visibleMonth, 1).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
-              month: "long",
-              year: "numeric"
+        <View style={styles.selector}>
+          <Text style={styles.selectorTitle}>{t("birth.year")}</Text>
+          <View style={styles.stepRow}>
+            {[-10, -1, 1, 10].map((step) => (
+              <Pressable
+                key={step}
+                onPress={() => setSelectedYear((year) => year + step)}
+                style={styles.stepButton}
+              >
+                <Text style={styles.stepText}>{step > 0 ? `+${step}` : step}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.selectedBig}>{selectedYear}</Text>
+        </View>
+
+        <View style={styles.selector}>
+          <Text style={styles.selectorTitle}>{t("birth.month")}</Text>
+          <View style={styles.monthGrid}>
+            {monthLabels.map((label, monthIndex) => {
+              const active = selectedMonth === monthIndex;
+              return (
+                <Pressable
+                  key={`${label}-${monthIndex}`}
+                  onPress={() => {
+                    setSelectedMonth(monthIndex);
+                    setSelectedDay((day) => Math.min(day, daysInMonth(selectedYear, monthIndex)));
+                  }}
+                  style={[styles.monthChip, active && styles.dayCellActive]}
+                >
+                  <Text style={[styles.dayText, active && styles.dayTextActive]}>{label}</Text>
+                </Pressable>
+              );
             })}
-          </Text>
-          <Pressable onPress={() => moveMonth(1)} style={styles.monthButton}>
-            <Text style={styles.monthButtonText}>›</Text>
-          </Pressable>
+          </View>
         </View>
-        <View style={styles.weekdays}>
-          {weekdayLabels.map((day, index) => (
-            <Text key={`${day}-${index}`} style={styles.weekday}>
-              {day}
-            </Text>
-          ))}
-        </View>
+
+        <View style={styles.selector}>
+          <Text style={styles.selectorTitle}>{t("birth.day")}</Text>
         <View style={styles.dayGrid}>
-          {Array.from({ length: new Date(visibleYear, visibleMonth, 1).getDay() === 0 ? 6 : new Date(visibleYear, visibleMonth, 1).getDay() - 1 }).map((_, index) => (
-            <View key={`blank-${index}`} style={styles.dayCell} />
-          ))}
-          {Array.from({ length: daysInMonth(visibleYear, visibleMonth) }).map((_, index) => {
+          {Array.from({ length: currentMonthDays }).map((_, index) => {
             const day = index + 1;
-            const dateKey = formatDateKey(visibleYear, visibleMonth, day);
-            const active = selectedDate === dateKey;
+            const active = selectedDay === day;
             return (
-              <Pressable key={dateKey} onPress={() => selectDate(day)} style={[styles.dayCell, active && styles.dayCellActive]}>
+              <Pressable
+                key={day}
+                onPress={() => setSelectedDay(day)}
+                style={[styles.dayCell, active && styles.dayCellActive]}
+              >
                 <Text style={[styles.dayText, active && styles.dayTextActive]}>{day}</Text>
               </Pressable>
             );
           })}
+        </View>
         </View>
         <Text style={styles.selectionText}>
           {t("birth.selectedDate")}: {selectedDateLabel}
@@ -215,14 +234,23 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.sm
   },
-  calendarHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between"
+  selector: {
+    gap: spacing.xs
   },
-  monthButton: {
-    width: 42,
-    height: 42,
+  selectorTitle: {
+    color: colors.accent,
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1,
+    textTransform: "uppercase"
+  },
+  stepRow: {
+    flexDirection: "row",
+    gap: spacing.xs
+  },
+  stepButton: {
+    flex: 1,
+    minHeight: 38,
     borderRadius: radii.sm,
     alignItems: "center",
     justifyContent: "center",
@@ -230,30 +258,32 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.background
   },
-  monthButtonText: {
+  stepText: {
     color: colors.accent,
-    fontSize: 28,
-    lineHeight: 30,
-    fontWeight: "700"
+    fontSize: 13,
+    fontWeight: "900"
   },
-  monthTitle: {
+  selectedBig: {
     color: colors.text,
-    fontFamily: typography.display,
-    fontSize: 20,
-    lineHeight: 25,
-    fontWeight: "600",
-    textTransform: "capitalize"
-  },
-  weekdays: {
-    flexDirection: "row",
-    justifyContent: "space-between"
-  },
-  weekday: {
-    width: "14.2%",
-    color: colors.faint,
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: "900",
     textAlign: "center"
+  },
+  monthGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6
+  },
+  monthChip: {
+    width: "23%",
+    minHeight: 38,
+    borderRadius: radii.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background
   },
   dayGrid: {
     flexDirection: "row",
