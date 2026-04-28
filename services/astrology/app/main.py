@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI, Header, HTTPException
 
-from .astro import calculate_natal_chart, ephemeris_status
+from .astro import calculate_natal_chart, ensure_ephemeris_files, ephemeris_status
 from .models import NatalChartRequest
 
 import os
@@ -18,6 +18,7 @@ def require_service_token(authorization: str | None = Header(default=None)) -> N
 
 @app.get("/health")
 def health() -> dict:
+    ensure_ephemeris_files()
     return {
         "ok": True,
         "service": "mirror-ai-astrology",
