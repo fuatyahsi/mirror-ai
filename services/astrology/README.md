@@ -1,3 +1,14 @@
+---
+title: Mirror AI Astrology Service
+emoji: 🔭
+colorFrom: indigo
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: false
+license: agpl-3.0
+---
+
 # Mirror AI Astrology Service
 
 This service is the isolated Swiss Ephemeris calculation layer for Mirror AI.
