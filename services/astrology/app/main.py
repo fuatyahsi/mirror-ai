@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI, Header, HTTPException
 
-from .astro import calculate_natal_chart, configure_ephemeris
+from .astro import calculate_natal_chart, ephemeris_status
 from .models import NatalChartRequest
 
 import os
@@ -21,7 +21,17 @@ def health() -> dict:
     return {
         "ok": True,
         "service": "mirror-ai-astrology",
-        "ephemeris_path": configure_ephemeris(),
+        "ephemeris": ephemeris_status(),
+    }
+
+
+@app.get("/")
+def root() -> dict:
+    return {
+        "service": "mirror-ai-astrology",
+        "version": app.version,
+        "health": "/health",
+        "natal_chart": "/natal-chart",
     }
 
 
@@ -31,4 +41,3 @@ def natal_chart(request: NatalChartRequest) -> dict:
         return calculate_natal_chart(request)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-

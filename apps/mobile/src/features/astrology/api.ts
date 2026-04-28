@@ -4,15 +4,17 @@ import type { NatalChart, NatalChartInput } from "@/types/astrology";
 
 const astrologyServiceUrl = process.env.EXPO_PUBLIC_ASTROLOGY_SERVICE_URL;
 const astrologyRequestTimeoutMs = 2500;
+const strictAstrologyBackend = process.env.EXPO_PUBLIC_ASTROLOGY_STRICT === "true";
+const shouldUseDirectAstrologyService = Boolean(astrologyServiceUrl) && __DEV__;
 
 export async function calculateNatalChart(input: NatalChartInput): Promise<NatalChart> {
-  if (astrologyServiceUrl) {
+  if (shouldUseDirectAstrologyService && astrologyServiceUrl) {
     try {
       const data = await postNatalChart(`${astrologyServiceUrl.replace(/\/$/, "")}/natal-chart`, input);
       return sanitizeNatalChart(data);
-    } catch {
-      // Physical test devices cannot reach the emulator-only 10.0.2.2 service.
-      // Continue with remote Supabase or embedded preview instead of breaking onboarding.
+    } catch (error) {
+      if (strictAstrologyBackend) throw normalizeAstrologyError(error);
+      // Local direct calls are only for Expo dev. Release builds use Supabase Edge Functions.
     }
   }
 
@@ -23,9 +25,14 @@ export async function calculateNatalChart(input: NatalChartInput): Promise<Natal
       });
       if (error) throw error;
       return sanitizeNatalChart(data.chart);
-    } catch {
+    } catch (error) {
+      if (strictAstrologyBackend) throw normalizeAstrologyError(error);
       return sanitizeNatalChart(createMockNatalChart(input));
     }
+  }
+
+  if (strictAstrologyBackend) {
+    throw new Error("Supabase bağlantısı yok; gerçek doğum haritası hesaplanamadı.");
   }
 
   return sanitizeNatalChart(createMockNatalChart(input));
@@ -67,4 +74,9 @@ export function isUserFacingChartWarning(message: string) {
   return !["not found in path", "using moshier", "sepl_", "semo_", "seas_", ".se1"].some((fragment) =>
     lower.includes(fragment)
   );
+}
+
+function normalizeAstrologyError(error: unknown) {
+  if (error instanceof Error) return error;
+  return new Error("Gerçek doğum haritası servisi yanıt vermedi.");
 }

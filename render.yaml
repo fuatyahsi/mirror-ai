@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: mirror-ai-astrology
+    runtime: docker
+    rootDir: services/astrology
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      - key: SWISS_EPHEMERIS_PATH
+        value: /app/ephe
+      - key: MIRROR_ASTRO_FALLBACK_TO_MOSHIER
+        value: "false"
+      - key: MIRROR_ASTROLOGY_SERVICE_TOKEN
+        generateValue: true

@@ -53,11 +53,24 @@ ASPECTS = [
     ("opposition", "Karşıt", 180, 8),
 ]
 
+EPHEMERIS_FILES = ["sepl_18.se1", "semo_18.se1", "seas_18.se1"]
+
 
 def configure_ephemeris() -> str:
     ephe_path = Path(os.getenv("SWISS_EPHEMERIS_PATH", "./ephe")).resolve()
     swe.set_ephe_path(str(ephe_path))
     return str(ephe_path)
+
+
+def ephemeris_status() -> dict:
+    ephe_path = Path(configure_ephemeris())
+    files = {name: (ephe_path / name).exists() for name in EPHEMERIS_FILES}
+    return {
+        "path": str(ephe_path),
+        "required_files": files,
+        "ready": all(files.values()),
+        "moshier_fallback_enabled": os.getenv("MIRROR_ASTRO_FALLBACK_TO_MOSHIER", "true").lower() == "true",
+    }
 
 
 def decimal_hour(value: datetime) -> float:
@@ -229,7 +242,7 @@ def calculate_natal_chart(request: NatalChartRequest) -> dict:
         },
         "engine": {
             "name": "Swiss Ephemeris",
-            "python_package": "pysweph",
+            "python_package": "pyswisseph",
             "version": swe.version,
             "ephemeris_path": ephe_path,
         },
