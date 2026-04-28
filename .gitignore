@@ -8,6 +8,8 @@ dist/
 build/
 web-build/
 coverage/
+*.apk
+*.aab
 
 # native/generated
 apps/mobile/ios/
