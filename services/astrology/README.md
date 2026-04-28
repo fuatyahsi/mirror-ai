@@ -23,12 +23,19 @@ Do not commit downloaded ephemeris files. Put them under `services/astrology/eph
 
 ## Required Ephemeris Files
 
-For the MVP natal chart range, place these files under `services/astrology/ephe` locally or `/app/ephe` in production:
+For the MVP natal chart range, the service needs these files under `services/astrology/ephe` locally or `/app/ephe` in production:
 
 ```txt
 sepl_18.se1
 semo_18.se1
 seas_18.se1
+```
+
+By default, the Docker service can auto-download missing files from the public Swiss Ephemeris GitHub mirror:
+
+```txt
+SWISS_EPHEMERIS_DOWNLOAD_BASE_URL=https://raw.githubusercontent.com/aloistr/swisseph/master/ephe
+MIRROR_ASTRO_AUTO_DOWNLOAD_EPHEMERIS=true
 ```
 
 `/health` reports whether those files are present:
@@ -79,11 +86,13 @@ curl -X POST http://localhost:8010/natal-chart ^
 
 ```txt
 SWISS_EPHEMERIS_PATH=./ephe
+SWISS_EPHEMERIS_DOWNLOAD_BASE_URL=https://raw.githubusercontent.com/aloistr/swisseph/master/ephe
+MIRROR_ASTRO_AUTO_DOWNLOAD_EPHEMERIS=true
 MIRROR_ASTRO_FALLBACK_TO_MOSHIER=false
 MIRROR_ASTROLOGY_SERVICE_TOKEN=
 ```
 
-For a strict real-device test, keep `MIRROR_ASTRO_FALLBACK_TO_MOSHIER=false` and make sure `/health` returns `"ready": true`.
+For a strict real-device test, keep `MIRROR_ASTRO_FALLBACK_TO_MOSHIER=false`. With auto-download enabled, the first chart request will populate the missing files and `/health` should then return `"ready": true`.
 
 ## Docker
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import itertools
 import math
 import os
+import urllib.request
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -54,6 +55,7 @@ ASPECTS = [
 ]
 
 EPHEMERIS_FILES = ["sepl_18.se1", "semo_18.se1", "seas_18.se1"]
+DEFAULT_EPHEMERIS_DOWNLOAD_BASE_URL = "https://raw.githubusercontent.com/aloistr/swisseph/master/ephe"
 
 
 def configure_ephemeris() -> str:
@@ -69,6 +71,8 @@ def ephemeris_status() -> dict:
         "path": str(ephe_path),
         "required_files": files,
         "ready": all(files.values()),
+        "auto_download_enabled": is_ephemeris_auto_download_enabled(),
+        "download_base_url": ephemeris_download_base_url(),
         "moshier_fallback_enabled": is_moshier_fallback_enabled(),
     }
 
@@ -77,7 +81,34 @@ def is_moshier_fallback_enabled() -> bool:
     return os.getenv("MIRROR_ASTRO_FALLBACK_TO_MOSHIER", "true").lower() == "true"
 
 
+def is_ephemeris_auto_download_enabled() -> bool:
+    return os.getenv("MIRROR_ASTRO_AUTO_DOWNLOAD_EPHEMERIS", "true").lower() == "true"
+
+
+def ephemeris_download_base_url() -> str:
+    return os.getenv("SWISS_EPHEMERIS_DOWNLOAD_BASE_URL", DEFAULT_EPHEMERIS_DOWNLOAD_BASE_URL).rstrip("/")
+
+
+def ensure_ephemeris_files() -> None:
+    if ephemeris_status()["ready"] or not is_ephemeris_auto_download_enabled():
+        return
+
+    ephe_path = Path(configure_ephemeris())
+    ephe_path.mkdir(parents=True, exist_ok=True)
+    base_url = ephemeris_download_base_url()
+
+    for file_name in EPHEMERIS_FILES:
+        destination = ephe_path / file_name
+        if destination.exists():
+            continue
+
+        temporary_destination = destination.with_suffix(destination.suffix + ".tmp")
+        urllib.request.urlretrieve(f"{base_url}/{file_name}", temporary_destination)
+        temporary_destination.replace(destination)
+
+
 def require_ephemeris_ready() -> None:
+    ensure_ephemeris_files()
     status = ephemeris_status()
     if status["ready"] or status["moshier_fallback_enabled"]:
         return
