@@ -69,8 +69,24 @@ def ephemeris_status() -> dict:
         "path": str(ephe_path),
         "required_files": files,
         "ready": all(files.values()),
-        "moshier_fallback_enabled": os.getenv("MIRROR_ASTRO_FALLBACK_TO_MOSHIER", "true").lower() == "true",
+        "moshier_fallback_enabled": is_moshier_fallback_enabled(),
     }
+
+
+def is_moshier_fallback_enabled() -> bool:
+    return os.getenv("MIRROR_ASTRO_FALLBACK_TO_MOSHIER", "true").lower() == "true"
+
+
+def require_ephemeris_ready() -> None:
+    status = ephemeris_status()
+    if status["ready"] or status["moshier_fallback_enabled"]:
+        return
+
+    missing = [name for name, exists in status["required_files"].items() if not exists]
+    raise RuntimeError(
+        "Swiss ephemeris files are required when MIRROR_ASTRO_FALLBACK_TO_MOSHIER=false. "
+        f"Missing files in {status['path']}: {', '.join(missing)}"
+    )
 
 
 def decimal_hour(value: datetime) -> float:
@@ -140,7 +156,7 @@ def calc_body(jd_ut: float, body_id: int) -> tuple[list[float], int, str | None]
             fallback_warning = error_text
         return list(values), result_flags, fallback_warning
     except Exception:
-        if os.getenv("MIRROR_ASTRO_FALLBACK_TO_MOSHIER", "true").lower() != "true":
+        if not is_moshier_fallback_enabled():
             raise
         values, result_flags, _error_text = unpack_calc_result(
             swe.calc_ut(jd_ut, body_id, swe.FLG_MOSEPH | swe.FLG_SPEED)
@@ -203,6 +219,7 @@ def calculate_houses(jd_ut: float, latitude: float, longitude: float, house_syst
 
 
 def calculate_natal_chart(request: NatalChartRequest) -> dict:
+    require_ephemeris_ready()
     ephe_path = configure_ephemeris()
     local_dt = parse_local_datetime(request)
     utc_dt = local_dt.astimezone(ZoneInfo("UTC"))
