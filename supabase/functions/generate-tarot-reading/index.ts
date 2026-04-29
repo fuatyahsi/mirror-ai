@@ -3,6 +3,14 @@ import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
 import { buildSourceContext, normalizeLocale, sourceLabels } from "../shared/sourceContext.ts";
 
+type TarotDeckCard = {
+  card_key: string;
+  name: string;
+  arcana: string;
+  upright_meaning: string;
+  reversed_meaning: string;
+};
+
 const spreadPositions: Record<string, string[]> = {
   single: ["message"],
   three_card: ["past", "present", "possible_direction"],
@@ -10,7 +18,7 @@ const spreadPositions: Record<string, string[]> = {
   decision: ["option_a", "option_b", "subconscious_influence"]
 };
 
-const fallbackCards = [
+const fallbackCards: TarotDeckCard[] = [
   {
     card_key: "major_18_moon",
     name: "The Moon",
@@ -34,6 +42,168 @@ const fallbackCards = [
   }
 ];
 
+const tarotTranslations: Record<
+  string,
+  {
+    tr: { name: string; upright: string; reversed: string };
+  }
+> = {
+  major_00_fool: {
+    tr: {
+      name: "Deli",
+      upright: "Yeni başlangıç, açıklık ve ilk adımda güven.",
+      reversed: "Düşünmeden risk alma, pratik sinyalleri görmezden gelme."
+    }
+  },
+  major_01_magician: {
+    tr: {
+      name: "Büyücü",
+      upright: "Niyetini eyleme çevirme, odak ve kişisel güç.",
+      reversed: "Dağınık irade, zemini olmayan performans."
+    }
+  },
+  major_02_high_priestess: {
+    tr: {
+      name: "Başrahibe",
+      upright: "Sezgi, iç bilgi ve sessiz gözlem.",
+      reversed: "Gizli bilgi, sezgiye güvensizlik ve iç sesi bastırma."
+    }
+  },
+  major_03_empress: {
+    tr: {
+      name: "İmparatoriçe",
+      upright: "Bakım, büyüme, bedenlenme ve kabul etme.",
+      reversed: "Aşırı verme, duygusal sınırların bulanıklaşması."
+    }
+  },
+  major_04_emperor: {
+    tr: {
+      name: "İmparator",
+      upright: "Yapı, koruma ve net sınırlar.",
+      reversed: "Kontrol, katılık ve duygusal mesafe."
+    }
+  },
+  major_05_hierophant: {
+    tr: {
+      name: "Aziz",
+      upright: "Gelenek, rehberlik ve ortak değerler.",
+      reversed: "Kalıba uyma, miras alınmış kurallar ve farklılıktan korkma."
+    }
+  },
+  major_06_lovers: {
+    tr: {
+      name: "Aşıklar",
+      upright: "Seçim, uyum ve yakınlıkta dürüstlük.",
+      reversed: "Karışık sinyaller, uyumsuzluk ve yansıtma."
+    }
+  },
+  major_07_chariot: {
+    tr: {
+      name: "Savaş Arabası",
+      upright: "Yön, öz disiplin ve hareket.",
+      reversed: "Zorlama, sabırsızlık ve çözülmemiş iç çatışma."
+    }
+  },
+  major_08_strength: {
+    tr: {
+      name: "Güç",
+      upright: "Nazik cesaret, sabır ve duygusal olgunluk.",
+      reversed: "Özgüven kırılması, bastırılmış öfke ve iç çekingenlik."
+    }
+  },
+  major_09_hermit: {
+    tr: {
+      name: "Ermiş",
+      upright: "Yalnız kalıp düşünme, iç rehberlik ve sakin gözlem.",
+      reversed: "İzolasyon, geri çekilme ve destek almaktan kaçınma."
+    }
+  },
+  major_10_wheel: {
+    tr: {
+      name: "Kader Çarkı",
+      upright: "Döngü değişimi, zamanlama ve dönüm noktası.",
+      reversed: "Tekrarlayan kalıp, değişime direnç."
+    }
+  },
+  major_11_justice: {
+    tr: {
+      name: "Adalet",
+      upright: "Netlik, sorumluluk ve dengeli karar.",
+      reversed: "Ertelenen gerçek, adaletsizlik hissi ve kafa karışıklığı."
+    }
+  },
+  major_12_hanged_man: {
+    tr: {
+      name: "Asılan Adam",
+      upright: "Duraklama, yeniden çerçeveleme ve teslimiyet.",
+      reversed: "Tıkanma, gecikme ve kendini fazla feda etme."
+    }
+  },
+  major_13_death: {
+    tr: {
+      name: "Ölüm",
+      upright: "Bitiş, yenilenme ve dönüşüm.",
+      reversed: "Tutunma, geçişten korkma."
+    }
+  },
+  major_14_temperance: {
+    tr: {
+      name: "Denge",
+      upright: "Bütünleşme, ölçülülük ve duygusal simya.",
+      reversed: "Aşırılık, dengesizlik ve sabırsızlık."
+    }
+  },
+  major_15_devil: {
+    tr: {
+      name: "Şeytan",
+      upright: "Bağlılık, cazibe ve gölge kalıp.",
+      reversed: "Serbest kalma, döngüyü görme ve seçimi geri alma."
+    }
+  },
+  major_16_tower: {
+    tr: {
+      name: "Kule",
+      upright: "Sarsılma, gerçeğin yanılsamayı kırması.",
+      reversed: "Değişim korkusu, gecikmiş dürüstlük."
+    }
+  },
+  major_17_star: {
+    tr: {
+      name: "Yıldız",
+      upright: "Umut, iyileşme ve dürüst kırılganlık.",
+      reversed: "Cesaret kırılması, temkinlilik ve inanç kaybı."
+    }
+  },
+  major_18_moon: {
+    tr: {
+      name: "Ay",
+      upright: "Belirsizlik, rüyalar ve bilinçaltı sinyaller.",
+      reversed: "Kaygının dağılması, yanılsamanın görünür olması."
+    }
+  },
+  major_19_sun: {
+    tr: {
+      name: "Güneş",
+      upright: "Sıcaklık, canlılık, görünürlük ve sevinç.",
+      reversed: "Geçici gölgelenme, fazla açılma ve sabırsızlık."
+    }
+  },
+  major_20_judgement: {
+    tr: {
+      name: "Mahkeme",
+      upright: "Uyanış, değerlendirme ve çağrıya cevap verme.",
+      reversed: "Kaçınma, kendini yargılama ve tamamlanmamış ders."
+    }
+  },
+  major_21_world: {
+    tr: {
+      name: "Dünya",
+      upright: "Tamamlanma, bütünleşme ve olgun bakış.",
+      reversed: "Açık kalan uçlar, neredeyse tamamlanmış döngü."
+    }
+  }
+};
+
 function shuffled<T>(items: T[]) {
   const copy = [...items];
   for (let index = copy.length - 1; index > 0; index -= 1) {
@@ -41,6 +211,15 @@ function shuffled<T>(items: T[]) {
     [copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]];
   }
   return copy;
+}
+
+function localizedCard(card: TarotDeckCard, locale: "tr" | "en") {
+  const translated = locale === "tr" ? tarotTranslations[card.card_key]?.tr : undefined;
+  return {
+    name: translated?.name ?? card.name,
+    upright_meaning: translated?.upright ?? card.upright_meaning,
+    reversed_meaning: translated?.reversed ?? card.reversed_meaning
+  };
 }
 
 Deno.serve(async (req) => {
@@ -62,15 +241,28 @@ Deno.serve(async (req) => {
 
     if (deckError) throw deckError;
 
-    const selectedDeck = shuffled(deck?.length ? deck : fallbackCards).slice(0, positions.length);
-    const selectedCards = positions.map((position, index) => ({
-      position,
-      card: selectedDeck[index]?.name ?? "The Moon",
-      card_key: selectedDeck[index]?.card_key ?? "major_18_moon",
-      orientation: Math.random() < 0.78 ? "upright" : "reversed",
-      upright_meaning: selectedDeck[index]?.upright_meaning ?? "Uncertainty, dreams, subconscious signals.",
-      reversed_meaning: selectedDeck[index]?.reversed_meaning ?? "Anxiety clearing, illusion becoming visible."
-    }));
+    const selectedDeck = shuffled((deck?.length ? deck : fallbackCards) as TarotDeckCard[]).slice(0, positions.length);
+    const selectedCards = positions.map((position, index) => {
+      const baseCard = selectedDeck[index] ?? fallbackCards[index % fallbackCards.length];
+      const orientation = Math.random() < 0.78 ? "upright" : "reversed";
+      const localized = localizedCard(baseCard, locale);
+      const positionLabel = labels.positions[position as keyof typeof labels.positions] ?? position;
+      const orientationLabel = labels.orientations[orientation as keyof typeof labels.orientations] ?? orientation;
+      const meaning = orientation === "reversed" ? localized.reversed_meaning : localized.upright_meaning;
+
+      return {
+        position,
+        position_label: positionLabel,
+        card: localized.name,
+        card_name_en: baseCard.name,
+        card_key: baseCard.card_key,
+        orientation,
+        orientation_label: orientationLabel,
+        upright_meaning: localized.upright_meaning,
+        reversed_meaning: localized.reversed_meaning,
+        meaning
+      };
+    });
 
     const { data: dbProfile } = user
       ? await supabase

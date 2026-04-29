@@ -20,6 +20,9 @@ const copy = {
     relationship: "İlişki bağlamı",
     engine: "Mirror AI + Supabase Edge Functions",
     tarotRef: "Tarot",
+    tarotCard: "Tarot kartı",
+    position: "Pozisyon",
+    meaning: "Anlam",
     coffeeSymbol: "Kahve sembolü",
     spreadType: "Açılım tipi",
     topic: "Konu",
@@ -64,6 +67,9 @@ const copy = {
     relationship: "Relationship context",
     engine: "Mirror AI + Supabase Edge Functions",
     tarotRef: "Tarot",
+    tarotCard: "Tarot card",
+    position: "Position",
+    meaning: "Meaning",
     coffeeSymbol: "Coffee symbol",
     spreadType: "Spread type",
     topic: "Topic",
@@ -170,11 +176,24 @@ function memoryReferences(memory: Array<Record<string, unknown>> | undefined, lo
 function tarotReferences(cards: Array<Record<string, unknown>> | undefined, locale: Locale) {
   if (!Array.isArray(cards) || cards.length === 0) return [];
   const text = copy[locale];
-  return cards.map((card) => {
+
+  return cards.flatMap((card) => {
     const position = text.positions[String(card.position) as keyof typeof text.positions] ?? String(card.position);
     const orientation =
       text.orientations[String(card.orientation) as keyof typeof text.orientations] ?? String(card.orientation);
-    return `${text.tarotRef}: ${position} / ${card.card} / ${orientation}`;
+    const cardName = String(card.card ?? card.card_name ?? "Tarot");
+    const meaning =
+      typeof card.meaning === "string"
+        ? card.meaning
+        : card.orientation === "reversed"
+          ? String(card.reversed_meaning ?? "")
+          : String(card.upright_meaning ?? "");
+
+    return [
+      `${text.tarotCard}: ${cardName} (${orientation})`,
+      `${text.position}: ${position}`,
+      meaning ? `${text.meaning}: ${meaning}` : null
+    ].filter(Boolean) as string[];
   });
 }
 

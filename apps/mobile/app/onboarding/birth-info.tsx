@@ -1,19 +1,26 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { TextField } from "@/components/forms/TextField";
 import { BackButton } from "@/components/layout/BackButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Screen } from "@/components/layout/Screen";
 import { calculateNatalChart } from "@/features/astrology/api";
-import { findBirthPlaceByCity, findBirthPlaces, type BirthPlace } from "@/features/astrology/birthPlaces";
+import { findBirthPlaceByCity, type BirthPlace } from "@/features/astrology/birthPlaces";
+import { searchBirthPlaces } from "@/features/astrology/geocoding";
 import { useI18n } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
 
+type PickerKind = "year" | "month" | "day" | "hour" | "minute";
+
 function formatDateKey(year: number, monthIndex: number, day: number) {
   return `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function formatTimeKey(hour: number, minute: number) {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 function parseDateKey(value?: string) {
@@ -27,8 +34,21 @@ function parseDateKey(value?: string) {
   };
 }
 
+function parseTimeKey(value?: string) {
+  const match = /^(\d{1,2}):(\d{2})/.exec(value ?? "");
+  if (!match) return { hour: 12, minute: 0 };
+  return {
+    hour: Math.max(0, Math.min(23, Number(match[1]))),
+    minute: Math.max(0, Math.min(59, Number(match[2])))
+  };
+}
+
 function daysInMonth(year: number, monthIndex: number) {
   return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+function numberRange(start: number, end: number) {
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 }
 
 export default function BirthInfoScreen() {
@@ -37,19 +57,35 @@ export default function BirthInfoScreen() {
   const setNatalChart = useUserStore((state) => state.setNatalChart);
   const { locale, t } = useI18n();
   const existingDate = parseDateKey(userProfile.birth.birth_date);
-  const existingPlace = findBirthPlaceByCity(userProfile.birth.birth_city, userProfile.birth.birth_country);
-  const now = new Date();
+  const existingTime = parseTimeKey(userProfile.birth.birth_time);
+  const storedPlace =
+    userProfile.birth.birth_city &&
+    typeof userProfile.birth.latitude === "number" &&
+    typeof userProfile.birth.longitude === "number"
+      ? {
+          city: userProfile.birth.birth_city,
+          country: userProfile.birth.birth_country ?? "",
+          latitude: userProfile.birth.latitude,
+          longitude: userProfile.birth.longitude,
+          timezone: userProfile.birth.timezone ?? "UTC"
+        }
+      : undefined;
+  const existingPlace =
+    findBirthPlaceByCity(userProfile.birth.birth_city, userProfile.birth.birth_country) ?? storedPlace;
 
-  const [selectedYear, setSelectedYear] = useState(existingDate?.year ?? now.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(existingDate?.monthIndex ?? now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(existingDate?.year ?? 1985);
+  const [selectedMonth, setSelectedMonth] = useState(existingDate?.monthIndex ?? 0);
   const [selectedDay, setSelectedDay] = useState(existingDate?.day ?? 1);
-  const [birthTime, setBirthTime] = useState(userProfile.birth.birth_time ?? "12:00");
+  const [selectedHour, setSelectedHour] = useState(existingTime.hour);
+  const [selectedMinute, setSelectedMinute] = useState(existingTime.minute);
+  const [pickerKind, setPickerKind] = useState<PickerKind>();
   const [placeQuery, setPlaceQuery] = useState(userProfile.birth.birth_city ?? "");
+  const [places, setPlaces] = useState<BirthPlace[]>(existingPlace ? [existingPlace] : []);
   const [selectedPlace, setSelectedPlace] = useState<BirthPlace | undefined>(existingPlace);
+  const [isSearchingPlace, setIsSearchingPlace] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
 
-  const places = useMemo(() => findBirthPlaces(placeQuery), [placeQuery]);
   const monthLabels = useMemo(
     () =>
       Array.from({ length: 12 }).map((_, monthIndex) =>
@@ -59,11 +95,46 @@ export default function BirthInfoScreen() {
       ),
     [locale]
   );
-  const selectedDate = formatDateKey(selectedYear, selectedMonth, Math.min(selectedDay, daysInMonth(selectedYear, selectedMonth)));
+
+  const currentMonthDays = daysInMonth(selectedYear, selectedMonth);
+  const safeSelectedDay = Math.min(selectedDay, currentMonthDays);
+  const selectedDate = formatDateKey(selectedYear, selectedMonth, safeSelectedDay);
+  const birthTime = formatTimeKey(selectedHour, selectedMinute);
+  const selectedPlaceLabel = selectedPlace
+    ? `${selectedPlace.city}, ${selectedPlace.country} / ${selectedPlace.timezone}`
+    : t("birth.placeRequired");
+  const searchLabel = locale === "en" ? "Search city" : "Şehri ara";
+  const searchingLabel = locale === "en" ? "Searching places..." : "Yer aranıyor...";
+  const noPlaceLabel = locale === "en" ? "No city found. Try country + city." : "Şehir bulunamadı. Ülke + şehir deneyin.";
+  const canSearchPlace = placeQuery.trim().length >= 2 && !isSearchingPlace;
 
   function selectPlace(place: BirthPlace) {
     setSelectedPlace(place);
     setPlaceQuery(place.city);
+  }
+
+  async function searchPlaces() {
+    if (!canSearchPlace) return;
+    setIsSearchingPlace(true);
+    setError(undefined);
+    try {
+      const results = await searchBirthPlaces(placeQuery, locale);
+      setPlaces(results);
+    } finally {
+      setIsSearchingPlace(false);
+    }
+  }
+
+  function selectYear(year: number) {
+    setSelectedYear(year);
+    setSelectedDay((day) => Math.min(day, daysInMonth(year, selectedMonth)));
+    setPickerKind(undefined);
+  }
+
+  function selectMonth(monthIndex: number) {
+    setSelectedMonth(monthIndex);
+    setSelectedDay((day) => Math.min(day, daysInMonth(selectedYear, monthIndex)));
+    setPickerKind(undefined);
   }
 
   async function next() {
@@ -73,7 +144,7 @@ export default function BirthInfoScreen() {
 
     const birth = {
       birth_date: selectedDate,
-      birth_time: birthTime || "12:00",
+      birth_time: birthTime,
       birth_city: selectedPlace.city,
       birth_country: selectedPlace.country,
       latitude: selectedPlace.latitude,
@@ -109,79 +180,34 @@ export default function BirthInfoScreen() {
     }
   }
 
-  const selectedPlaceLabel = selectedPlace
-    ? `${selectedPlace.city}, ${selectedPlace.country} / ${selectedPlace.timezone}`
-    : t("birth.placeRequired");
-  const selectedDateLabel = selectedDate || t("birth.dateRequired");
-  const currentMonthDays = daysInMonth(selectedYear, selectedMonth);
-
   return (
     <Screen>
       <BackButton fallbackHref={userProfile.onboarding_completed ? "/tabs/astrology" : "/onboarding"} />
       <PageHeader eyebrow={t("birth.eyebrow")} title={t("birth.title")} subtitle={t("birth.subtitle")} />
 
-      <View style={styles.calendar}>
-        <View style={styles.selector}>
-          <Text style={styles.selectorTitle}>{t("birth.year")}</Text>
-          <View style={styles.stepRow}>
-            {[-10, -1, 1, 10].map((step) => (
-              <Pressable
-                key={step}
-                onPress={() => setSelectedYear((year) => year + step)}
-                style={styles.stepButton}
-              >
-                <Text style={styles.stepText}>{step > 0 ? `+${step}` : step}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Text style={styles.selectedBig}>{selectedYear}</Text>
+      <View style={styles.selectorCard}>
+        <Text style={styles.selectorTitle}>{t("birth.selectedDate")}</Text>
+        <View style={styles.dateRow}>
+          <SelectorButton label={t("birth.day")} value={String(safeSelectedDay)} onPress={() => setPickerKind("day")} />
+          <SelectorButton
+            label={t("birth.month")}
+            value={monthLabels[selectedMonth]}
+            onPress={() => setPickerKind("month")}
+          />
+          <SelectorButton label={t("birth.year")} value={String(selectedYear)} onPress={() => setPickerKind("year")} />
         </View>
-
-        <View style={styles.selector}>
-          <Text style={styles.selectorTitle}>{t("birth.month")}</Text>
-          <View style={styles.monthGrid}>
-            {monthLabels.map((label, monthIndex) => {
-              const active = selectedMonth === monthIndex;
-              return (
-                <Pressable
-                  key={`${label}-${monthIndex}`}
-                  onPress={() => {
-                    setSelectedMonth(monthIndex);
-                    setSelectedDay((day) => Math.min(day, daysInMonth(selectedYear, monthIndex)));
-                  }}
-                  style={[styles.monthChip, active && styles.dayCellActive]}
-                >
-                  <Text style={[styles.dayText, active && styles.dayTextActive]}>{label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-
-        <View style={styles.selector}>
-          <Text style={styles.selectorTitle}>{t("birth.day")}</Text>
-        <View style={styles.dayGrid}>
-          {Array.from({ length: currentMonthDays }).map((_, index) => {
-            const day = index + 1;
-            const active = selectedDay === day;
-            return (
-              <Pressable
-                key={day}
-                onPress={() => setSelectedDay(day)}
-                style={[styles.dayCell, active && styles.dayCellActive]}
-              >
-                <Text style={[styles.dayText, active && styles.dayTextActive]}>{day}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        </View>
-        <Text style={styles.selectionText}>
-          {t("birth.selectedDate")}: {selectedDateLabel}
-        </Text>
+        <Text style={styles.selectionText}>{selectedDate}</Text>
       </View>
 
-      <TextField label={t("birth.time")} placeholder="14:30" value={birthTime} onChangeText={setBirthTime} />
+      <View style={styles.selectorCard}>
+        <Text style={styles.selectorTitle}>{t("birth.time")}</Text>
+        <View style={styles.timeRow}>
+          <SelectorButton label={locale === "en" ? "Hour" : "Saat"} value={String(selectedHour).padStart(2, "0")} onPress={() => setPickerKind("hour")} />
+          <Text style={styles.timeDivider}>:</Text>
+          <SelectorButton label={locale === "en" ? "Minute" : "Dakika"} value={String(selectedMinute).padStart(2, "0")} onPress={() => setPickerKind("minute")} />
+        </View>
+        <Text style={styles.selectionText}>{birthTime}</Text>
+      </View>
 
       <View style={styles.placeBox}>
         <TextField
@@ -193,12 +219,22 @@ export default function BirthInfoScreen() {
             setSelectedPlace(undefined);
           }}
         />
+        <Pressable
+          onPress={searchPlaces}
+          disabled={!canSearchPlace}
+          style={[styles.searchButton, !canSearchPlace && styles.searchButtonDisabled]}
+        >
+          <Text style={styles.searchButtonText}>{isSearchingPlace ? searchingLabel : searchLabel}</Text>
+        </Pressable>
         <View style={styles.placeList}>
           {places.map((place) => {
-            const active = selectedPlace?.city === place.city && selectedPlace.country === place.country;
+            const active =
+              selectedPlace?.city === place.city &&
+              selectedPlace.country === place.country &&
+              selectedPlace.latitude === place.latitude;
             return (
               <Pressable
-                key={`${place.city}-${place.country}`}
+                key={`${place.city}-${place.country}-${place.latitude}-${place.longitude}`}
                 onPress={() => selectPlace(place)}
                 style={[styles.placeOption, active && styles.placeOptionActive]}
               >
@@ -208,9 +244,13 @@ export default function BirthInfoScreen() {
                 <Text style={styles.placeMeta}>
                   {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)} / {place.timezone}
                 </Text>
+                {place.display_name ? <Text style={styles.placeDisplay}>{place.display_name}</Text> : null}
               </Pressable>
             );
           })}
+          {!isSearchingPlace && placeQuery.trim().length >= 2 && places.length === 0 ? (
+            <Text style={styles.emptyPlaceText}>{noPlaceLabel}</Text>
+          ) : null}
         </View>
         <Text style={styles.selectionText}>
           {t("birth.selectedPlace")}: {selectedPlaceLabel}
@@ -221,21 +261,162 @@ export default function BirthInfoScreen() {
       <PrimaryButton disabled={!selectedDate || !selectedPlace || isSaving} onPress={next}>
         {isSaving ? t("birth.calculatingChart") : userProfile.onboarding_completed ? t("birth.saveAndCalculate") : t("birth.next")}
       </PrimaryButton>
+
+      <PickerSheet
+        visible={Boolean(pickerKind)}
+        title={pickerKind ? pickerTitle(pickerKind, t, locale) : ""}
+        options={pickerOptions({
+          pickerKind,
+          monthLabels,
+          selectedYear,
+          selectedMonth,
+          selectedDay: safeSelectedDay,
+          selectedHour,
+          selectedMinute,
+          currentMonthDays,
+          onSelectYear: selectYear,
+          onSelectMonth: selectMonth,
+          onSelectDay: (day) => {
+            setSelectedDay(day);
+            setPickerKind(undefined);
+          },
+          onSelectHour: (hour) => {
+            setSelectedHour(hour);
+            setPickerKind(undefined);
+          },
+          onSelectMinute: (minute) => {
+            setSelectedMinute(minute);
+            setPickerKind(undefined);
+          }
+        })}
+        closeLabel={locale === "en" ? "Close" : "Kapat"}
+        onClose={() => setPickerKind(undefined)}
+      />
     </Screen>
   );
 }
 
+function SelectorButton({ label, value, onPress }: { label: string; value: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={styles.selectorButton}>
+      <Text style={styles.selectorButtonLabel}>{label}</Text>
+      <Text style={styles.selectorButtonValue}>{value}</Text>
+    </Pressable>
+  );
+}
+
+function pickerTitle(kind: PickerKind, t: ReturnType<typeof useI18n>["t"], locale: string) {
+  const titles = {
+    year: t("birth.year"),
+    month: t("birth.month"),
+    day: t("birth.day"),
+    hour: locale === "en" ? "Hour" : "Saat",
+    minute: locale === "en" ? "Minute" : "Dakika"
+  };
+  return titles[kind];
+}
+
+function pickerOptions(input: {
+  pickerKind?: PickerKind;
+  monthLabels: string[];
+  selectedYear: number;
+  selectedMonth: number;
+  selectedDay: number;
+  selectedHour: number;
+  selectedMinute: number;
+  currentMonthDays: number;
+  onSelectYear: (year: number) => void;
+  onSelectMonth: (monthIndex: number) => void;
+  onSelectDay: (day: number) => void;
+  onSelectHour: (hour: number) => void;
+  onSelectMinute: (minute: number) => void;
+}) {
+  switch (input.pickerKind) {
+    case "year":
+      return numberRange(1960, 2026).map((year) => ({
+        label: String(year),
+        active: year === input.selectedYear,
+        onPress: () => input.onSelectYear(year)
+      }));
+    case "month":
+      return input.monthLabels.map((label, monthIndex) => ({
+        label,
+        active: monthIndex === input.selectedMonth,
+        onPress: () => input.onSelectMonth(monthIndex)
+      }));
+    case "day":
+      return numberRange(1, input.currentMonthDays).map((day) => ({
+        label: String(day),
+        active: day === input.selectedDay,
+        onPress: () => input.onSelectDay(day)
+      }));
+    case "hour":
+      return numberRange(0, 23).map((hour) => ({
+        label: String(hour).padStart(2, "0"),
+        active: hour === input.selectedHour,
+        onPress: () => input.onSelectHour(hour)
+      }));
+    case "minute":
+      return numberRange(0, 59).map((minute) => ({
+        label: String(minute).padStart(2, "0"),
+        active: minute === input.selectedMinute,
+        onPress: () => input.onSelectMinute(minute)
+      }));
+    default:
+      return [];
+  }
+}
+
+function PickerSheet({
+  visible,
+  title,
+  options,
+  closeLabel,
+  onClose
+}: {
+  visible: boolean;
+  title: string;
+  options: { label: string; active: boolean; onPress: () => void }[];
+  closeLabel: string;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <Pressable onPress={onClose} style={styles.modalClose}>
+              <Text style={styles.modalCloseText}>{closeLabel}</Text>
+            </Pressable>
+          </View>
+          <ScrollView contentContainerStyle={styles.pickerGrid}>
+            {options.map((option) => (
+              <Pressable
+                key={`${title}-${option.label}`}
+                onPress={option.onPress}
+                style={[styles.pickerOption, option.active && styles.pickerOptionActive]}
+              >
+                <Text style={[styles.pickerOptionText, option.active && styles.pickerOptionTextActive]}>
+                  {option.label}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
-  calendar: {
+  selectorCard: {
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: spacing.md,
     gap: spacing.sm
-  },
-  selector: {
-    gap: spacing.xs
   },
   selectorTitle: {
     color: colors.accent,
@@ -244,69 +425,43 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: "uppercase"
   },
-  stepRow: {
+  dateRow: {
     flexDirection: "row",
-    gap: spacing.xs
+    gap: spacing.sm
   },
-  stepButton: {
-    flex: 1,
-    minHeight: 38,
-    borderRadius: radii.sm,
+  timeRow: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background
+    gap: spacing.sm
   },
-  stepText: {
+  timeDivider: {
     color: colors.accent,
-    fontSize: 13,
+    fontSize: 28,
     fontWeight: "900"
   },
-  selectedBig: {
-    color: colors.text,
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: "900",
-    textAlign: "center"
-  },
-  monthGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6
-  },
-  monthChip: {
-    width: "23%",
-    minHeight: 38,
+  selectorButton: {
+    flex: 1,
+    minHeight: 62,
     borderRadius: radii.sm,
-    alignItems: "center",
-    justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.background
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    justifyContent: "center",
+    gap: 3
   },
-  dayGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 4
-  },
-  dayCell: {
-    width: "13.1%",
-    aspectRatio: 1,
-    borderRadius: radii.sm,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  dayCellActive: {
-    backgroundColor: colors.accent
-  },
-  dayText: {
+  selectorButtonLabel: {
     color: colors.muted,
-    fontSize: 13,
-    fontWeight: "800"
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase"
   },
-  dayTextActive: {
-    color: colors.background
+  selectorButtonValue: {
+    color: colors.text,
+    fontSize: 21,
+    lineHeight: 26,
+    fontWeight: "900"
   },
   selectionText: {
     color: colors.muted,
@@ -315,6 +470,23 @@ const styles = StyleSheet.create({
   },
   placeBox: {
     gap: spacing.sm
+  },
+  searchButton: {
+    minHeight: 44,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md
+  },
+  searchButtonDisabled: {
+    opacity: 0.45
+  },
+  searchButtonText: {
+    color: colors.text,
+    fontWeight: "900"
   },
   placeList: {
     gap: spacing.xs
@@ -345,9 +517,86 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17
   },
+  placeDisplay: {
+    color: colors.faint,
+    fontSize: 11,
+    lineHeight: 16
+  },
+  emptyPlaceText: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18
+  },
   error: {
     color: colors.danger,
     fontSize: 13,
     lineHeight: 19
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.62)"
+  },
+  modalCard: {
+    maxHeight: "78%",
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    gap: spacing.sm
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
+  modalTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900"
+  },
+  modalClose: {
+    minHeight: 36,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  modalCloseText: {
+    color: colors.accent,
+    fontWeight: "900"
+  },
+  pickerGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    paddingBottom: spacing.md
+  },
+  pickerOption: {
+    width: "23.5%",
+    minHeight: 46,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  pickerOptionActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.accent
+  },
+  pickerOptionText: {
+    color: colors.muted,
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  pickerOptionTextActive: {
+    color: colors.background
   }
 });

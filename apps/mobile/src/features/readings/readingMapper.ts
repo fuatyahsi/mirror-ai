@@ -33,7 +33,7 @@ export function toReadingOutput(
         translate(locale, "mapper.basedProfile"),
         translate(locale, "mapper.basedChart"),
         translate(locale, "mapper.basedMemory"),
-        "Mirror AI servis katmanı"
+        locale === "en" ? "Mirror AI service layer" : "Mirror AI servis katmanı"
       ],
       confidence: 0.68,
       limitations: translate(locale, "mapper.limitationsFallback")

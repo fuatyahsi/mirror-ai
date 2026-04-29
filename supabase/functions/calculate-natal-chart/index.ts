@@ -1,5 +1,5 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
-import { requireUser } from "../shared/auth.ts";
+import { getOptionalUser } from "../shared/auth.ts";
 
 type NatalChartInput = {
   birth_date?: string;
@@ -30,14 +30,16 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
   try {
-    const { supabase, user } = await requireUser(req);
+    const { supabase, user } = await getOptionalUser(req);
     const body = await req.json().catch(() => ({}));
 
-    const { data: profile } = await supabase
-      .from("users_profile")
-      .select("birth_date,birth_time,latitude,longitude,timezone")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const { data: profile } = user
+      ? await supabase
+          .from("users_profile")
+          .select("birth_date,birth_time,latitude,longitude,timezone")
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : { data: null };
 
     const input = normalizeInput(body, profile);
 
@@ -71,6 +73,10 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Astrology service error", detail: chart }, response.status);
     }
 
+    if (!user) {
+      return jsonResponse({ chart_id: null, persisted: false, chart });
+    }
+
     const { data: birthChart, error: insertError } = await supabase
       .from("birth_charts")
       .insert({
@@ -82,12 +88,18 @@ Deno.serve(async (req) => {
       .select("id")
       .single();
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      return jsonResponse({
+        chart_id: null,
+        persisted: false,
+        persist_error: insertError.message,
+        chart
+      });
+    }
 
-    return jsonResponse({ chart_id: birthChart.id, chart });
+    return jsonResponse({ chart_id: birthChart.id, persisted: true, chart });
   } catch (error) {
     if (error instanceof Response) return error;
     return jsonResponse({ error: error instanceof Error ? error.message : "Unexpected error" }, 500);
   }
 });
-

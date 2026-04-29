@@ -1,6 +1,7 @@
 export type BirthPlace = {
   city: string;
   country: string;
+  display_name?: string;
   latitude: number;
   longitude: number;
   timezone: string;
