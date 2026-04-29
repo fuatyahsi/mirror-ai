@@ -78,8 +78,8 @@ export default function AstrologyScreen() {
     <Screen>
       <PageHeader eyebrow={t("astrology.eyebrow")} title={t("astrology.title")} subtitle={t("astrology.subtitle")} />
       <SegmentedControl activeView={activeView} onChange={setActiveView} />
-      {activeView === "birth" ? <BirthChartView chart={chart} /> : null}
-      {activeView === "star" ? <StarChartView chart={chart} /> : null}
+      {activeView === "birth" ? <BirthChartView chart={chart} profile={profile.mystic_profile} /> : null}
+      {activeView === "star" ? <StarChartView chart={chart} profile={profile.mystic_profile} /> : null}
       {activeView === "natal" ? <NatalHoroscopeView chart={chart} profile={profile.mystic_profile} /> : null}
       {visibleWarnings.length > 0 ? (
         <InsightCard title={t("astrology.warningsTitle")} body={visibleWarnings.join("\n")} />
@@ -110,8 +110,9 @@ function SegmentedControl({ activeView, onChange }: { activeView: AstrologyView;
   );
 }
 
-function BirthChartView({ chart }: { chart: NatalChart }) {
-  const { t } = useI18n();
+function BirthChartView({ chart, profile }: { chart: NatalChart; profile?: MysticProfile }) {
+  const { locale, t } = useI18n();
+  const birthInterpretations = buildBirthDataInterpretations(chart, profile, locale, t);
   const corePoints = [
     { label: t("astrology.sun"), point: chart.sun },
     { label: t("astrology.moon"), point: chart.moon },
@@ -153,12 +154,25 @@ function BirthChartView({ chart }: { chart: NatalChart }) {
         />
         <Text style={styles.referenceBody}>{t("astrology.referenceBody")}</Text>
       </Section>
+
+      <Section title={locale === "en" ? "Personal meaning of this calculation" : "Bu hesabın kişisel yorumu"}>
+        {birthInterpretations.map((item) => (
+          <InterpretationCard
+            key={item.title}
+            title={item.title}
+            body={item.body}
+            action={item.action}
+            references={item.references}
+          />
+        ))}
+      </Section>
     </>
   );
 }
 
-function StarChartView({ chart }: { chart: NatalChart }) {
-  const { t } = useI18n();
+function StarChartView({ chart, profile }: { chart: NatalChart; profile?: MysticProfile }) {
+  const { locale, t } = useI18n();
+  const placementInterpretations = buildPlanetPlacementInterpretations(chart, profile, locale, t);
 
   return (
     <>
@@ -168,6 +182,18 @@ function StarChartView({ chart }: { chart: NatalChart }) {
             key={`${planet.key}-${planet.absolute_degree}-${index}`}
             point={planet}
             right={formatDegree(planet)}
+          />
+        ))}
+      </Section>
+
+      <Section title={locale === "en" ? "What these placements say about you" : "Gezegenlerin kişisel yorumu"}>
+        {placementInterpretations.map((item) => (
+          <InterpretationCard
+            key={item.title}
+            title={item.title}
+            body={item.body}
+            action={item.action}
+            references={item.references}
           />
         ))}
       </Section>
@@ -360,6 +386,115 @@ type NatalInterpretation = {
   references: string[];
 };
 
+function buildBirthDataInterpretations(
+  chart: NatalChart,
+  profile: MysticProfile | undefined,
+  locale: Locale,
+  t: (key: TranslationKey, values?: Record<string, string | number>) => string
+): NatalInterpretation[] {
+  const copy = personalAstrologyCopy[locale];
+  const profileTitle = profile?.profile_title ?? t("profile.titleFallback");
+  const style = profile?.preferred_reading_style ?? t("result.readingStyleFallback");
+  const clarity = scoreText(profile?.rationality_need, locale);
+  const uncertainty = scoreText(profile?.uncertainty_tolerance, locale);
+  const location = `${chart.input.latitude.toFixed(4)}, ${chart.input.longitude.toFixed(4)} / ${chart.input.timezone}`;
+
+  return [
+    {
+      title: copy.birthCalculationTitle,
+      body: fill(copy.birthCalculationBody, {
+        engine: chart.engine.name,
+        birth: formatBirthData(chart),
+        sun: formatPointShort(chart.sun),
+        moon: formatPointShort(chart.moon),
+        ascendant: formatPointShort(chart.ascendant),
+        profile: profileTitle,
+        style,
+        clarity
+      }),
+      action: fill(copy.birthCalculationAction, { clarity, style }),
+      references: [
+        `${t("astrology.engine")}: ${chart.engine.name}`,
+        `${t("astrology.birthData")}: ${formatBirthData(chart)}`,
+        `${t("astrology.sun")}: ${formatPointShort(chart.sun)}`,
+        `${t("astrology.moon")}: ${formatPointShort(chart.moon)}`,
+        `${t("astrology.ascendant")}: ${formatPointShort(chart.ascendant)}`,
+        `${copy.profile}: ${profileTitle}`
+      ]
+    },
+    {
+      title: copy.timeLocationTitle,
+      body: fill(copy.timeLocationBody, {
+        utc: chart.time.utc,
+        jd: String(chart.time.julian_day_ut),
+        location,
+        ascendant: formatPointShort(chart.ascendant),
+        uncertainty
+      }),
+      action: fill(copy.timeLocationAction, { uncertainty }),
+      references: [
+        `UTC: ${chart.time.utc}`,
+        `JD UT: ${chart.time.julian_day_ut}`,
+        `${t("astrology.location")}: ${location}`,
+        `${t("astrology.ascendant")}: ${formatPointShort(chart.ascendant)}`,
+        `${copy.uncertainty}: ${uncertainty}`
+      ]
+    }
+  ];
+}
+
+function buildPlanetPlacementInterpretations(
+  chart: NatalChart,
+  profile: MysticProfile | undefined,
+  locale: Locale,
+  t: (key: TranslationKey, values?: Record<string, string | number>) => string
+): NatalInterpretation[] {
+  const copy = personalAstrologyCopy[locale];
+  const profileTitle = profile?.profile_title ?? t("profile.titleFallback");
+  const style = profile?.preferred_reading_style ?? t("result.readingStyleFallback");
+  const clarity = scoreText(profile?.rationality_need, locale);
+  const uncertainty = scoreText(profile?.uncertainty_tolerance, locale);
+  const emotional = scoreText(profile?.emotional_intensity, locale);
+
+  return chart.planets.slice(0, 10).map((planet) => {
+    const planetCopy = planetPlacementCopy(locale, planet.key);
+    const aspect = findAspectForPoint(chart, planet);
+
+    return {
+      title: fill(planetCopy.title, {
+        planet: planet.label,
+        point: formatPointShort(planet)
+      }),
+      body: fill(planetCopy.body, {
+        planet: planet.label,
+        point: formatPointShort(planet),
+        sign: planet.sign_label,
+        profile: profileTitle,
+        style,
+        clarity,
+        uncertainty,
+        emotional,
+        aspect: aspect ? aspectReference(aspect) : copy.noSpecificAspect
+      }),
+      action: fill(planetCopy.action, {
+        planet: planet.label,
+        sign: planet.sign_label,
+        clarity,
+        uncertainty,
+        emotional
+      }),
+      references: [
+        pointReference(planet.label, planet),
+        aspect ? aspectReference(aspect) : undefined,
+        `${copy.profile}: ${profileTitle}`,
+        `${copy.clarity}: ${clarity}`,
+        `${copy.uncertainty}: ${uncertainty}`,
+        `${copy.emotionalIntensity}: ${emotional}`
+      ].filter(Boolean) as string[]
+    };
+  });
+}
+
 function buildNatalInterpretations(
   chart: NatalChart,
   profile: MysticProfile | undefined,
@@ -454,6 +589,209 @@ function buildNatalInterpretations(
   ];
 }
 
+const personalAstrologyCopy = {
+  tr: {
+    profile: "Mistik profil",
+    clarity: "Netlik ihtiyacı",
+    uncertainty: "Belirsizlik toleransı",
+    emotionalIntensity: "Duygusal yoğunluk",
+    noSpecificAspect: "Bu gezegen için ilk 10 majör açı içinde özel açı eşleşmesi yok",
+    birthCalculationTitle: "Bu doğum verisi sende neyi kişiselleştiriyor?",
+    birthCalculationBody:
+      "{{engine}} hesabı, {{birth}} doğum verisini kullanarak {{sun}} Güneş, {{moon}} Ay ve {{ascendant}} yükselen eksenini çıkarıyor. {{profile}} profilinle birleştiğinde Mirror AI bu veriyi ham teknik liste olarak bırakmaz; {{style}} yorum dilinde, {{clarity}} netlik ihtiyacını karşılayacak şekilde hangi temanın kimlik, hangi temanın duygu, hangi temanın dışa yansıma olduğunu ayırır.",
+    birthCalculationAction:
+      "Bu kartı okurken motor/veri satırlarını kanıt zemini gibi kullan. {{clarity}} netlik ihtiyacın yüksek olduğunda yorumdan sonra tek cümlelik sonuç çıkar: 'Bu veri bana hangi davranışı daha bilinçli seçtiriyor?'",
+    timeLocationTitle: "Saat ve konum yorumda nasıl devreye giriyor?",
+    timeLocationBody:
+      "UTC {{utc}}, JD {{jd}} ve {{location}} konumu özellikle yükselen, evler ve açı zamanlamasını besler. {{ascendant}} yükselenin bu yüzden sadece burç etiketi değil; dışarıdan nasıl algılandığın, karar anında neyi önce gösterdiğin ve yorumların hangi bağlamla kişiselleştiği için referans olur. {{uncertainty}} belirsizlik toleransında bu teknik zemin, yorumların tahmin gibi değil gerekçeli içgörü gibi kalmasını sağlar.",
+    timeLocationAction:
+      "Doğum saati yaklaşık ise yükselen/ev yorumlarını daha esnek oku. Saat netse, ilişki ve karar yorumlarında yükselen/ev vurgusunu daha güçlü referans al; {{uncertainty}} belirsizlikte bu ayrım yanlış kesinlik kurmanı engeller."
+  },
+  en: {
+    profile: "Mystic profile",
+    clarity: "Need for clarity",
+    uncertainty: "Uncertainty tolerance",
+    emotionalIntensity: "Emotional intensity",
+    noSpecificAspect: "No specific aspect match for this planet in the first 10 major aspects",
+    birthCalculationTitle: "What does this birth data personalize for you?",
+    birthCalculationBody:
+      "{{engine}} uses {{birth}} to calculate your Sun at {{sun}}, Moon at {{moon}}, and Ascendant at {{ascendant}}. Combined with your {{profile}} profile, Mirror AI does not leave this as a technical list; in your {{style}} reading style, it separates identity, emotion, and outward expression with enough reasoning for your {{clarity}} need for clarity.",
+    birthCalculationAction:
+      "Use the engine/data rows as the evidence base. When your {{clarity}} need for clarity is active, end the reading with one sentence: 'Which behavior does this data help me choose more consciously?'",
+    timeLocationTitle: "How do time and location affect the reading?",
+    timeLocationBody:
+      "UTC {{utc}}, JD {{jd}}, and location {{location}} especially feed Ascendant, houses, and timing context. Your Ascendant at {{ascendant}} is therefore not only a zodiac label; it is a reference for how you are perceived, what you show first under pressure, and how readings become contextual. With {{uncertainty}} uncertainty tolerance, this technical ground keeps the reading as reasoned insight rather than prediction.",
+    timeLocationAction:
+      "If birth time is approximate, read Ascendant/house meanings flexibly. If it is exact, use Ascendant/house emphasis more strongly in relationship and decision readings; with {{uncertainty}} uncertainty, this prevents false certainty."
+  }
+} as const;
+
+function planetPlacementCopy(locale: Locale, key: string) {
+  const copy = {
+    tr: {
+      default: {
+        title: "{{planet}} {{point}}",
+        body:
+          "{{planet}} {{point}} yerleşimi, haritanda {{sign}} temasının hangi iç alanı çalıştırdığını gösterir. {{profile}} profiliyle birlikte okunduğunda bu veri, Mirror AI yorumlarında {{style}} bir dille hangi dürtüyü büyütüp hangisini sakinleştirmen gerektiğini ayırmak için kullanılır. Açı referansı: {{aspect}}.",
+        action:
+          "{{planet}} teması aktive olduğunda önce gözlem yap, sonra karar ver. {{clarity}} netlik ihtiyacın yükselirse bu yerleşimi tek başına hüküm değil, davranışını düzenleyen bir işaret olarak kullan."
+      },
+      sun: {
+        title: "Kimlik ve yaşam enerjisi: {{point}}",
+        body:
+          "Güneş {{point}}, temel kimliğinin {{sign}} tonuyla çalıştığını gösterir. {{profile}} profilinle birlikte bu, kendini anlatırken hem sezgisel anlam hem de {{clarity}} netlik arayabileceğini söyler. Mirror AI bu yüzden yorumlarında seni yalnızca motive etmeye değil, motivasyonunun hangi değere yaslandığını göstermeye çalışır. Açı referansı: {{aspect}}.",
+        action:
+          "Karar alırken kendine şunu sor: 'Bu seçim benim hangi tarafımı görünür kılıyor?' {{clarity}} netlik yükseldiğinde kimliğini kanıtlamaya değil, seçimini sadeleştirmeye odaklan."
+      },
+      moon: {
+        title: "Duygusal ihtiyaç ve ilk tepki: {{point}}",
+        body:
+          "Ay {{point}}, duygusal güven ihtiyacının {{sign}} biçiminde çalıştığını anlatır. {{emotional}} duygusal yoğunluk ve {{uncertainty}} belirsizlik toleransı ile birlikte, bu yerleşim yorumların duyguya temas etmesi ama duyguyu kesin gerçek gibi sunmaması gerektiğini gösterir. Açı referansı: {{aspect}}.",
+        action:
+          "Duygun yükseldiğinde hemen sonuç çıkarma. Önce 'ne hissediyorum', sonra 'bunu hangi veri destekliyor' diye iki ayrı not al; {{uncertainty}} belirsizlikte bu seni dengeler."
+      },
+      mercury: {
+        title: "Zihin ve iletişim tarzı: {{point}}",
+        body:
+          "Merkür {{point}}, düşünceyi nasıl kurduğunu ve soruları nasıl çerçevelediğini gösterir. {{style}} yorum stilinle birleşince Mirror AI senin için sembolik cümleleri gerekçeyle bağlamak zorunda kalır; çünkü zihnin yalnızca his değil, tutarlılık da ister. Açı referansı: {{aspect}}.",
+        action:
+          "Bir konuda kafan karıştığında sorunu tek cümleye indir. Sonra o cümlenin duygu mu, kanıt mı, varsayım mı olduğunu ayır; {{clarity}} netlik ihtiyacı böyle daha sağlıklı çalışır."
+      },
+      venus: {
+        title: "Sevgi dili ve değer algısı: {{point}}",
+        body:
+          "Venüs {{point}}, ilişkide neyi değerli, çekici ve yakın hissettiğini gösterir. {{profile}} profilin ve {{uncertainty}} belirsizlik toleransınla birlikte bu yerleşim, aşk yorumlarının kesin niyet okumadan; değer, emek ve karşılıklılık üzerinden kişiselleşmesi gerektiğini söyler. Açı referansı: {{aspect}}.",
+        action:
+          "İlişkide bir işareti yorumlamadan önce şu üç şeye bak: söz, davranış, süreklilik. Venüs temasını romantize etmeden değerinin korunup korunmadığını kontrol et."
+      },
+      mars: {
+        title: "Sınır, hareket ve cesaret: {{point}}",
+        body:
+          "Mars {{point}}, ne zaman harekete geçtiğini, neye öfkelendiğini ve sınırı nasıl koyduğunu gösterir. {{emotional}} duygusal yoğunlukla birleştiğinde Mirror AI, sana ani tepki yerine yönlü eylem önermelidir. Açı referansı: {{aspect}}.",
+        action:
+          "Tepki vermeden önce eylemini küçült: uzun açıklama yerine tek net cümle, büyük karar yerine küçük sınır. Mars enerjisini kanıt toplamaya değil, net davranışa çevir."
+      },
+      jupiter: {
+        title: "Büyüme ve anlam arayışı: {{point}}",
+        body:
+          "Jüpiter {{point}}, nerede genişlemek, inanmak ve daha büyük anlam kurmak istediğini gösterir. {{profile}} profilinle birlikte bu, yorumların sana umut verirken abartılı kesinlik üretmemesi gerektiğini anlatır. Açı referansı: {{aspect}}.",
+        action:
+          "Bir fırsat büyüdüğünde önce potansiyeli yaz, sonra bedelini yaz. Jüpiter temasını sadece iyimserlik değil, bilinçli genişleme olarak kullan."
+      },
+      saturn: {
+        title: "Sınav, sınır ve olgunlaşma: {{point}}",
+        body:
+          "Satürn {{point}}, nerede daha ciddi, temkinli veya sorumluluk odaklı çalıştığını gösterir. Retro vurgusu varsa bu tema iç muhasebe gibi hissedilebilir. {{clarity}} netlik ihtiyacıyla birlikte Mirror AI burada sana korku değil, yapı ve sabır önermelidir. Açı referansı: {{aspect}}.",
+        action:
+          "Zorlanan konuda kendine tek sürdürülebilir kural koy. Satürn sana 'hemen çöz' demez; 'tekrar edebileceğin sağlam davranışı seç' der."
+      },
+      uranus: {
+        title: "Özgürleşme ve kırılma biçimi: {{point}}",
+        body:
+          "Uranüs {{point}}, nerede ani farkındalık, bağımsızlık ve kalıp kırma ihtiyacı taşıdığını gösterir. {{profile}} profilinle birleşince bu veri, değişim isteğinin gerçek özgürlük mü yoksa belirsizlikten kaçış mı olduğunu ayırmak için kullanılır. Açı referansı: {{aspect}}.",
+        action:
+          "Ani karar isteği geldiğinde 24 saatlik mesafe koy. Sonra hâlâ aynı şeyi istiyorsan değişimi küçük ve geri döndürülebilir bir adımla başlat."
+      },
+      neptune: {
+        title: "Sezgi, ideal ve sis alanı: {{point}}",
+        body:
+          "Neptün {{point}}, nerede sezgi, idealizasyon ve anlam arayışının güçlendiğini gösterir. {{uncertainty}} belirsizlik toleransıyla birlikte bu yerleşim, Mirror AI yorumlarında ilham ile varsayımı birbirinden ayırmayı özellikle önemli yapar. Açı referansı: {{aspect}}.",
+        action:
+          "Bir his çok büyüdüğünde onu hemen gerçek kabul etme. Önce 'bu sezgi mi, dilek mi, korku mu?' diye adlandır; sonra davranış kanıtına bak."
+      },
+      pluto: {
+        title: "Derin dönüşüm ve güç teması: {{point}}",
+        body:
+          "Plüton {{point}}, nerede yoğunluk, kontrol, bırakma ve dönüşüm temalarının çalıştığını gösterir. {{profile}} profilinle birlikte bu yerleşim, Mirror AI yorumlarında seni bağımlı kılan döngüyü değil, farkındalıkla dönüştürebileceğin kalıbı göstermelidir. Açı referansı: {{aspect}}.",
+        action:
+          "Yoğun bir konuda kendine şunu sor: 'Bunu kontrol etmeye mi çalışıyorum, yoksa gerçekten anlamaya mı?' Cevap kontrolse, bir adım geri çekil ve veriye dön."
+      }
+    },
+    en: {
+      default: {
+        title: "{{planet}} {{point}}",
+        body:
+          "{{planet}} at {{point}} shows which inner area carries the tone of {{sign}}. Read with your {{profile}} profile, this helps Mirror AI use a {{style}} voice to separate which impulse to amplify and which to calm. Aspect reference: {{aspect}}.",
+        action:
+          "When the {{planet}} theme activates, observe first and decide second. If your {{clarity}} need for clarity rises, use this placement as a behavioral signal, not as a verdict."
+      },
+      sun: {
+        title: "Identity and life force: {{point}}",
+        body:
+          "Sun at {{point}} shows that your core identity works through a {{sign}} tone. With your {{profile}} profile, this means you may need both symbolic meaning and {{clarity}} clarity. Mirror AI therefore tries not only to motivate you, but to show which value your motivation rests on. Aspect reference: {{aspect}}.",
+        action:
+          "When deciding, ask: 'Which part of me does this choice make visible?' If clarity rises, simplify the choice instead of proving your identity."
+      },
+      moon: {
+        title: "Emotional need and first reaction: {{point}}",
+        body:
+          "Moon at {{point}} describes how emotional safety works for you. With {{emotional}} emotional intensity and {{uncertainty}} uncertainty tolerance, readings should touch the feeling without turning it into fixed fact. Aspect reference: {{aspect}}.",
+        action:
+          "When emotion rises, do not conclude immediately. Write two separate notes: what you feel, and which evidence supports it."
+      },
+      mercury: {
+        title: "Mind and communication style: {{point}}",
+        body:
+          "Mercury at {{point}} shows how you think, name feelings, and frame questions. With your {{style}} style, Mirror AI must connect symbolic sentences to reasoning because your mind wants coherence, not only feeling. Aspect reference: {{aspect}}.",
+        action:
+          "Reduce confusion to one sentence. Then mark whether that sentence is feeling, evidence, or assumption."
+      },
+      venus: {
+        title: "Love language and value sense: {{point}}",
+        body:
+          "Venus at {{point}} shows what feels valuable, attractive, and close in relationships. With your {{profile}} profile and {{uncertainty}} uncertainty tolerance, love readings should personalize through value, effort, and reciprocity rather than certain mind-reading. Aspect reference: {{aspect}}.",
+        action:
+          "Before interpreting a romantic sign, check three things: words, behavior, consistency."
+      },
+      mars: {
+        title: "Boundary, action, and courage: {{point}}",
+        body:
+          "Mars at {{point}} shows when you act, what angers you, and how you set limits. With {{emotional}} emotional intensity, Mirror AI should suggest directed action instead of impulsive reaction. Aspect reference: {{aspect}}.",
+        action:
+          "Before reacting, shrink the action: one clear sentence instead of a long explanation; one small boundary instead of a dramatic decision."
+      },
+      jupiter: {
+        title: "Growth and meaning: {{point}}",
+        body:
+          "Jupiter at {{point}} shows where you want to expand, believe, and create bigger meaning. With your {{profile}} profile, readings should give hope without exaggerated certainty. Aspect reference: {{aspect}}.",
+        action:
+          "When an opportunity expands, write both its potential and its cost."
+      },
+      saturn: {
+        title: "Test, boundary, and maturity: {{point}}",
+        body:
+          "Saturn at {{point}} shows where you work seriously, cautiously, or responsibly. If retrograde, this may feel like inner accounting. With {{clarity}} clarity needs, Mirror AI should offer structure and patience, not fear. Aspect reference: {{aspect}}.",
+        action:
+          "Set one sustainable rule for the hard area. Saturn asks for repeatable behavior, not instant resolution."
+      },
+      uranus: {
+        title: "Freedom and disruption style: {{point}}",
+        body:
+          "Uranus at {{point}} shows where sudden awareness, independence, and pattern-breaking appear. With your {{profile}} profile, this helps separate real freedom from escaping uncertainty. Aspect reference: {{aspect}}.",
+        action:
+          "When a sudden decision urge appears, give it 24 hours and then choose a small reversible step."
+      },
+      neptune: {
+        title: "Intuition, ideal, and fog: {{point}}",
+        body:
+          "Neptune at {{point}} shows where intuition, idealization, and meaning intensify. With {{uncertainty}} uncertainty tolerance, it is important to separate inspiration from assumption. Aspect reference: {{aspect}}.",
+        action:
+          "When a feeling becomes large, ask whether it is intuition, wish, or fear before treating it as truth."
+      },
+      pluto: {
+        title: "Deep transformation and power theme: {{point}}",
+        body:
+          "Pluto at {{point}} shows where intensity, control, release, and transformation work. With your {{profile}} profile, Mirror AI should show the pattern you can transform, not the loop that keeps you dependent. Aspect reference: {{aspect}}.",
+        action:
+          "Ask: 'Am I trying to control this, or understand it?' If the answer is control, step back and return to evidence."
+      }
+    }
+  } as const;
+
+  const localeCopy = copy[locale];
+  return localeCopy[key as keyof typeof localeCopy] ?? localeCopy.default;
+}
+
 const natalCopy = {
   tr: {
     profile: "Mistik profil",
@@ -524,6 +862,23 @@ function fill(template: string, values: Record<string, string>) {
   return Object.entries(values).reduce(
     (text, [name, value]) => text.replace(new RegExp(`{{${name}}}`, "g"), value),
     template
+  );
+}
+
+function normalizeReference(value: string) {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function findAspectForPoint(chart: NatalChart, point: ZodiacPoint) {
+  const aliases = [point.label, point.key, point.sign_label].map(normalizeReference);
+  return chart.aspects.find((aspect) =>
+    aspect.between.some((item) => {
+      const normalized = normalizeReference(item);
+      return aliases.some((alias) => normalized.includes(alias));
+    })
   );
 }
 
