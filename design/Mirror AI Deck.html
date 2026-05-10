@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<title>Mirror AI — Tasarım Sunumu</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="deck-stage.js"></script>
+<style>
+  :root {
+    --bg:#090B10; --surf:#121722; --surf2:#18202E; --brd:#293241;
+    --tx:#F4EFE7; --mu:#A7AFBD; --fa:#707A8A;
+    --ac:#D8B56D; --acs:#3B3220;
+    --fD:'Cormorant Garamond',serif; --fB:'DM Sans',sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  deck-stage { --slide-bg: var(--bg); }
+
+  section {
+    width: 1920px; height: 1080px;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+    overflow: hidden; position: relative;
+  }
+
+  /* ── stars bg ── */
+  .stars { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+  .star  { position: absolute; border-radius: 50%; background: var(--ac); }
+
+  /* ── shared layout ── */
+  .slide-inner { position: relative; z-index: 1; width: 100%; height: 100%; display: flex; }
+
+  /* ── phone mockup ── */
+  .phone {
+    width: 320px; height: 672px; flex-shrink: 0;
+    background: var(--bg); border-radius: 46px;
+    border: 7px solid #181E2C;
+    box-shadow: 0 0 0 1px #252D40, 0 32px 80px rgba(0,0,0,.9);
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .phone-island  { position: absolute; top:10px; left:50%; transform:translateX(-50%); width:96px; height:28px; background:#000; border-radius:18px; z-index:20; }
+  .phone-bar     { position: absolute; bottom:7px; left:50%; transform:translateX(-50%); width:100px; height:4px; background:rgba(255,255,255,.45); border-radius:99px; z-index:20; }
+  .phone-status  { height:46px; flex-shrink:0; display:flex; align-items:flex-end; justify-content:space-between; padding:0 18px 8px; font-size:11px; font-weight:600; color:var(--tx); }
+  .phone-content { flex:1; overflow:hidden; display:flex; flex-direction:column; padding:0 14px; gap:8px; padding-bottom:12px; }
+
+  /* ── mini screen primitives ── */
+  .m-eyebrow { font-size:8px; color:var(--ac); font-weight:600; letter-spacing:.1em; text-transform:uppercase; }
+  .m-title   { font-size:17px; color:var(--tx); font-family:'Cormorant Garamond',serif; font-weight:600; line-height:1.2; }
+  .m-sub     { font-size:9px; color:var(--mu); line-height:1.55; font-weight:300; }
+  .m-card    { background:var(--surf); border:1px solid var(--brd); border-radius:8px; padding:9px 11px; display:flex; flex-direction:column; gap:3px; }
+  .m-card.acc{ border-left:2px solid var(--ac); }
+  .m-card-t  { font-size:11px; color:var(--tx); font-family:'Cormorant Garamond',serif; font-weight:600; line-height:1.25; }
+  .m-card-b  { font-size:8.5px; color:var(--mu); line-height:1.5; font-weight:300; }
+  .m-btn-p   { background:var(--ac); border-radius:7px; padding:9px 12px; color:#08090C; font-size:10px; font-weight:700; text-align:center; }
+  .m-btn-s   { border-radius:7px; border:1px solid var(--brd); padding:9px 12px; color:var(--tx); font-size:10px; font-weight:700; text-align:center; }
+  .m-chip    { display:inline-flex; padding:5px 10px; border-radius:14px; font-size:9px; font-weight:600; border:1px solid var(--brd); color:var(--mu); background:transparent; }
+  .m-chip.on { border-color:var(--ac); background:var(--acs); color:var(--tx); }
+  .m-input   { background:var(--surf); border:1px solid var(--brd); border-radius:7px; padding:8px 10px; color:var(--mu); font-size:9px; }
+  .m-label   { font-size:7px; color:var(--mu); font-weight:600; letter-spacing:.07em; text-transform:uppercase; margin-bottom:2px; }
+  .m-back    { display:flex; align-items:center; gap:4px; }
+  .m-back span { font-size:9px; color:var(--ac); font-weight:600; }
+  .score-row { display:flex; flex-direction:column; gap:3px; }
+  .score-lbl { display:flex; justify-content:space-between; font-size:8px; color:var(--mu); }
+  .score-lbl b { color:var(--ac); font-weight:700; }
+  .score-track { height:2.5px; background:var(--brd); border-radius:2px; }
+  .score-fill  { height:100%; border-radius:2px; background:var(--ac); }
+  .m-stat    { background:var(--surf); border:1px solid var(--brd); border-radius:8px; padding:9px 7px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .m-stat-v  { font-size:16px; color:var(--ac); font-family:'Cormorant Garamond',serif; font-weight:600; }
+  .m-stat-l  { font-size:7.5px; color:var(--mu); text-align:center; }
+
+  .tarot-back { width:62px; height:96px; border-radius:6px; background:#0D1119; border:.5px solid rgba(216,181,109,.5); flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .bottom-nav { display:flex; background:var(--surf2); border-top:1px solid var(--brd); padding-bottom:22px; padding-top:6px; flex-shrink:0; }
+  .nav-item   { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .nav-lbl    { font-size:7px; font-weight:500; }
+
+  /* ── right panel ── */
+  .right {
+    flex:1; padding:80px 100px 80px 80px;
+    display:flex; flex-direction:column; justify-content:center; gap:28px;
+  }
+  .slide-tag   { font-size:12px; color:var(--ac); font-weight:600; letter-spacing:.12em; text-transform:uppercase; }
+  .slide-title { font-size:64px; color:var(--tx); font-family:'Cormorant Garamond',serif; font-weight:400; line-height:1.1; }
+  .slide-sub   { font-size:18px; color:var(--mu); line-height:1.7; font-weight:300; max-width:560px; }
+  .feature-list { display:flex; flex-direction:column; gap:14px; margin-top:8px; }
+  .feature-item { display:flex; align-items:flex-start; gap:14px; }
+  .feature-dot  { width:6px; height:6px; border-radius:50%; background:var(--ac); flex-shrink:0; margin-top:7px; }
+  .feature-text { font-size:16px; color:var(--mu); line-height:1.55; font-weight:300; }
+  .feature-text b { color:var(--tx); font-weight:600; }
+
+  /* ── left panel (phone holder) ── */
+  .left {
+    width:700px; height:100%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .phone-glow {
+    position:absolute; width:300px; height:500px;
+    background:radial-gradient(ellipse, rgba(216,181,109,.12), transparent 70%);
+    pointer-events:none;
+  }
+
+  /* ── divider ── */
+  .vdiv { width:1px; background:var(--brd); height:60%; align-self:center; opacity:.5; }
+
+  /* ── title slide ── */
+  .title-slide {
+    flex-direction:column; gap:24px; text-align:center;
+  }
+  .title-mark { margin-bottom:8px; }
+  .title-main { font-size:96px; color:var(--tx); font-family:'Cormorant Garamond',serif; font-weight:300; letter-spacing:.04em; }
+  .title-sub  { font-size:26px; color:var(--mu); font-weight:300; letter-spacing:.14em; text-transform:uppercase; }
+  .title-rule { width:48px; height:1px; background:var(--ac); opacity:.7; margin:0 auto; }
+  .title-desc { font-size:24px; color:var(--fa); max-width:600px; line-height:1.7; font-weight:300; text-align:center; }
+
+  /* ── closing ── */
+  .closing-slide { flex-direction:column; gap:20px; text-align:center; }
+  .closing-chips { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
+  .closing-chip  { padding:10px 22px; border-radius:20px; border:1px solid var(--brd); color:var(--mu); font-size:24px; font-weight:500; }
+  .closing-chip.hi { border-color:var(--ac); background:var(--acs); color:var(--tx); }
+</style>
+</head>
+<body>
+<deck-stage>
+
+<!-- ══════════════════════════════════════════ 01 TITLE -->
+<section data-screen-label="01 Title">
+  <div class="stars">
+    <div class="star" style="left:5%;top:8%;width:2px;height:2px;opacity:.5;"></div>
+    <div class="star" style="left:82%;top:11%;width:1.5px;height:1.5px;opacity:.4;"></div>
+    <div class="star" style="left:46%;top:4%;width:1px;height:1px;opacity:.35;"></div>
+    <div class="star" style="left:91%;top:22%;width:2px;height:2px;opacity:.3;"></div>
+    <div class="star" style="left:18%;top:75%;width:1.5px;height:1.5px;opacity:.45;"></div>
+    <div class="star" style="left:70%;top:68%;width:2px;height:2px;opacity:.25;"></div>
+    <div class="star" style="left:8%;top:55%;width:1px;height:1px;opacity:.55;"></div>
+    <div class="star" style="left:93%;top:80%;width:1.5px;height:1.5px;opacity:.3;"></div>
+    <div class="star" style="left:55%;top:90%;width:1px;height:1px;opacity:.4;"></div>
+    <div class="star" style="left:34%;top:20%;width:2px;height:2px;opacity:.2;"></div>
+    <div class="star" style="left:62%;top:35%;width:1px;height:1px;opacity:.3;"></div>
+    <div class="star" style="left:25%;top:88%;width:1.5px;height:1.5px;opacity:.35;"></div>
+  </div>
+  <div class="slide-inner title-slide">
+    <div class="title-mark">
+      <svg width="72" height="72" viewBox="0 0 52 52" fill="none">
+        <circle cx="26" cy="26" r="24" stroke="#D8B56D" stroke-width=".6" opacity=".3"/>
+        <circle cx="26" cy="26" r="18" stroke="#D8B56D" stroke-width=".6" opacity=".5"/>
+        <circle cx="26" cy="26" r="11" stroke="#D8B56D" stroke-width=".7" opacity=".8"/>
+        <circle cx="26" cy="26" r="4"  fill="#D8B56D"   opacity=".9"/>
+        <path d="M26 9 C19 9 14 17 14 26 C14 17 18 11 24 10 Z" fill="#D8B56D" opacity=".4"/>
+      </svg>
+    </div>
+    <div class="title-main">Mirror AI</div>
+    <div class="title-rule"></div>
+    <div class="title-sub">Kişisel Hafızalı İçgörü Asistanı</div>
+    <div class="title-desc">Tarot · Kahve Falı · İlişki Analizi · Natal Harita<br/>Kişisel profil + geri bildirim + hafıza ile derinleşen yorumlar</div>
+    <div class="closing-chips" style="margin-top:0;">
+      <div class="closing-chip hi">14 Ekran</div>
+      <div class="closing-chip">Expo + React Native</div>
+      <div class="closing-chip">Supabase + Swiss Ephemeris</div>
+      <div class="closing-chip hi">Mock → AI hazır</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 02 ONBOARDING -->
+<section data-screen-label="02 Onboarding">
+  <div class="slide-inner">
+    <div class="left">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-island"></div>
+        <div class="phone-bar"></div>
+        <div class="phone-status">9:41<span style="font-size:9px;opacity:.6;">●●●</span></div>
+        <div style="position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+            <div style="position:absolute;left:7%;top:5%;width:2px;height:2px;border-radius:50%;background:#D8B56D;opacity:.5;"></div>
+            <div style="position:absolute;left:80%;top:10%;width:1.5px;height:1.5px;border-radius:50%;background:#D8B56D;opacity:.4;"></div>
+            <div style="position:absolute;left:50%;top:3%;width:1px;height:1px;border-radius:50%;background:#D8B56D;opacity:.35;"></div>
+            <div style="position:absolute;left:20%;top:70%;width:1.5px;height:1.5px;border-radius:50%;background:#D8B56D;opacity:.3;"></div>
+            <div style="position:absolute;left:90%;top:60%;width:1px;height:1px;border-radius:50%;background:#D8B56D;opacity:.45;"></div>
+          </div>
+          <div class="phone-content" style="padding-top:8px;justify-content:space-between;flex:1;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <svg width="32" height="32" viewBox="0 0 52 52" fill="none" style="flex-shrink:0;">
+                <circle cx="26" cy="26" r="18" stroke="#D8B56D" stroke-width=".8" opacity=".6"/>
+                <circle cx="26" cy="26" r="4" fill="#D8B56D" opacity=".9"/>
+              </svg>
+              <div class="m-eyebrow">Kişisel hafızalı içgörü</div>
+              <div class="m-title" style="font-size:20px;">Seni hatırlayan spiritüel asistan</div>
+              <div class="m-sub">Tarot, kahve falı, ilişki analizi ve günlük içgörüleri kişisel profilinle yorumlayan sakin bir alan.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <div class="m-card acc"><div class="m-card-t">Kesin kehanet değil</div><div class="m-card-b">Sembolik ve farkındalık amaçlı yorumlar.</div></div>
+              <div class="m-card"><div class="m-card-t">İlk adım: mistik profil</div><div class="m-card-b">Kısa bir test ile yorum stilini kişiselleştireceğiz.</div></div>
+              <div class="m-btn-p">Başla</div>
+              <div class="m-btn-s">Zaten hesabım var</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="right">
+      <div class="slide-tag">02 — Onboarding</div>
+      <div class="slide-title">İlk izlenim<br/>sakinlik sunar</div>
+      <div class="slide-sub">Korku veya merak yerine güven ve saygı temeli üzerine kurulu bir giriş akışı.</div>
+      <div class="feature-list">
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Yıldız arkaplanı</b> — atmosfer yaratır, abartılı değil</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>İki kart</b> — "ne değil" ve "ne yapacağız" mesajını netleştirir</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Güvenlik güvencesi</b> — ilk ekranda çerçeveleme</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Misafir akışı</b> — hesap zorunlu değil</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 03 PROFIL TESTİ -->
+<section data-screen-label="03 Profil Testi">
+  <div class="slide-inner">
+    <div class="left">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-island"></div>
+        <div class="phone-bar"></div>
+        <div class="phone-status">9:41<span style="font-size:9px;opacity:.6;">●●●</span></div>
+        <div class="phone-content" style="padding-top:8px;">
+          <div class="m-eyebrow">2 / 3 — Profil testi</div>
+          <div class="m-title" style="font-size:16px;">Yorumların seni nasıl okumalı?</div>
+          <div class="m-sub">Sembolik yorum stilini ve belirsizlikle ilişki kurma biçimini ayarlar.</div>
+          <div style="background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:9px;display:flex;flex-direction:column;gap:5px;">
+            <div style="font-size:10px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;line-height:1.3;">Net sinyal alamadığında ne yaparsın?</div>
+            <div style="padding:5px 8px;border-radius:5px;border:1px solid var(--brd);font-size:8px;color:var(--mu);">İçime kapanır, beklerim.</div>
+            <div style="padding:5px 8px;border-radius:5px;border:1px solid var(--ac);background:var(--acs);font-size:8px;color:var(--tx);">Daha fazla ipucu ararım.</div>
+            <div style="padding:5px 8px;border-radius:5px;border:1px solid var(--brd);font-size:8px;color:var(--mu);">Direkt sorarım.</div>
+            <div style="padding:5px 8px;border-radius:5px;border:1px solid var(--brd);font-size:8px;color:var(--mu);">Fazla düşünür, anlam yüklerim.</div>
+          </div>
+          <div style="background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:9px;display:flex;flex-direction:column;gap:5px;">
+            <div style="font-size:10px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;line-height:1.3;">Geçmiş ilişkilerinde hangi döngüyü tekrar ettin?</div>
+            <div style="padding:5px 8px;border-radius:5px;border:1px solid var(--brd);font-size:8px;color:var(--mu);">Ulaşılması zor kişilere çekilmek</div>
+            <div style="padding:5px 8px;border-radius:5px;border:1px solid var(--brd);font-size:8px;color:var(--mu);">Çok hızlı bağlanmak</div>
+          </div>
+          <div class="m-btn-p" style="margin-top:auto;">Mistik profilimi oluştur</div>
+        </div>
+      </div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="right">
+      <div class="slide-tag">03 — Profil Testi</div>
+      <div class="slide-title">Tanı değil,<br/>ayarlama</div>
+      <div class="slide-sub">Üç soru ile kullanıcının yorum tercihini ve psikolojik kalıplarını öğrenir. Hiçbir yargı, sadece kişiselleştirme.</div>
+      <div class="feature-list">
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>3 soru</b> — belirsizlik tepkisi, tekrar döngüsü, rezonans stili</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Seçim hafızaya alınır</b> — tüm yorumlarda bağlam olarak kullanılır</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>profileScoring.ts</b> — yanıtlar Mystic Profile skoruna dönüşür</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Güvenlik dili</b> — "tanı koymaz" notu her zaman görünür</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 04 MİSTİK PROFİL -->
+<section data-screen-label="04 Mistik Profil">
+  <div class="slide-inner">
+    <div class="left">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-island"></div>
+        <div class="phone-bar"></div>
+        <div class="phone-status">9:41<span style="font-size:9px;opacity:.6;">●●●</span></div>
+        <div style="position:relative;flex:1;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;">
+          <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+            <div style="position:absolute;left:8%;top:6%;width:2px;height:2px;border-radius:50%;background:#D8B56D;opacity:.45;"></div>
+            <div style="position:absolute;left:85%;top:15%;width:1.5px;height:1.5px;border-radius:50%;background:#D8B56D;opacity:.35;"></div>
+            <div style="position:absolute;left:50%;top:4%;width:1px;height:1px;border-radius:50%;background:#D8B56D;opacity:.4;"></div>
+            <div style="position:absolute;left:15%;top:80%;width:1.5px;height:1.5px;border-radius:50%;background:#D8B56D;opacity:.3;"></div>
+          </div>
+          <svg width="56" height="56" viewBox="0 0 52 52" fill="none" style="flex-shrink:0;">
+            <circle cx="26" cy="26" r="24" stroke="#D8B56D" stroke-width=".6" opacity=".3"/>
+            <circle cx="26" cy="26" r="18" stroke="#D8B56D" stroke-width=".6" opacity=".5"/>
+            <circle cx="26" cy="26" r="11" stroke="#D8B56D" stroke-width=".7" opacity=".8"/>
+            <circle cx="26" cy="26" r="4"  fill="#D8B56D"   opacity=".9"/>
+            <path d="M26 9 C19 9 14 17 14 26 C14 17 18 11 24 10 Z" fill="#D8B56D" opacity=".4"/>
+          </svg>
+          <div style="text-align:center;display:flex;flex-direction:column;gap:6px;">
+            <div class="m-eyebrow" style="text-align:center;">3 / 3 — Mistik profil</div>
+            <div style="font-size:26px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:400;line-height:1.1;">Sezgisel Gözlemci</div>
+            <div style="width:32px;height:1px;background:var(--ac);opacity:.6;margin:0 auto;"></div>
+            <div style="font-size:9px;color:var(--mu);line-height:1.6;font-weight:300;max-width:220px;">Belirsizliği okuma yeteneğin yüksek; ama çok katmanlı yorumlar zaman zaman seni yorabilir.</div>
+          </div>
+          <div class="m-card acc" style="width:100%;">
+            <div class="m-card-t">Yorum stili</div>
+            <div class="m-card-b">"sembolik" — yorumlar bu çerçevede kişiselleştirilecek.</div>
+          </div>
+          <div class="m-btn-p" style="width:100%;">Ana ekrana geç →</div>
+        </div>
+      </div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="right">
+      <div class="slide-tag">04 — Mistik Profil</div>
+      <div class="slide-title">Kişiselleştirme<br/>ilk andan başlar</div>
+      <div class="slide-sub">Onboarding sonunda kullanıcı bir kimlikle çıkıyor. Bu kimlik tüm yorumların bağlamı haline gelir.</div>
+      <div class="feature-list">
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>3 profil arketip</b> — Sezgisel Gözlemci, Duygusal Analist, Döngü Kırıcı</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Reveal animasyonu</b> — profil ismi yavaşça yükselir, tökezleme anı yaratır</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Hafızaya kaydedilir</b> — Supabase memory_profile tablosuna yazılır</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Yorum stili bağlantısı</b> — her okuma bu profil üzerinden filtre alır</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 05 ANA EKRAN -->
+<section data-screen-label="05 Ana Ekran">
+  <div class="slide-inner">
+    <div class="left">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-island"></div>
+        <div class="phone-bar"></div>
+        <div class="phone-status">9:41<span style="font-size:9px;opacity:.6;">●●●</span></div>
+        <div class="phone-content" style="padding-top:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <div class="m-eyebrow">Mirror AI</div>
+              <div class="m-title" style="font-size:18px;">Bugün iç aynanda ne var?</div>
+            </div>
+            <div style="font-size:18px;color:var(--ac);font-family:'Cormorant Garamond',serif;opacity:.7;">☽</div>
+          </div>
+          <div style="font-size:8px;color:var(--fa);">pazar, 27 nisan 2025</div>
+          <div class="m-card acc">
+            <div style="font-size:7px;color:var(--ac);font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Sezgisel Gözlemci</div>
+            <div class="m-card-t">Günlük enerji</div>
+            <div class="m-card-b">Bugün netlik arayışı ile sezgisel hisleri ayırmak iyi gelebilir.</div>
+          </div>
+          <div class="m-btn-p">Bugünkü içgörümü göster</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div style="height:36px;border-radius:7px;border:1px solid var(--brd);background:var(--surf);color:var(--tx);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">Tarot</div>
+            <div style="height:36px;border-radius:7px;border:1px solid var(--brd);background:var(--surf);color:var(--tx);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">Kahve falı</div>
+            <div style="height:36px;border-radius:7px;border:1px solid var(--brd);background:var(--surf);color:var(--tx);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">İlişki analizi</div>
+            <div style="height:36px;border-radius:7px;border:1px solid var(--brd);background:var(--surf);color:var(--tx);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">Profilim</div>
+          </div>
+          <div style="font-size:12px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;">Son yorumlar</div>
+          <div class="m-card"><div class="m-card-t">Bugünün İç Aynası</div><div class="m-card-b">Sakin bir gözlem hali, tekrar eden düşüncelerin…</div></div>
+          <div class="m-card"><div class="m-card-t">İlişki Enerji Analizi</div><div class="m-card-b">A. ile dinamikte çekim kadar belirsizlik de…</div></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item"><div style="font-size:16px;color:var(--ac);">⌂</div><div class="nav-lbl" style="color:var(--ac);">Ana</div></div>
+          <div class="nav-item"><div style="font-size:12px;color:var(--fa);">✦</div><div class="nav-lbl" style="color:var(--fa);">Tarot</div></div>
+          <div class="nav-item"><div style="font-size:12px;color:var(--fa);">☕</div><div class="nav-lbl" style="color:var(--fa);">Kahve</div></div>
+          <div class="nav-item"><div style="font-size:12px;color:var(--fa);">♡</div><div class="nav-lbl" style="color:var(--fa);">İlişki</div></div>
+          <div class="nav-item"><div style="font-size:12px;color:var(--fa);">○</div><div class="nav-lbl" style="color:var(--fa);">Profil</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="right">
+      <div class="slide-tag">05 — Ana Ekran</div>
+      <div class="slide-title">Her gün farklı<br/>bir ayna</div>
+      <div class="slide-sub">Kişisel profil başlığı, günlük insight kartı ve geçmiş yorumlar tek bir akışta.</div>
+      <div class="feature-list">
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Günlük enerji kartı</b> — profil bağlamlı, her gün farklı</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Hızlı aksiyon grid</b> — 4 ana özelliğe tek dokunuşla erişim</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Son yorumlar listesi</b> — okuma geçmişi ve geri bildirim takibi</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Bottom nav</b> — 5 sekme, tutarlı navigasyon</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 06 TAROT -->
+<section data-screen-label="06 Tarot">
+  <div class="slide-inner">
+    <div class="left">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-island"></div>
+        <div class="phone-bar"></div>
+        <div class="phone-status">9:41<span style="font-size:9px;opacity:.6;">●●●</span></div>
+        <div class="phone-content" style="padding-top:6px;">
+          <div class="m-eyebrow">Tarot</div>
+          <div class="m-title" style="font-size:16px;">Kartları hüküm değil ayna olarak aç</div>
+          <div style="font-size:7px;color:var(--mu);font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:2px;">Açılım tipi</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <div class="m-chip">Tek kart</div>
+            <div class="m-chip on">Üç kart</div>
+            <div class="m-chip">İlişki</div>
+            <div class="m-chip">Karar</div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:8px;padding:4px 0;">
+            <div class="tarot-back">
+              <svg width="40" height="60" viewBox="0 0 40 60">
+                <g transform="translate(20,30)">
+                  <circle r="14" stroke="#D8B56D" stroke-width=".5" stroke-opacity=".25" fill="none"/>
+                  <circle r="8"  stroke="#D8B56D" stroke-width=".5" stroke-opacity=".4" fill="none"/>
+                  <circle r="1.5" fill="#D8B56D" fill-opacity=".5"/>
+                  <line x1="0" y1="0" x2="0" y2="-14" stroke="#D8B56D" stroke-width=".4" stroke-opacity=".3"/>
+                  <line x1="0" y1="0" x2="9.9" y2="-9.9" stroke="#D8B56D" stroke-width=".4" stroke-opacity=".3"/>
+                  <line x1="0" y1="0" x2="14" y2="0" stroke="#D8B56D" stroke-width=".4" stroke-opacity=".3"/>
+                </g>
+              </svg>
+            </div>
+            <div class="tarot-back">
+              <svg width="40" height="60" viewBox="0 0 40 60">
+                <g transform="translate(20,30)">
+                  <circle r="14" stroke="#D8B56D" stroke-width=".5" stroke-opacity=".25" fill="none"/>
+                  <circle r="8"  stroke="#D8B56D" stroke-width=".5" stroke-opacity=".4" fill="none"/>
+                  <circle r="1.5" fill="#D8B56D" fill-opacity=".5"/>
+                </g>
+              </svg>
+            </div>
+            <div class="tarot-back">
+              <svg width="40" height="60" viewBox="0 0 40 60">
+                <g transform="translate(20,30)">
+                  <circle r="14" stroke="#D8B56D" stroke-width=".5" stroke-opacity=".25" fill="none"/>
+                  <circle r="8"  stroke="#D8B56D" stroke-width=".5" stroke-opacity=".4" fill="none"/>
+                  <circle r="1.5" fill="#D8B56D" fill-opacity=".5"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+          <div class="m-label">Konu</div>
+          <div class="m-input">relationship</div>
+          <div class="m-label">Sorun</div>
+          <div class="m-input" style="min-height:44px;">Bu kişiyle devam etmeli miyim?</div>
+          <div class="m-btn-p">Kartları aç</div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item"><div style="font-size:14px;color:var(--fa);">⌂</div><div class="nav-lbl" style="color:var(--fa);">Ana</div></div>
+          <div class="nav-item"><div style="font-size:10px;color:var(--ac);">✦</div><div class="nav-lbl" style="color:var(--ac);">Tarot</div></div>
+          <div class="nav-item"><div style="font-size:10px;color:var(--fa);">☕</div><div class="nav-lbl" style="color:var(--fa);">Kahve</div></div>
+          <div class="nav-item"><div style="font-size:10px;color:var(--fa);">♡</div><div class="nav-lbl" style="color:var(--fa);">İlişki</div></div>
+          <div class="nav-item"><div style="font-size:10px;color:var(--fa);">○</div><div class="nav-lbl" style="color:var(--fa);">Profil</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="right">
+      <div class="slide-tag">06 — Tarot</div>
+      <div class="slide-title">Dört açılım,<br/>sonsuz bağlam</div>
+      <div class="slide-sub">Tek kart, üç kart, ilişki ve karar açılımları — her birinin kart pozisyonları farklı sembolik yükler taşır.</div>
+      <div class="feature-list">
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>4 açılım tipi</b> — single, three_card, relationship, decision</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Kart back SVG</b> — geometrik mandala, her seferinde aynı kağıt hissi</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Flip animasyonu</b> — yorum detayında kartlara dokunarak yüzleri açılır</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Profil bağlamı</b> — her kart yorumu mystic profile üzerinden filtre alır</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 07 YORUM DETAYI -->
+<section data-screen-label="07 Yorum Detayı">
+  <div class="slide-inner">
+    <div class="left">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-island"></div>
+        <div class="phone-bar"></div>
+        <div class="phone-status">9:41<span style="font-size:9px;opacity:.6;">●●●</span></div>
+        <div class="phone-content" style="padding-top:6px;">
+          <div class="m-back"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D8B56D" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg><span>Geri</span></div>
+          <div class="m-eyebrow">İlişki Analizi</div>
+          <div class="m-title" style="font-size:15px;">İlişki Enerji Analizi</div>
+          <div style="display:flex;justify-content:center;gap:6px;padding:2px 0;">
+            <div style="width:56px;height:86px;border-radius:6px;background:var(--surf);border:1px solid var(--ac);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:5px 3px;">
+              <div style="font-size:6px;color:var(--ac);font-weight:600;text-transform:uppercase;">Sen</div>
+              <div style="font-size:8px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;text-align:center;">The Moon</div>
+              <div style="font-size:6px;color:var(--fa);">düz</div>
+            </div>
+            <div style="width:56px;height:86px;border-radius:6px;background:var(--surf);border:1px solid var(--ac);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:5px 3px;">
+              <div style="font-size:6px;color:var(--ac);font-weight:600;text-transform:uppercase;">Karşı</div>
+              <div style="font-size:8px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;text-align:center;">Two of Cups</div>
+              <div style="font-size:6px;color:var(--fa);">ters</div>
+            </div>
+            <div style="width:56px;height:86px;border-radius:6px;background:var(--surf);border:1px solid var(--ac);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:5px 3px;">
+              <div style="font-size:6px;color:var(--ac);font-weight:600;text-transform:uppercase;">Dinamik</div>
+              <div style="font-size:8px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;text-align:center;">Justice</div>
+              <div style="font-size:6px;color:var(--fa);">düz</div>
+            </div>
+          </div>
+          <div style="background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:7px;">
+            <div style="font-size:11px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;">Enerji haritası</div>
+            <div class="score-row"><div class="score-lbl">Duygusal çekim<b>72</b></div><div class="score-track"><div class="score-fill" style="width:72%;"></div></div></div>
+            <div class="score-row"><div class="score-lbl">İletişim netliği<b>48</b></div><div class="score-track"><div class="score-fill" style="width:48%;"></div></div></div>
+            <div class="score-row"><div class="score-lbl">Belirsizlik<b>81</b></div><div class="score-track"><div class="score-fill" style="width:81%;"></div></div></div>
+            <div class="score-row"><div class="score-lbl">Projeksiyon riski<b>67</b></div><div class="score-track"><div class="score-fill" style="width:67%;"></div></div></div>
+          </div>
+          <div class="m-card acc"><div class="m-card-t">Öneri</div><div class="m-card-b">Kararı tek bir yorumla verme; küçük, saygılı ve net bir iletişim denemesi daha güvenilir veri sağlayabilir.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="right">
+      <div class="slide-tag">07 — Yorum Detayı</div>
+      <div class="slide-title">Sayılar değil,<br/>yönlendirme</div>
+      <div class="slide-sub">Enerji haritası skor vermez, olasılık gösterir. Niyet okuması değil; dinamik ayrımı.</div>
+      <div class="feature-list">
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Enerji haritası</b> — 4 boyutlu skor, yüzde değil gösterge olarak okunmalı</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Kart flip</b> — her kart pozisyonuna ve yorumuna dokunarak ulaşılır</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>"Neye dayanıyor?"</b> — şeffaflık bloğu, güven inşa eder</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Geri bildirim</b> — isabetli / kısmen / isabetsiz → memory profile güncellenir</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 08 NATAL HARİTA -->
+<section data-screen-label="08 Natal Harita">
+  <div class="slide-inner">
+    <div class="left">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-island"></div>
+        <div class="phone-bar"></div>
+        <div class="phone-status">9:41<span style="font-size:9px;opacity:.6;">●●●</span></div>
+        <div class="phone-content" style="padding-top:6px;align-items:center;">
+          <div class="m-back"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D8B56D" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg><span>Profil</span></div>
+          <div class="m-eyebrow">Natal Harita</div>
+          <div class="m-title" style="font-size:14px;">Doğum haritanın şiiri</div>
+          <svg width="220" height="220" viewBox="0 0 292 292">
+            <defs>
+              <script type="text/babel">
+              </script>
+            </defs>
+            <!-- simplified zodiac wheel -->
+            <circle cx="146" cy="146" r="134" fill="none" stroke="#293241" stroke-width=".5"/>
+            <circle cx="146" cy="146" r="114" fill="none" stroke="#293241" stroke-width=".5"/>
+            <circle cx="146" cy="146" r="94"  fill="#0D1119" stroke="#293241" stroke-width=".6"/>
+            <circle cx="146" cy="146" r="78"  fill="#090B10" stroke="#293241" stroke-width=".5"/>
+            <!-- 12 dividers -->
+            <line x1="146" y1="12" x2="146" y2="280" stroke="#293241" stroke-width=".4" opacity=".5"/>
+            <line x1="12"  y1="146" x2="280" y2="146" stroke="#293241" stroke-width=".4" opacity=".5"/>
+            <line x1="51"  y1="51" x2="241" y2="241" stroke="#293241" stroke-width=".4" opacity=".4"/>
+            <line x1="241" y1="51" x2="51"  y2="241" stroke="#293241" stroke-width=".4" opacity=".4"/>
+            <line x1="79"  y1="12" x2="213" y2="280" stroke="#293241" stroke-width=".3" opacity=".3"/>
+            <line x1="213" y1="12" x2="79"  y2="280" stroke="#293241" stroke-width=".3" opacity=".3"/>
+            <line x1="12"  y1="79" x2="280" y2="213" stroke="#293241" stroke-width=".3" opacity=".3"/>
+            <line x1="12"  y1="213" x2="280" y2="79" stroke="#293241" stroke-width=".3" opacity=".3"/>
+            <!-- zodiac signs -->
+            <text x="146" y="26"  text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♈</text>
+            <text x="211" y="45"  text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♉</text>
+            <text x="255" y="100" text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♊</text>
+            <text x="268" y="150" text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♋</text>
+            <text x="255" y="205" text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♌</text>
+            <text x="211" y="255" text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♍</text>
+            <text x="146" y="272" text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♎</text>
+            <text x="85"  y="255" text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♏</text>
+            <text x="38"  y="205" text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♐</text>
+            <text x="24"  y="150" text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♑</text>
+            <text x="38"  y="100" text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♒</text>
+            <text x="85"  y="45"  text-anchor="middle" font-size="11" fill="#D8B56D" font-family="serif" opacity=".8">♓</text>
+            <!-- planet lines + dots -->
+            <line x1="146" y1="146" x2="211" y2="82"  stroke="#E8C870" stroke-width=".8" opacity=".4"/>
+            <line x1="146" y1="146" x2="140" y2="68"  stroke="#C8D4E8" stroke-width=".8" opacity=".4"/>
+            <line x1="146" y1="146" x2="200" y2="104" stroke="#D8B56D" stroke-width=".8" opacity=".4"/>
+            <line x1="146" y1="146" x2="206" y2="92"  stroke="#A7AFBD" stroke-width=".8" opacity=".4"/>
+            <circle cx="204" cy="89"  r="6" fill="#121722" stroke="#E8C870" stroke-width="1.2"/>
+            <text   x="204"  y="93"  text-anchor="middle" font-size="6" fill="#E8C870" font-family="serif">☉</text>
+            <circle cx="141" cy="71"  r="6" fill="#121722" stroke="#C8D4E8" stroke-width="1.2"/>
+            <text   x="141"  y="75"  text-anchor="middle" font-size="6" fill="#C8D4E8" font-family="serif">☽</text>
+            <circle cx="194" cy="107" r="6" fill="#121722" stroke="#D8B56D" stroke-width="1.2"/>
+            <text   x="194"  y="111" text-anchor="middle" font-size="5" fill="#D8B56D" font-family="sans-serif">AC</text>
+            <circle cx="210" cy="94"  r="6" fill="#121722" stroke="#A7AFBD" stroke-width="1.2"/>
+            <text   x="210"  y="98"  text-anchor="middle" font-size="6" fill="#A7AFBD" font-family="serif">☿</text>
+            <circle cx="146" cy="146" r="3.5" fill="#D8B56D" opacity=".7"/>
+          </svg>
+          <div style="background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:9px;display:flex;flex-direction:column;gap:4px;width:100%;">
+            <div style="font-size:10px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;">Gezegen konumları</div>
+            <div style="display:flex;justify-content:space-between;font-size:8px;"><span style="color:var(--mu);">☉ Güneş</span><span style="color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;">İkizler</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:8px;"><span style="color:var(--mu);">☽ Ay</span><span style="color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;">Balık</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:8px;"><span style="color:var(--mu);">AC Yükselen</span><span style="color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:600;">Aslan</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="right">
+      <div class="slide-tag">08 — Natal Harita ✦ Yeni</div>
+      <div class="slide-title">Doğum haritası<br/>görselleşir</div>
+      <div class="slide-sub">Swiss Ephemeris ile hesaplanan natal harita, interaktif SVG çark olarak gösterilir. Her gezegen konumu sembolik yorumla eşleşir.</div>
+      <div class="feature-list">
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Pure SVG çark</b> — 12 burç, gezegen konumları, ev çizgileri</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Swiss Ephemeris</b> — Python microservice ile gerçek hesaplama</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Element renklendirme</b> — ateş, toprak, hava, su görsel ayrımı</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Yorumla bağlantı</b> — güneş/ay/yükselen tüm yorumlarda kullanılır</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 09 HAFIZA -->
+<section data-screen-label="09 Hafıza">
+  <div class="slide-inner">
+    <div class="left">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-island"></div>
+        <div class="phone-bar"></div>
+        <div class="phone-status">9:41<span style="font-size:9px;opacity:.6;">●●●</span></div>
+        <div class="phone-content" style="padding-top:6px;">
+          <div class="m-back"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D8B56D" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg><span>Profil</span></div>
+          <div class="m-eyebrow">Hafıza</div>
+          <div class="m-title" style="font-size:15px;">Mirror seni hatırlıyor</div>
+          <div class="m-sub">Kaydettiğin anlar, yorumların bağlamını derinleştirir.</div>
+          <div class="m-btn-p">+ Yeni an ekle</div>
+          <div style="display:flex;flex-direction:column;gap:0;">
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
+                <div style="width:24px;height:24px;border-radius:50%;background:var(--acs);border:1px solid var(--ac);display:flex;align-items:center;justify-content:center;font-size:10px;">💫</div>
+                <div style="width:1px;height:22px;background:var(--brd);opacity:.4;"></div>
+              </div>
+              <div style="flex:1;padding-bottom:8px;">
+                <div style="font-size:7px;color:var(--fa);margin-bottom:2px;">2024-12-10</div>
+                <div style="font-size:9px;color:var(--mu);line-height:1.5;font-weight:300;">A. ile son görüşme — uzaklaştığını fark ettim ama ses çıkarmadım.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
+                <div style="width:24px;height:24px;border-radius:50%;background:var(--acs);border:1px solid var(--ac);display:flex;align-items:center;justify-content:center;font-size:10px;">🔄</div>
+                <div style="width:1px;height:22px;background:var(--brd);opacity:.4;"></div>
+              </div>
+              <div style="flex:1;padding-bottom:8px;">
+                <div style="font-size:7px;color:var(--fa);margin-bottom:2px;">2024-11-23</div>
+                <div style="font-size:9px;color:var(--mu);line-height:1.5;font-weight:300;">Yine ulaşılması zor birine ilgi duyduğumu fark ettim.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
+                <div style="width:24px;height:24px;border-radius:50%;background:var(--acs);border:1px solid var(--ac);display:flex;align-items:center;justify-content:center;font-size:10px;">☕</div>
+                <div style="width:1px;height:22px;background:var(--brd);opacity:.4;"></div>
+              </div>
+              <div style="flex:1;padding-bottom:8px;">
+                <div style="font-size:7px;color:var(--fa);margin-bottom:2px;">2024-10-05</div>
+                <div style="font-size:9px;color:var(--mu);line-height:1.5;font-weight:300;">Kahve falı: "yol" sembolü o ay başladığım projeyi anlatıyordu.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
+                <div style="width:24px;height:24px;border-radius:50%;background:var(--acs);border:1px solid var(--ac);display:flex;align-items:center;justify-content:center;font-size:10px;">🌙</div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:7px;color:var(--fa);margin-bottom:2px;">2024-09-18</div>
+                <div style="font-size:9px;color:var(--mu);line-height:1.5;font-weight:300;">Tekrarlayan kapı rüyası — karar noktasında hissediyorum.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="right">
+      <div class="slide-tag">09 — Hafıza ✦ Yeni</div>
+      <div class="slide-title">AI seni<br/>hatırlıyor</div>
+      <div class="slide-sub">Kullanıcı anlarını kaydeder; Mirror bu olayları gelecekteki yorumların bağlamına ekler. Jenerik değil, senin geçmişin.</div>
+      <div class="feature-list">
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Timeline UI</b> — kronolojik, ikon-etiketli hafıza akışı</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Anında ekleme</b> — inline form, sayfa geçişi yok</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Supabase memory_events</b> — tüm anlar sunucuda kullanıcıya özgü saklanır</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Yorum bağlamı</b> — Edge Function hafıza olaylarını prompt'a enjekte eder</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 10 KREDİLER -->
+<section data-screen-label="10 Krediler">
+  <div class="slide-inner">
+    <div class="left">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-island"></div>
+        <div class="phone-bar"></div>
+        <div class="phone-status">9:41<span style="font-size:9px;opacity:.6;">●●●</span></div>
+        <div class="phone-content" style="padding-top:6px;">
+          <div class="m-back"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D8B56D" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg><span>Profil</span></div>
+          <div class="m-eyebrow">Krediler</div>
+          <div class="m-title" style="font-size:15px;">Yorumlar için yakıt</div>
+          <div style="background:var(--acs);border:1px solid var(--ac);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:32px;color:var(--ac);font-family:'Cormorant Garamond',serif;font-weight:300;line-height:1;">120</div>
+            <div>
+              <div style="font-size:10px;color:var(--tx);font-weight:600;">Mevcut kredi</div>
+              <div style="font-size:8px;color:var(--mu);">Son yenileme: bugün</div>
+            </div>
+          </div>
+          <div class="m-card"><div class="m-card-t">Başlangıç</div><div style="display:flex;justify-content:space-between;margin-top:2px;"><div class="m-card-b">İlk 20 kredi</div><div style="font-size:10px;color:var(--tx);font-weight:700;">Ücretsiz</div></div></div>
+          <div style="background:var(--acs);border:1px solid var(--ac);border-radius:8px;padding:9px 11px;display:flex;flex-direction:column;gap:3px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div>
+                <div class="m-card-t">Ay Paketi</div>
+                <div class="m-card-b">Aylık yenilenir</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:11px;color:var(--ac);font-weight:700;">₺89</div>
+                <div style="font-size:7px;color:var(--fa);">100 kredi</div>
+              </div>
+            </div>
+          </div>
+          <div class="m-card"><div class="m-card-t">Yıllık Premium</div><div style="display:flex;justify-content:space-between;margin-top:2px;"><div class="m-card-b">Sınırsız + hafıza derinliği</div><div style="font-size:10px;color:var(--tx);font-weight:700;">₺399/yıl</div></div></div>
+          <div class="m-btn-p">Satın al</div>
+          <div style="font-size:7.5px;color:var(--fa);text-align:center;line-height:1.5;">Abonelik istediğinde iptal edilebilir.</div>
+        </div>
+      </div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="right">
+      <div class="slide-tag">10 — Krediler ✦ Yeni</div>
+      <div class="slide-title">Monetizasyon<br/>şeffaf ve net</div>
+      <div class="slide-sub">Freemium model: ilk 20 kredi ücretsiz, yorum başına 1 kredi. Premium hafıza ve natal derinliği açar.</div>
+      <div class="feature-list">
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>3 paket tiyeri</b> — Başlangıç (free), Ay Paketi, Yıllık Premium</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Canlı bakiye</b> — ekranın üstünde her zaman görünür</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>RevenueCat entegrasyon</b> — src/features/premium/revenueCat.ts hazır</div></div>
+        <div class="feature-item"><div class="feature-dot"></div><div class="feature-text"><b>Güvenlik dili</b> — "eğlence amaçlı" notu her işlem ekranında</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 11 MİMARİ -->
+<section data-screen-label="11 Mimari">
+  <div class="slide-inner" style="padding:80px 120px;flex-direction:column;gap:48px;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:12px;color:var(--ac);font-weight:600;letter-spacing:.12em;text-transform:uppercase;">11 — Teknik Altyapı</div>
+      <div style="font-size:72px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:300;line-height:1.05;">Stack & Mimari</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:28px;">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="font-size:13px;color:var(--ac);font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid var(--brd);">Mobil</div>
+        <div style="font-size:15px;color:var(--tx);font-weight:600;">Expo + React Native</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">Expo Router</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">Zustand state</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">TanStack Query</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">RHF + Zod</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="font-size:13px;color:var(--ac);font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid var(--brd);">Backend</div>
+        <div style="font-size:15px;color:var(--tx);font-weight:600;">Supabase</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">Postgres + RLS</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">Edge Functions</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">Storage</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">Auth</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="font-size:13px;color:var(--ac);font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid var(--brd);">AI Katmanı</div>
+        <div style="font-size:15px;color:var(--tx);font-weight:600;">Mock → Gemini</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">gemini-2.5-flash-lite</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">6 Edge Function</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">Provider abstraction</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">Memory profil inject</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="font-size:13px;color:var(--ac);font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid var(--brd);">Astroloji</div>
+        <div style="font-size:15px;color:var(--tx);font-weight:600;">Swiss Ephemeris</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">Python microservice</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">FastAPI / uvicorn</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">Port 8010</div>
+        <div style="font-size:14px;color:var(--mu);font-weight:300;">AGPL licensed</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ 12 KAPANIŞ -->
+<section data-screen-label="12 Kapanış">
+  <div class="stars">
+    <div class="star" style="left:5%;top:8%;width:2px;height:2px;opacity:.5;"></div>
+    <div class="star" style="left:82%;top:11%;width:1.5px;height:1.5px;opacity:.4;"></div>
+    <div class="star" style="left:46%;top:4%;width:1px;height:1px;opacity:.35;"></div>
+    <div class="star" style="left:91%;top:22%;width:2px;height:2px;opacity:.3;"></div>
+    <div class="star" style="left:18%;top:75%;width:1.5px;height:1.5px;opacity:.45;"></div>
+    <div class="star" style="left:70%;top:68%;width:2px;height:2px;opacity:.25;"></div>
+    <div class="star" style="left:93%;top:80%;width:1.5px;height:1.5px;opacity:.3;"></div>
+    <div class="star" style="left:55%;top:90%;width:1px;height:1px;opacity:.4;"></div>
+  </div>
+  <div class="slide-inner closing-slide">
+    <div>
+      <svg width="56" height="56" viewBox="0 0 52 52" fill="none">
+        <circle cx="26" cy="26" r="24" stroke="#D8B56D" stroke-width=".6" opacity=".3"/>
+        <circle cx="26" cy="26" r="18" stroke="#D8B56D" stroke-width=".6" opacity=".5"/>
+        <circle cx="26" cy="26" r="11" stroke="#D8B56D" stroke-width=".7" opacity=".8"/>
+        <circle cx="26" cy="26" r="4"  fill="#D8B56D"   opacity=".9"/>
+      </svg>
+    </div>
+    <div style="font-size:80px;color:var(--tx);font-family:'Cormorant Garamond',serif;font-weight:300;">Sonraki Adımlar</div>
+    <div style="width:48px;height:1px;background:var(--ac);opacity:.7;margin:0 auto;"></div>
+    <div class="closing-chips">
+      <div class="closing-chip hi">Supabase bağlantısı</div>
+      <div class="closing-chip hi">Gemini AI entegrasyonu</div>
+      <div class="closing-chip">RevenueCat ödeme</div>
+      <div class="closing-chip">Coffee vision modeli</div>
+      <div class="closing-chip hi">Lisans kararı (Swiss Ephemeris)</div>
+      <div class="closing-chip">Push notification</div>
+      <div class="closing-chip">App Store gönderimi</div>
+    </div>
+    <div style="font-size:16px;color:var(--fa);font-weight:300;margin-top:8px;">Mirror AI · Expo + Supabase + Swiss Ephemeris · Mock-first, AI-ready</div>
+  </div>
+</section>
+
+</deck-stage>
+<script type="application/json" id="speaker-notes">
+[
+  "Mirror AI — kişisel hafızalı spiritüel içgörü asistanı. Tarot, kahve falı, ilişki analizi ve natal haritayı tek bir kişisel profille birleştirir. Amaç: jenerik kehanet değil, sizi tanıyan yorumlar.",
+  "Hoşgeldin ekranı güven üzerine kurulu. İlk andan 'kesin kehanet değil' mesajını verir. Misafir akışı zorunlu değil, hesap olmadan da başlanabilir.",
+  "Üç soruluk profil testi — belirsizliğe tepki, tekrar döngüsü ve rezonans stili. Bu yanıtlar Mystic Profile'a dönüşür ve tüm yorumların filtresi olur.",
+  "Reveal anı. Kullanıcı onboarding sonunda bir kimlikle çıkıyor: Sezgisel Gözlemci, Duygusal Analist veya Döngü Kırıcı. Bu kimlik Supabase'de hafızaya alınır.",
+  "Ana ekran: kişiselleştirilmiş günlük enerji kartı, hızlı erişim grid'i ve geçmiş yorumlar. Her gün farklı bir insight — jenerik bir yorum değil, profil bağlamlı.",
+  "Tarot ekranı: dört açılım tipi, kart back mandala SVG, yorum detayında flip animasyonu. Her kart pozisyonu ayrı sembolik yük taşır.",
+  "Yorum detayı: tarot kartları çevrilir, ilişki analizinde enerji haritası gösterilir. 'Neye dayanıyor?' bloğu şeffaflık sağlar. Geri bildirim memory profile'ı günceller.",
+  "Yeni ekran: natal harita. Swiss Ephemeris ile Python microservice'ten gelen gerçek hesaplama, pure SVG çark olarak görselleştirilir. Element renklendirme ve gezegen konumları.",
+  "Yeni ekran: hafıza timeline'ı. Kullanıcı kendi anlarını kaydeder. Edge Function bu olayları sonraki yorumların prompt'una enjekte eder — bu Mirror AI'nın temel farkı.",
+  "Yeni ekran: krediler. Freemium model, şeffaf fiyatlandırma. RevenueCat entegrasyonu hazır ama henüz etkin değil. Premium hafıza ve natal derinliği açar.",
+  "Teknik altyapı: Expo + React Native, Supabase, Gemini 2.5 Flash Lite, Swiss Ephemeris. Mock-first mimari — tüm AI çağrıları provider abstraction arkasında, anahtarlar olmadan çalışır.",
+  "Sonraki adımlar: Supabase bağlantısı, Gemini entegrasyonu, RevenueCat ödeme, kahve vision modeli ve Swiss Ephemeris lisans kararı. Mirror AI açılışa hazır zemin üzerinde."
+]
+</script>
+</body>
+</html>

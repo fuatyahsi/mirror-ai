@@ -1,7 +1,9 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
+import { recordCreditSpend, requirePaidAccess } from "../shared/credits.ts";
 import { buildSourceContext, normalizeLocale, sourceLabels } from "../shared/sourceContext.ts";
+import { extractCoffeeSymbols } from "../shared/visionProvider.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -12,8 +14,9 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const locale = normalizeLocale(body.locale);
     const labels = sourceLabels(locale);
-
+    const creditAccess = user ? await requirePaidAccess("coffee", user.id) : null;
     const cupImageUrl = body.cup_image_url ?? "local-dev-coffee-image-placeholder";
+    const shouldStoreImage = body.do_not_store_image !== true;
 
     const { data: dbProfile } = user
       ? await supabase
@@ -26,17 +29,14 @@ Deno.serve(async (req) => {
     const profile = dbProfile ?? body.profile ?? body.client_profile ?? null;
     const memory = body.memory ?? body.client_memory ?? [];
     const astrology = body.astrology ?? body.astro_context ?? body.natal_chart ?? null;
-
-    const detectedSymbols =
-      locale === "en"
-        ? [
-            { symbol: "road", label: "Road", meaning: "Movement, news, or a change of direction", confidence: 0.71 },
-            { symbol: "ring", label: "Ring", meaning: "Bond, loop, or repeated relationship theme", confidence: 0.64 }
-          ]
-        : [
-            { symbol: "road", label: "Yol", meaning: "Hareket, haber veya yön değişimi", confidence: 0.71 },
-            { symbol: "ring", label: "Yüzük", meaning: "Bağ, döngü veya tekrar eden ilişki teması", confidence: 0.64 }
-          ];
+    const vision = await extractCoffeeSymbols({
+      cupImageUrl,
+      plateImageUrl: body.plate_image_url,
+      topic: body.topic,
+      question: body.question,
+      locale
+    });
+    const detectedSymbols = vision.detected_symbols;
 
     const provider = getAIProvider();
     const sourceContext = buildSourceContext({
@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
         plate_image_url: body.plate_image_url,
         user_context: body.context,
         detected_symbols: detectedSymbols,
+        image_quality: vision.image_quality,
         astrology_context: astrology
       },
       profile,
@@ -72,6 +73,7 @@ Deno.serve(async (req) => {
         reading_id: crypto.randomUUID(),
         persisted: false,
         detected_symbols: detectedSymbols,
+        image_quality: vision.image_quality,
         ...result,
         source_context: sourceContext
       });
@@ -84,10 +86,10 @@ Deno.serve(async (req) => {
         reading_type: "coffee",
         topic: body.topic ?? "general",
         question: body.question ?? null,
-        result_json: { ...result, source_context: sourceContext },
+        result_json: { ...result, detected_symbols: detectedSymbols, source_context: sourceContext },
         explanation_json: result.explanation,
         confidence: result.explanation.confidence,
-        premium_used: true
+        premium_used: Boolean(creditAccess?.isPremium || creditAccess?.shouldSpendCredits)
       })
       .select("id")
       .single();
@@ -95,20 +97,29 @@ Deno.serve(async (req) => {
     if (readingError) throw readingError;
 
     const { error: coffeeError } = await supabase.from("coffee_readings").insert({
-        user_id: user.id,
-        reading_id: reading.id,
-      cup_image_url: cupImageUrl,
-      plate_image_url: body.plate_image_url ?? null,
+      user_id: user.id,
+      reading_id: reading.id,
+      cup_image_url: shouldStoreImage ? cupImageUrl : "deleted_after_analysis",
+      plate_image_url: shouldStoreImage ? body.plate_image_url ?? null : null,
       detected_symbols: detectedSymbols,
-      user_context: { topic: body.topic, context: body.context }
+      user_context: {
+        topic: body.topic,
+        context: body.context,
+        image_quality: vision.image_quality,
+        image_retention: shouldStoreImage ? "stored" : "deleted_after_analysis"
+      }
     });
 
     if (coffeeError) throw coffeeError;
 
+    const billing = creditAccess ? await recordCreditSpend(user.id, creditAccess, reading.id) : null;
+
     return jsonResponse({
       reading_id: reading.id,
       persisted: true,
+      billing,
       detected_symbols: detectedSymbols,
+      image_quality: vision.image_quality,
       ...result,
       source_context: sourceContext
     });

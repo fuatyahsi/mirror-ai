@@ -10,6 +10,13 @@ class NatalChartRequest(BaseModel):
     house_system: str = Field(default="P", min_length=1, max_length=1)
 
 
+class SynastryRequest(BaseModel):
+    first: NatalChartRequest
+    second: NatalChartRequest
+    second_birth_time_known: bool = Field(default=True)
+    locale: str = Field(default="tr", pattern="^(tr|en)$")
+
+
 class ZodiacPoint(BaseModel):
     key: str
     label: str
@@ -17,4 +24,3 @@ class ZodiacPoint(BaseModel):
     sign_key: str
     sign_label: str
     degree: float
-

@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Screen } from "@/components/layout/Screen";
 import { calculateMysticProfile, type QuizAnswer } from "@/features/onboarding/profileScoring";
 import { getProfileQuestions } from "@/features/onboarding/quizQuestions";
+import { syncMysticProfile } from "@/features/profileMemory/api";
 import { useI18n } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
@@ -15,19 +16,28 @@ export default function ProfileQuizScreen() {
   const completeOnboarding = useUserStore((state) => state.completeOnboarding);
   const { locale, t } = useI18n();
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
   const questions = getProfileQuestions(locale);
 
   function select(questionId: string, optionId: string) {
     setAnswers((current) => ({ ...current, [questionId]: optionId }));
   }
 
-  function finish() {
+  async function finish() {
     const quizAnswers: QuizAnswer[] = Object.entries(answers).map(([questionId, optionId]) => ({
       questionId,
       optionId
     }));
     const profile = calculateMysticProfile(quizAnswers, locale);
     completeOnboarding(profile);
+    setIsSaving(true);
+    try {
+      await syncMysticProfile(profile);
+    } catch {
+      // Profile is already persisted locally; remote sync can be retried after login or the next edit.
+    } finally {
+      setIsSaving(false);
+    }
     router.replace("/onboarding/result");
   }
 
@@ -54,7 +64,7 @@ export default function ProfileQuizScreen() {
           })}
         </View>
       ))}
-      <PrimaryButton disabled={!completed} onPress={finish}>
+      <PrimaryButton disabled={!completed || isSaving} onPress={finish}>
         {t("quiz.finish")}
       </PrimaryButton>
     </Screen>
@@ -80,12 +90,12 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceSoft,
     padding: spacing.md
   },
   optionActive: {
     borderColor: colors.accent,
-    backgroundColor: colors.accentSoft
+    backgroundColor: colors.surfaceMid
   },
   optionText: {
     color: colors.muted,

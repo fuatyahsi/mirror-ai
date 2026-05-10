@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useI18n } from "@/i18n";
-import { colors, radii, spacing, typography } from "@/theme";
+import { colors, featureColors, radii, spacing, typography } from "@/theme";
 import { formatReadableDate } from "@/utils/date";
 import type { ReadingOutput } from "@/types/readings";
 
@@ -12,14 +12,19 @@ type ReadingCardProps = {
 export function ReadingCard({ reading }: ReadingCardProps) {
   const { locale, t } = useI18n();
   const typeKey = `readingType.${reading.reading_type}` as const;
+  const palette = getReadingPalette(reading.reading_type);
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: palette.surface, borderColor: palette.accent },
+        pressed && styles.pressed
+      ]}
       onPress={() => router.push(`/readings/${reading.id}`)}
     >
       <View style={styles.row}>
-        <Text style={styles.type}>{t(typeKey)}</Text>
+        <Text style={[styles.type, { color: palette.accent }]}>{t(typeKey)}</Text>
         <Text style={styles.date}>{formatReadableDate(reading.created_at, locale)}</Text>
       </View>
       <Text style={styles.title}>{reading.title}</Text>
@@ -30,12 +35,19 @@ export function ReadingCard({ reading }: ReadingCardProps) {
   );
 }
 
+function getReadingPalette(readingType: string) {
+  if (readingType === "coffee") return featureColors.coffee;
+  if (readingType === "tarot") return featureColors.tarot;
+  if (readingType === "numerology") return featureColors.numerology;
+  if (readingType === "relationship") return featureColors.relationship;
+  if (readingType === "birth_chart") return featureColors.astrology;
+  return featureColors.daily;
+}
+
 const styles = StyleSheet.create({
   card: {
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
     paddingHorizontal: 15,
     paddingVertical: 13,
     gap: 5

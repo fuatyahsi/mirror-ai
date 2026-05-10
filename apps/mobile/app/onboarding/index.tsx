@@ -8,7 +8,7 @@ import { Screen } from "@/components/layout/Screen";
 import { LanguageSwitch } from "@/components/settings/LanguageSwitch";
 import { useI18n } from "@/i18n";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { colors, spacing } from "@/theme";
+import { colors, radii, spacing } from "@/theme";
 
 export default function OnboardingStartScreen() {
   const continueAsGuest = useAuthStore((state) => state.continueAsGuest);
@@ -46,6 +46,11 @@ export default function OnboardingStartScreen() {
 const styles = StyleSheet.create({
   brandWrap: {
     minHeight: 176,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
     justifyContent: "center",
     gap: spacing.sm
   },

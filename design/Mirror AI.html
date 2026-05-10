@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mirror AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #04050A; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; font-family: var(--font-body, 'DM Sans', sans-serif); }
+
+  /* ── CSS theme vars ─────────────────────────── */
+  :root {
+    --accent:      #D8B56D;
+    --accent-soft: #3B3220;
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body:    'DM Sans', sans-serif;
+  }
+
+  /* ── Screen animations ──────────────────────── */
+  @keyframes screenEnter {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeUpIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .screen-anim {
+    animation: screenEnter .32s cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  /* ── Phone stage ────────────────────────────── */
+  .stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 52px;
+    height: 100vh;
+    width: 100vw;
+    padding: 24px;
+  }
+
+  /* hide scrollbars inside phone */
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
+
+  /* inputs */
+  input, textarea, button { font-family: inherit; }
+  input::placeholder, textarea::placeholder { color: #707A8A; }
+  input[type=date]::-webkit-calendar-picker-indicator,
+  input[type=time]::-webkit-calendar-picker-indicator { filter: invert(0.45); }
+  textarea { font-family: var(--font-body, 'DM Sans', sans-serif); }
+
+  /* ── Tweaks panel ───────────────────────────── */
+  #tweaks-panel {
+    position: fixed; bottom: 28px; right: 28px;
+    background: #0E1118; border: 1px solid #293241;
+    border-radius: 16px; padding: 20px 20px 16px;
+    display: none; flex-direction: column; gap: 16px;
+    width: 230px; z-index: 9999;
+    box-shadow: 0 12px 40px rgba(0,0,0,.7);
+  }
+  #tweaks-panel.visible { display: flex; }
+
+  .tw-head { font-size: 13px; font-weight: 700; color: #F4EFE7; letter-spacing: .04em; display: flex; justify-content: space-between; align-items: center; }
+  .tw-close { background: none; border: none; cursor: pointer; color: #707A8A; font-size: 18px; line-height: 1; padding: 0; }
+  .tw-section { display: flex; flex-direction: column; gap: 7px; }
+  .tw-label { font-size: 10px; color: #707A8A; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; }
+  .tw-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tw-chip {
+    padding: 5px 11px; border-radius: 16px; font-size: 11px; font-weight: 600;
+    border: 1px solid #293241; background: transparent; color: #A7AFBD;
+    cursor: pointer; transition: all .15s;
+  }
+  .tw-chip.active { border-color: var(--accent, #D8B56D); background: var(--accent-soft, #3B3220); color: #F4EFE7; }
+  .tw-swatch {
+    width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: border-color .15s;
+  }
+  .tw-swatch.active { border-color: #F4EFE7; }
+  .tw-divider { height: 1px; background: #1E2535; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- ── Phone bezel ───────────────────────────────── -->
+  <div id="phone" style="
+    width: 393px; height: 852px; flex-shrink: 0;
+    background: #090B10; border-radius: 54px;
+    border: 8px solid #181E2C;
+    box-shadow:
+      0 0 0 1px #252D40,
+      0 48px 120px rgba(0,0,0,.95),
+      0 10px 30px rgba(0,0,0,.6),
+      inset 0 1px 0 rgba(255,255,255,.07);
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  ">
+    <!-- dynamic island -->
+    <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:22px;z-index:100;pointer-events:none;"></div>
+    <!-- status bar -->
+    <div style="position:absolute;top:0;left:0;right:0;z-index:50;height:59px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 10px;pointer-events:none;">
+      <span style="font-size:15px;font-weight:600;color:#F4EFE7;font-variant-numeric:tabular-nums;font-family:-apple-system,sans-serif;">9:41</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <svg width="17" height="11" viewBox="0 0 19 12" fill="#F4EFE7">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx=".7"/>
+          <rect x="4.8" y="5"   width="3.2" height="7"   rx=".7"/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx=".7"/>
+          <rect x="14.4" y="0" width="3.2" height="12"   rx=".7"/>
+        </svg>
+        <svg width="15" height="11" viewBox="0 0 17 12" fill="#F4EFE7">
+          <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z"/>
+          <path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z"/>
+          <circle cx="8.5" cy="10.5" r="1.5"/>
+        </svg>
+        <svg width="25" height="12" viewBox="0 0 27 13" fill="none">
+          <rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke="#F4EFE7" strokeOpacity=".35"/>
+          <rect x="2" y="2" width="20" height="9" rx="2" fill="#F4EFE7"/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5 26.5 5.8 25.8 4.8 25 4.5Z" fill="#F4EFE7" fillOpacity=".4"/>
+        </svg>
+      </div>
+    </div>
+    <!-- home indicator -->
+    <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:139px;height:5px;background:rgba(255,255,255,.5);border-radius:100px;z-index:100;pointer-events:none;"></div>
+    <!-- React root -->
+    <div id="root" style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding-top:59px;"></div>
+  </div>
+
+  <!-- ── Sidebar info ──────────────────────────────── -->
+  <div style="display:flex;flex-direction:column;gap:24px;max-width:250px;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:10px;color:var(--accent,#D8B56D);font-weight:600;letter-spacing:.12em;text-transform:uppercase;">Mirror AI</div>
+      <div style="font-size:28px;color:#F4EFE7;font-family:var(--font-display,'Cormorant Garamond',serif);font-weight:400;line-height:1.1;">İnteraktif<br/>Prototip</div>
+      <div style="font-size:11px;color:#707A8A;line-height:1.75;font-weight:300;">Tüm ekranlar çalışır. Onboarding'den geçin, tarot açın, natal haritaya bakın.</div>
+    </div>
+    <div style="height:1px;background:#1E2535;"></div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="font-size:10px;color:#A7AFBD;font-weight:600;letter-spacing:.08em;">13 EKRAN</div>
+      <div style="font-size:11px;color:#707A8A;line-height:1.8;">
+        Splash · Onboarding · Profil Testi<br/>
+        Ana Ekran · Tarot · Kahve Falı<br/>
+        İlişki Analizi · Yorum Detayı<br/>
+        <span style="color:var(--accent,#D8B56D);">Natal Harita · Hafıza · Krediler</span> ✦ yeni
+      </div>
+    </div>
+    <div style="height:1px;background:#1E2535;"></div>
+    <div style="font-size:11px;color:#707A8A;line-height:1.8;">
+      Kartlara dokun → çevir<br/>
+      Profil → Natal Harita / Hafıza<br/>
+      Tweaks → tema rengi / font
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Tweaks panel ────────────────────────────────── -->
+<div id="tweaks-panel">
+  <div class="tw-head">
+    Tweaks
+    <button class="tw-close" onclick="closeTweaks()">×</button>
+  </div>
+
+  <div class="tw-section">
+    <div class="tw-label">Ekrana atla</div>
+    <div class="tw-row">
+      <button class="tw-chip" onclick="jumpTo('splash')">Splash</button>
+      <button class="tw-chip" onclick="jumpTo('onboarding-welcome')">Onboarding</button>
+      <button class="tw-chip" onclick="jumpTo('tabs')">Ana ekran</button>
+    </div>
+    <div class="tw-row">
+      <button class="tw-chip" onclick="jumpTo('natal-chart')">Natal harita</button>
+      <button class="tw-chip" onclick="jumpTo('credits')">Krediler</button>
+    </div>
+  </div>
+
+  <div class="tw-divider"></div>
+
+  <div class="tw-section">
+    <div class="tw-label">Tema rengi</div>
+    <div class="tw-row" id="swatch-row">
+      <div class="tw-swatch active" data-accent="#D8B56D" data-soft="#3B3220" style="background:#D8B56D;" title="Altın" onclick="setTheme(this)"></div>
+      <div class="tw-swatch"       data-accent="#C4A8E0" data-soft="#2D2442" style="background:#C4A8E0;" title="Lavanta" onclick="setTheme(this)"></div>
+      <div class="tw-swatch"       data-accent="#7EC8A0" data-soft="#1A3028" style="background:#7EC8A0;" title="Zümrüt" onclick="setTheme(this)"></div>
+      <div class="tw-swatch"       data-accent="#E0A8B8" data-soft="#3D2030" style="background:#E0A8B8;" title="Gül" onclick="setTheme(this)"></div>
+      <div class="tw-swatch"       data-accent="#FF9B72" data-soft="#3D1E10" style="background:#FF9B72;" title="Kor" onclick="setTheme(this)"></div>
+    </div>
+  </div>
+
+  <div class="tw-section">
+    <div class="tw-label">Tipografi</div>
+    <div class="tw-row" id="font-row">
+      <button class="tw-chip active" data-display="'Cormorant Garamond',serif" data-body="'DM Sans',sans-serif" onclick="setFont(this)">Klasik</button>
+      <button class="tw-chip"        data-display="'Playfair Display',serif"   data-body="'Inter',sans-serif"   onclick="setFont(this)">Modern</button>
+      <button class="tw-chip"        data-display="'DM Serif Display',serif"   data-body="'DM Sans',sans-serif" onclick="setFont(this)">Minimal</button>
+    </div>
+  </div>
+
+  <div class="tw-divider"></div>
+
+  <div class="tw-section">
+    <div class="tw-label">Başlangıç hızı</div>
+    <div class="tw-row" id="speed-row">
+      <button class="tw-chip active" data-dur=".32s" onclick="setSpeed(this)">Normal</button>
+      <button class="tw-chip"        data-dur=".08s" onclick="setSpeed(this)">Hızlı</button>
+      <button class="tw-chip"        data-dur=".7s"  onclick="setSpeed(this)">Yavaş</button>
+    </div>
+  </div>
+</div>
+
+<script type="text/babel" src="mirror-ui.jsx"></script>
+<script type="text/babel" src="mirror-screens.jsx"></script>
+
+<script>
+// ── Tweaks protocol ───────────────────────────────────────
+window.addEventListener('message', e => {
+  if (e.data?.type === '__activate_edit_mode')   document.getElementById('tweaks-panel').classList.add('visible');
+  if (e.data?.type === '__deactivate_edit_mode') document.getElementById('tweaks-panel').classList.remove('visible');
+});
+window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+
+function closeTweaks() {
+  document.getElementById('tweaks-panel').classList.remove('visible');
+  window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+}
+
+// ── Jump to screen ────────────────────────────────────────
+function jumpTo(s) {
+  if (window.__mirrorSetScreen) window.__mirrorSetScreen(s);
+}
+
+// ── Color theme ───────────────────────────────────────────
+function setTheme(el) {
+  document.querySelectorAll('#swatch-row .tw-swatch').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  const r = document.documentElement.style;
+  r.setProperty('--accent', el.dataset.accent);
+  r.setProperty('--accent-soft', el.dataset.soft);
+}
+
+// ── Typography ────────────────────────────────────────────
+function setFont(el) {
+  document.querySelectorAll('#font-row .tw-chip').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const r = document.documentElement.style;
+  r.setProperty('--font-display', el.dataset.display);
+  r.setProperty('--font-body',    el.dataset.body);
+}
+
+// ── Animation speed ───────────────────────────────────────
+function setSpeed(el) {
+  document.querySelectorAll('#speed-row .tw-chip').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const sheet = document.styleSheets[0];
+  // Update the .screen-anim animation-duration via a dynamic style
+  let dynStyle = document.getElementById('dyn-style');
+  if (!dynStyle) { dynStyle = document.createElement('style'); dynStyle.id='dyn-style'; document.head.appendChild(dynStyle); }
+  dynStyle.textContent = `.screen-anim { animation-duration: ${el.dataset.dur} !important; }`;
+}
+</script>
+</body>
+</html>

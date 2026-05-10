@@ -41,7 +41,8 @@ const copy = {
       dynamic: "ilişki dinamiği",
       option_a: "seçenek A",
       option_b: "seçenek B",
-      subconscious_influence: "bilinçaltı etki"
+      subconscious_influence: "bilinçaltı etki",
+      clarifier: "netleştirici kart"
     },
     orientations: {
       upright: "düz",
@@ -88,7 +89,8 @@ const copy = {
       dynamic: "relationship dynamic",
       option_a: "option A",
       option_b: "option B",
-      subconscious_influence: "subconscious influence"
+      subconscious_influence: "subconscious influence",
+      clarifier: "clarifier card"
     },
     orientations: {
       upright: "upright",
@@ -147,6 +149,17 @@ function astrologyReferences(astrology: Record<string, unknown> | null | undefin
       ...aspects.slice(0, 4).map((aspect) => {
         const between = Array.isArray(aspect.between) ? aspect.between.join(" - ") : "planets";
         return `${aspect.label || aspect.type}: ${between}`;
+      })
+    );
+  }
+
+  const synastry = astrology.synastry as Record<string, unknown> | undefined;
+  const synastryAspects = synastry?.key_aspects as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(synastryAspects)) {
+    refs.push(
+      ...synastryAspects.slice(0, 5).map((aspect) => {
+        const between = Array.isArray(aspect.between) ? aspect.between.join(" - ") : "synastry";
+        return `Synastry ${aspect.label || aspect.type}: ${between}, orb ${aspect.orb}`;
       })
     );
   }

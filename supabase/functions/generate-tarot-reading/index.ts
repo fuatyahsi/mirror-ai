@@ -222,6 +222,51 @@ function localizedCard(card: TarotDeckCard, locale: "tr" | "en") {
   };
 }
 
+function normalizeOrientation(value: unknown): "upright" | "reversed" {
+  return value === "reversed" ? "reversed" : "upright";
+}
+
+function buildTarotQuestion(question: unknown, clarifierQuestion: unknown, locale: "tr" | "en") {
+  const primary = typeof question === "string" ? question.trim() : "";
+  const clarifier = typeof clarifierQuestion === "string" ? clarifierQuestion.trim() : "";
+  if (!clarifier) return primary || undefined;
+
+  return locale === "en"
+    ? `Primary question: ${primary}\nClarifier question: ${clarifier}`
+    : `Ana soru: ${primary}\nNetleştirici soru: ${clarifier}`;
+}
+
+function incomingCardToDeckCard(
+  incoming: Record<string, unknown>,
+  deckByKey: Map<string, TarotDeckCard>,
+  index: number
+): TarotDeckCard {
+  const key = typeof incoming.card_key === "string" ? incoming.card_key : "";
+  const knownCard = key ? deckByKey.get(key) : undefined;
+  if (knownCard) return knownCard;
+
+  const name =
+    typeof incoming.card_name_en === "string"
+      ? incoming.card_name_en
+      : typeof incoming.card === "string"
+        ? incoming.card
+        : `Selected card ${index + 1}`;
+  const meaning =
+    typeof incoming.meaning === "string"
+      ? incoming.meaning
+      : typeof incoming.upright_meaning === "string"
+        ? incoming.upright_meaning
+        : "Symbolic card selected by the user.";
+
+  return {
+    card_key: key || `client_selected_${index + 1}`,
+    name,
+    arcana: "major",
+    upright_meaning: typeof incoming.upright_meaning === "string" ? incoming.upright_meaning : meaning,
+    reversed_meaning: typeof incoming.reversed_meaning === "string" ? incoming.reversed_meaning : meaning
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -232,7 +277,13 @@ Deno.serve(async (req) => {
     const locale = normalizeLocale(body.locale);
     const labels = sourceLabels(locale);
     const spreadType = body.spread_type ?? "three_card";
-    const positions = spreadPositions[spreadType] ?? spreadPositions.three_card;
+    const basePositions = spreadPositions[spreadType] ?? spreadPositions.three_card;
+    const clarifierQuestion =
+      typeof body.clarifier_question === "string" && body.clarifier_question.trim().length > 0
+        ? body.clarifier_question.trim()
+        : "";
+    const positions = clarifierQuestion ? [...basePositions, "clarifier"] : basePositions;
+    const fullQuestion = buildTarotQuestion(body.question, clarifierQuestion, locale);
 
     const { data: deck, error: deckError } = await supabase
       .from("tarot_decks")
@@ -241,14 +292,29 @@ Deno.serve(async (req) => {
 
     if (deckError) throw deckError;
 
-    const selectedDeck = shuffled((deck?.length ? deck : fallbackCards) as TarotDeckCard[]).slice(0, positions.length);
+    const availableDeck = (deck?.length ? deck : fallbackCards) as TarotDeckCard[];
+    const deckByKey = new Map(availableDeck.map((card) => [card.card_key, card]));
+    const incomingCards = Array.isArray(body.selected_cards)
+      ? (body.selected_cards.filter((card: unknown) => card && typeof card === "object") as Record<string, unknown>[])
+      : [];
+    const hasClientSelection = incomingCards.length >= positions.length;
+    const selectedDeck = hasClientSelection
+      ? incomingCards.slice(0, positions.length).map((card, index) => incomingCardToDeckCard(card, deckByKey, index))
+      : shuffled(availableDeck).slice(0, positions.length);
+
     const selectedCards = positions.map((position, index) => {
+      const incoming = hasClientSelection ? incomingCards[index] : undefined;
       const baseCard = selectedDeck[index] ?? fallbackCards[index % fallbackCards.length];
-      const orientation = Math.random() < 0.78 ? "upright" : "reversed";
+      const orientation = incoming ? normalizeOrientation(incoming.orientation) : Math.random() < 0.78 ? "upright" : "reversed";
       const localized = localizedCard(baseCard, locale);
       const positionLabel = labels.positions[position as keyof typeof labels.positions] ?? position;
       const orientationLabel = labels.orientations[orientation as keyof typeof labels.orientations] ?? orientation;
-      const meaning = orientation === "reversed" ? localized.reversed_meaning : localized.upright_meaning;
+      const meaning =
+        incoming && typeof incoming.meaning === "string"
+          ? incoming.meaning
+          : orientation === "reversed"
+            ? localized.reversed_meaning
+            : localized.upright_meaning;
 
       return {
         position,
@@ -289,8 +355,18 @@ Deno.serve(async (req) => {
     const result = await provider.generateReading({
       readingType: "tarot",
       topic: body.topic ?? "general",
-      question: body.question,
-      context: { spread_type: spreadType, selected_cards: selectedCards, astrology_context: astrology },
+      question: fullQuestion,
+      context: {
+        spread_type: spreadType,
+        primary_question: body.question,
+        clarifier_question: clarifierQuestion || null,
+        selected_cards: selectedCards,
+        astrology_context: astrology,
+        continuity_rule:
+          locale === "en"
+            ? "If a clarifier question exists, answer it only as a continuation of the primary topic and primary question."
+            : "Netleştirici soru varsa, sadece ana konu ve ana sorunun devamı olarak cevapla; bağlamdan kopma."
+      },
       profile,
       memory,
       astrology,
@@ -314,7 +390,7 @@ Deno.serve(async (req) => {
         user_id: user.id,
         reading_type: "tarot",
         topic: body.topic ?? "general",
-        question: body.question ?? null,
+        question: fullQuestion ?? null,
         result_json: { ...result, cards: selectedCards, source_context: sourceContext },
         explanation_json: result.explanation,
         confidence: result.explanation.confidence

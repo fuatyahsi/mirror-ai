@@ -12,7 +12,14 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopColor: colors.border
+          borderTopColor: colors.border,
+          height: 72,
+          paddingTop: 6,
+          paddingBottom: 10
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "700"
         },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.faint
@@ -51,6 +58,12 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.astrology"),
           tabBarIcon: ({ color, size }) => <Ionicons name="planet-outline" color={color} size={size} />
+        }}
+      />
+      <Tabs.Screen
+        name="numerology"
+        options={{
+          href: null
         }}
       />
       <Tabs.Screen

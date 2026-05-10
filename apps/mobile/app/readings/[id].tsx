@@ -5,7 +5,10 @@ import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { BackButton } from "@/components/layout/BackButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Screen } from "@/components/layout/Screen";
-import { useI18n } from "@/i18n";
+import { RelationshipDeepReportCard } from "@/components/readings/RelationshipDeepReportCard";
+import { WeeklyRelationshipReportCard } from "@/components/readings/WeeklyRelationshipReportCard";
+import { submitReadingFeedback } from "@/features/feedback/api";
+import { useI18n, type Locale } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
 import type { NatalChart, ZodiacPoint } from "@/types/astrology";
@@ -16,6 +19,13 @@ export default function ReadingDetailScreen() {
   const reading = useUserStore((state) => state.readings.find((item) => item.id === id));
   const profile = useUserStore((state) => state.profile);
   const submitFeedback = useUserStore((state) => state.submitFeedback);
+  const userLocale = useUserStore((state) => state.locale);
+  const relationshipQuestion = reading?.question;
+  const activeRelationship = useUserStore((state) =>
+    relationshipQuestion
+      ? state.relationshipProfiles.find((rel) => rel.main_question === relationshipQuestion)
+      : undefined
+  );
   const { t } = useI18n();
 
   if (!reading) {
@@ -29,57 +39,107 @@ export default function ReadingDetailScreen() {
 
   const currentReading = reading;
 
-  function feedback(score: FeedbackScore) {
-    submitFeedback({
+  async function feedback(score: FeedbackScore) {
+    const feedbackInput = {
       reading_id: currentReading.id,
       score,
       accuracy_rating: score === "accurate" ? 5 : score === "partial" ? 3 : 1,
       emotional_resonance: score === "inaccurate" ? 2 : 4
+    };
+
+    submitFeedback({
+      ...feedbackInput
     });
+
+    try {
+      await submitReadingFeedback(feedbackInput);
+    } catch {
+      // Local feedback is already saved; remote sync can be retried in a later persistence pass.
+    }
+
     router.push("/tabs/profile");
   }
+
+  const isDeepRelationship =
+    currentReading.reading_type === "relationship" && Boolean(currentReading.deep_report);
+  const isWeeklyRelationship =
+    currentReading.reading_type === "weekly_relationship" && Boolean(currentReading.weekly_report);
+  const reportLocale: Locale = userLocale === "en" ? "en" : "tr";
 
   return (
     <Screen>
       <BackButton fallbackHref="/tabs/home" />
-      <PageHeader eyebrow={currentReading.reading_type} title={currentReading.title} subtitle={currentReading.summary} />
-      {currentReading.sections.map((section, index) => (
-        <ReadingSectionCard
-          key={`${section.title}-${index}`}
-          section={section}
-          references={buildSectionReferences(section, index, currentReading, profile.natal_chart, {
-            birth: t("astrology.birthData"),
-            sun: t("astrology.sun"),
-            moon: t("astrology.moon"),
-            ascendant: t("astrology.ascendant")
-          })}
-        />
-      ))}
-      <InsightCard title={t("detail.advice")} body={currentReading.advice} />
-      <InsightCard title={t("detail.reflection")} body={currentReading.reflection_question} />
-      <View style={styles.explanation}>
-        <Text style={styles.explanationTitle}>{t("detail.basedOn")}</Text>
-        {currentReading.explanation.based_on.map((item, index) => (
-          <Text key={`${item}-${index}`} style={styles.basedOn}>
-            {item}
-          </Text>
-        ))}
-        <Text style={styles.limitations}>{currentReading.explanation.limitations}</Text>
-      </View>
-      {currentReading.source_context ? (
-        <View style={styles.explanation}>
-          <Text style={styles.explanationTitle}>{t("detail.proof")}</Text>
-          <Text style={styles.limitations}>
-            {t("detail.systems")}: {currentReading.source_context.systems.join(", ")}
-          </Text>
-          {currentReading.source_context.engine ? (
-            <Text style={styles.limitations}>
-              {t("detail.engine")}: {currentReading.source_context.engine}
-            </Text>
+      {isWeeklyRelationship && currentReading.weekly_report ? (
+        <>
+          <PageHeader
+            eyebrow={reportLocale === "en" ? "WEEKLY REVIEW" : "HAFTALIK ÖZET"}
+            title={currentReading.title}
+            subtitle={currentReading.summary}
+          />
+          <WeeklyRelationshipReportCard report={currentReading.weekly_report} locale={reportLocale} />
+          <InsightCard title={t("detail.advice")} body={currentReading.advice} />
+          <InsightCard title={t("detail.safety")} body={currentReading.safety_note} />
+        </>
+      ) : isDeepRelationship && currentReading.deep_report ? (
+        <>
+          <PageHeader
+            eyebrow={reportLocale === "en" ? "DEEP SYNASTRY" : "DERİN SİNASTRİ"}
+            title={currentReading.title}
+            subtitle={currentReading.summary}
+          />
+          <RelationshipDeepReportCard
+            report={currentReading.deep_report}
+            locale={reportLocale}
+            partnerNickname={activeRelationship?.nickname}
+            relationType={activeRelationship?.relation_type}
+            question={currentReading.question}
+          />
+          <InsightCard title={t("detail.advice")} body={currentReading.advice} />
+          <InsightCard title={t("detail.reflection")} body={currentReading.reflection_question} />
+          <InsightCard title={t("detail.safety")} body={currentReading.safety_note} />
+        </>
+      ) : (
+        <>
+          <PageHeader eyebrow={currentReading.reading_type} title={currentReading.title} subtitle={currentReading.summary} />
+          {currentReading.sections.map((section, index) => (
+            <ReadingSectionCard
+              key={`${section.title}-${index}`}
+              section={section}
+              references={buildSectionReferences(section, index, currentReading, profile.natal_chart, {
+                birth: t("astrology.birthData"),
+                sun: t("astrology.sun"),
+                moon: t("astrology.moon"),
+                ascendant: t("astrology.ascendant")
+              })}
+            />
+          ))}
+          <InsightCard title={t("detail.advice")} body={currentReading.advice} />
+          <InsightCard title={t("detail.reflection")} body={currentReading.reflection_question} />
+          <View style={styles.explanation}>
+            <Text style={styles.explanationTitle}>{t("detail.basedOn")}</Text>
+            {currentReading.explanation.based_on.map((item, index) => (
+              <Text key={`${item}-${index}`} style={styles.basedOn}>
+                {item}
+              </Text>
+            ))}
+            <Text style={styles.limitations}>{currentReading.explanation.limitations}</Text>
+          </View>
+          {currentReading.source_context ? (
+            <View style={styles.explanation}>
+              <Text style={styles.explanationTitle}>{t("detail.proof")}</Text>
+              <Text style={styles.limitations}>
+                {t("detail.systems")}: {currentReading.source_context.systems.join(", ")}
+              </Text>
+              {currentReading.source_context.engine ? (
+                <Text style={styles.limitations}>
+                  {t("detail.engine")}: {currentReading.source_context.engine}
+                </Text>
+              ) : null}
+            </View>
           ) : null}
-        </View>
-      ) : null}
-      <InsightCard title={t("detail.safety")} body={currentReading.safety_note} />
+          <InsightCard title={t("detail.safety")} body={currentReading.safety_note} />
+        </>
+      )}
       <View style={styles.feedback}>
         <Text style={styles.feedbackTitle}>{t("detail.feedbackTitle")}</Text>
         <PrimaryButton onPress={() => feedback("accurate")}>{t("detail.accurate")}</PrimaryButton>

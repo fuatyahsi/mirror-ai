@@ -253,10 +253,11 @@ export function generateTarotMock(
   topic: string,
   question: string,
   profile?: MysticProfile,
-  locale: Locale = "tr"
+  locale: Locale = "tr",
+  selectedCards?: TarotCardDraw[]
 ) {
   const text = copy[locale];
-  const cards = drawTarot(spreadType);
+  const cards = selectedCards?.length ? selectedCards : drawTarot(spreadType);
   return {
     reading: baseReading({
       type: "tarot",
@@ -267,10 +268,15 @@ export function generateTarotMock(
       title: text.tarotTitle,
       summary: text.tarotSummary,
       sections: cards.map((card) => ({
-        title: `${card.position}: ${card.card}`,
-        body: fill(text.tarotCardBody, {
-          orientation: card.orientation === "upright" ? text.upright : text.reversed
-        })
+        title: `${card.position_label ?? card.position}: ${card.card}`,
+        body: `${fill(text.tarotCardBody, {
+          orientation: card.orientation_label ?? (card.orientation === "upright" ? text.upright : text.reversed)
+        })}${card.meaning ? ` ${card.meaning}` : ""}`,
+        references: [
+          `${card.position_label ?? card.position}: ${card.card}`,
+          `${card.orientation_label ?? card.orientation}`,
+          card.meaning
+        ].filter(Boolean) as string[]
       })),
       advice: text.tarotAdvice
     }),

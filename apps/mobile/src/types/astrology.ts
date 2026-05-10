@@ -56,3 +56,30 @@ export type NatalChart = {
   warnings: string[];
 };
 
+export type SynastryAspect = {
+  type: string;
+  label: string;
+  between: [string, string];
+  orb: number;
+  category: "emotional" | "mental" | "romantic" | "long_term" | "crisis" | "attachment" | "karmic";
+  weight: number;
+  reference: string;
+};
+
+export type SynastryReport = {
+  overall_score: number;
+  confidence: number;
+  time_accuracy_note?: string;
+  strengths: string[];
+  risk_areas: string[];
+  scores: {
+    emotional_harmony: number;
+    mental_flow: number;
+    romantic_pull: number;
+    long_term_potential: number;
+    crisis_intensity: number;
+    attachment_dynamic: number;
+    repeating_theme: number;
+  };
+  key_aspects: SynastryAspect[];
+};

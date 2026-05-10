@@ -38,8 +38,8 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: 18,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
-    gap: 12
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+    gap: 14
   }
 });

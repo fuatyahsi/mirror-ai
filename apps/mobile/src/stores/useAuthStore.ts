@@ -12,8 +12,8 @@ type AuthState = {
   isLoading: boolean;
   error?: string;
   continueAsGuest: () => void;
-  signIn: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
 };
 
@@ -40,8 +40,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       } else {
         set({ user: { id: "mock-user", email }, isGuest: false });
       }
+      return true;
     } catch (error) {
       set({ error: error instanceof Error ? error.message : "Giriş yapılamadı." });
+      return false;
     } finally {
       set({ isLoading: false });
     }
@@ -59,8 +61,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       } else {
         set({ user: { id: "mock-user", email }, isGuest: false });
       }
+      return true;
     } catch (error) {
       set({ error: error instanceof Error ? error.message : "Kayıt oluşturulamadı." });
+      return false;
     } finally {
       set({ isLoading: false });
     }
@@ -72,4 +76,3 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, isGuest: false, error: undefined });
   }
 }));
-

@@ -1,7 +1,7 @@
 from fastapi import Depends, FastAPI, Header, HTTPException
 
-from .astro import calculate_natal_chart, ensure_ephemeris_files, ephemeris_status
-from .models import NatalChartRequest
+from .astro import calculate_natal_chart, calculate_synastry, ensure_ephemeris_files, ephemeris_status
+from .models import NatalChartRequest, SynastryRequest
 
 import os
 
@@ -33,6 +33,7 @@ def root() -> dict:
         "version": app.version,
         "health": "/health",
         "natal_chart": "/natal-chart",
+        "synastry": "/synastry",
     }
 
 
@@ -40,5 +41,13 @@ def root() -> dict:
 def natal_chart(request: NatalChartRequest) -> dict:
     try:
         return calculate_natal_chart(request)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/synastry", dependencies=[Depends(require_service_token)])
+def synastry(request: SynastryRequest) -> dict:
+    try:
+        return calculate_synastry(request)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

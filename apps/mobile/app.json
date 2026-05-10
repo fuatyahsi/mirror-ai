@@ -25,6 +25,13 @@
       "expo-router",
       "expo-secure-store",
       [
+        "expo-notifications",
+        {
+          "defaultChannel": "daily-sky",
+          "color": "#D8B56D"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Mirror AI uses selected cup photos only to generate your symbolic coffee reading."

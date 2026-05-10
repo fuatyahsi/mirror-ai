@@ -15,7 +15,7 @@ except ImportError as exc:  # pragma: no cover
         "Swiss Ephemeris Python binding is not installed. Run: python -m pip install -r requirements.txt"
     ) from exc
 
-from .models import NatalChartRequest
+from .models import NatalChartRequest, SynastryRequest
 
 SIGNS = [
     ("aries", "Koç"),
@@ -53,6 +53,59 @@ ASPECTS = [
     ("trine", "Üçgen", 120, 6),
     ("opposition", "Karşıt", 180, 8),
 ]
+
+SYNASTRY_ASPECTS = [
+    {"type": "conjunction", "tr": "Kavuşum", "en": "Conjunction", "angle": 0, "orb": 7, "score": 8},
+    {"type": "sextile", "tr": "Altmışlık", "en": "Sextile", "angle": 60, "orb": 4, "score": 7},
+    {"type": "square", "tr": "Kare", "en": "Square", "angle": 90, "orb": 5, "score": -5},
+    {"type": "trine", "tr": "Üçgen", "en": "Trine", "angle": 120, "orb": 5, "score": 8},
+    {"type": "opposition", "tr": "Karşıt", "en": "Opposition", "angle": 180, "orb": 6, "score": -3},
+]
+
+SYNASTRY_PAIRS = [
+    ("sun", "moon", "emotional", 1.2),
+    ("moon", "sun", "emotional", 1.2),
+    ("moon", "venus", "emotional", 1.1),
+    ("venus", "moon", "emotional", 1.1),
+    ("mercury", "mercury", "mental", 1.2),
+    ("sun", "mercury", "mental", 0.8),
+    ("mercury", "sun", "mental", 0.8),
+    ("venus", "mars", "romantic", 1.4),
+    ("mars", "venus", "romantic", 1.4),
+    ("venus", "venus", "romantic", 0.9),
+    ("mars", "mars", "crisis", 1.0),
+    ("moon", "saturn", "attachment", 1.35),
+    ("saturn", "moon", "attachment", 1.35),
+    ("venus", "saturn", "long_term", 1.2),
+    ("saturn", "venus", "long_term", 1.2),
+    ("sun", "saturn", "long_term", 0.95),
+    ("saturn", "sun", "long_term", 0.95),
+    ("true_node", "sun", "karmic", 1.0),
+    ("sun", "true_node", "karmic", 1.0),
+    ("true_node", "moon", "karmic", 1.0),
+    ("moon", "true_node", "karmic", 1.0),
+]
+
+CATEGORY_COPY = {
+    "tr": {
+        "emotional": "duygusal güven ve tepki ritmi",
+        "mental": "iletişim ve zihinsel akış",
+        "romantic": "romantik çekim ve temas dili",
+        "long_term": "uzun vadeli sorumluluk",
+        "crisis": "gerilim ve dürtü yönetimi",
+        "attachment": "bağlanma ve güvenlik ihtiyacı",
+        "karmic": "tekrarlayan/tanıdık tema",
+    },
+    "en": {
+        "emotional": "emotional safety and reaction rhythm",
+        "mental": "communication and mental flow",
+        "romantic": "romantic pull and contact style",
+        "long_term": "long-term responsibility",
+        "crisis": "tension and impulse management",
+        "attachment": "attachment and need for safety",
+        "karmic": "repeating/familiar theme",
+    },
+}
 
 EPHEMERIS_FILES = ["sepl_18.se1", "semo_18.se1", "seas_18.se1"]
 DEFAULT_EPHEMERIS_DOWNLOAD_BASE_URL = "https://raw.githubusercontent.com/aloistr/swisseph/master/ephe"
@@ -308,3 +361,167 @@ def calculate_natal_chart(request: NatalChartRequest) -> dict:
         raise ValueError("Invalid chart calculation result.")
 
     return chart
+
+
+def calculate_synastry(request: SynastryRequest) -> dict:
+    first_chart = calculate_natal_chart(request.first)
+    second_chart = calculate_natal_chart(request.second)
+    locale = request.locale if request.locale in ("tr", "en") else "tr"
+    aspects = calculate_synastry_aspects(first_chart, second_chart, locale)
+    scores = calculate_synastry_scores(aspects)
+    supportive_average = (
+        scores["emotional_harmony"]
+        + scores["mental_flow"]
+        + scores["romantic_pull"]
+        + scores["long_term_potential"]
+    ) / 4
+    pressure = (
+        scores["crisis_intensity"]
+        + scores["attachment_dynamic"]
+        + scores["repeating_theme"]
+    ) / 3
+    overall_score = round(max(28, min(92, supportive_average * 0.74 + (100 - pressure) * 0.26)))
+
+    report = {
+        "overall_score": overall_score,
+        "confidence": 0.81 if request.second_birth_time_known else 0.66,
+        "time_accuracy_note": partner_time_accuracy_note(request.second_birth_time_known, locale),
+        "strengths": top_synastry_categories(
+            aspects,
+            ["emotional", "mental", "romantic", "long_term"],
+            locale,
+        ),
+        "risk_areas": top_synastry_categories(
+            aspects,
+            ["crisis", "attachment", "karmic"],
+            locale,
+        ),
+        "scores": scores,
+        "key_aspects": aspects[:10],
+    }
+
+    return {
+        "input": request.model_dump(),
+        "first_chart": first_chart,
+        "second_chart": second_chart,
+        "synastry": report,
+    }
+
+
+def calculate_synastry_aspects(first_chart: dict, second_chart: dict, locale: str) -> list[dict]:
+    first_points = synastry_point_map(first_chart)
+    second_points = synastry_point_map(second_chart)
+    aspects = []
+
+    for first_key, second_key, category, weight in SYNASTRY_PAIRS:
+        first = first_points.get(first_key)
+        second = second_points.get(second_key)
+        if not first or not second:
+            continue
+
+        distance = normalize_angle_distance(first["absolute_degree"], second["absolute_degree"])
+        for definition in SYNASTRY_ASPECTS:
+            delta = abs(distance - definition["angle"])
+            if delta > definition["orb"]:
+                continue
+
+            orb = round(delta, 2)
+            label = definition["en"] if locale == "en" else definition["tr"]
+            aspects.append(
+                {
+                    "type": definition["type"],
+                    "label": label,
+                    "between": [first["key"], second["key"]],
+                    "orb": orb,
+                    "category": category,
+                    "weight": weight,
+                    "reference": (
+                        f"{first['label']} {format_synastry_point(first)} - "
+                        f"{second['label']} {format_synastry_point(second)}: {label}, orb {orb:.2f}°"
+                    ),
+                }
+            )
+            break
+
+    return sorted(aspects, key=lambda item: item["orb"])
+
+
+def synastry_point_map(chart: dict) -> dict[str, dict]:
+    points = {}
+    for point in [
+        chart.get("sun"),
+        chart.get("moon"),
+        chart.get("ascendant"),
+        chart.get("midheaven"),
+        *chart.get("planets", []),
+    ]:
+        if point and point.get("key") and math.isfinite(point.get("absolute_degree", float("nan"))):
+            points[point["key"]] = point
+    return points
+
+
+def calculate_synastry_scores(aspects: list[dict]) -> dict:
+    return {
+        "emotional_harmony": synastry_category_score(aspects, "emotional"),
+        "mental_flow": synastry_category_score(aspects, "mental"),
+        "romantic_pull": synastry_category_score(aspects, "romantic"),
+        "long_term_potential": synastry_category_score(aspects, "long_term"),
+        "crisis_intensity": synastry_category_intensity(aspects, "crisis"),
+        "attachment_dynamic": synastry_category_intensity(aspects, "attachment"),
+        "repeating_theme": synastry_category_intensity(aspects, "karmic"),
+    }
+
+
+def synastry_category_score(aspects: list[dict], category: str) -> int:
+    matches = [aspect for aspect in aspects if aspect["category"] == category]
+    if not matches:
+        return 54
+
+    raw = 0.0
+    for aspect in matches:
+        definition = next((item for item in SYNASTRY_ASPECTS if item["type"] == aspect["type"]), None)
+        raw += (definition["score"] if definition else 0) * aspect["weight"] * (
+            1 - min(aspect["orb"], 8) / 14
+        )
+
+    return round(max(24, min(94, 56 + raw * 5)))
+
+
+def synastry_category_intensity(aspects: list[dict], category: str) -> int:
+    matches = [aspect for aspect in aspects if aspect["category"] == category]
+    if not matches:
+        return 42
+
+    raw = sum(aspect["weight"] * (1 - min(aspect["orb"], 8) / 10) for aspect in matches)
+    return round(max(38, min(91, 46 + raw * 21)))
+
+
+def top_synastry_categories(aspects: list[dict], categories: list[str], locale: str) -> list[str]:
+    seen = set()
+    result = []
+    for aspect in aspects:
+        category = aspect["category"]
+        if category not in categories or category in seen:
+            continue
+        seen.add(category)
+        result.append(f"{CATEGORY_COPY[locale][category]}: {aspect['reference']}")
+    return result[:3]
+
+
+def partner_time_accuracy_note(is_known: bool, locale: str) -> str | None:
+    if is_known:
+        return None
+    if locale == "en":
+        return (
+            "Partner birth time is unknown, so houses and Ascendant are read flexibly. "
+            "The report leans on planet-to-planet synastry."
+        )
+    return (
+        "Karşı tarafın doğum saati bilinmediği için evler ve yükselen esnek okunur. "
+        "Analiz gezegenler arası sinastriye dayanır."
+    )
+
+
+def format_synastry_point(point: dict) -> str:
+    retrograde = " R" if point.get("retrograde") else ""
+    return f"{point['sign_label']} {float(point['degree']):.1f}°{retrograde}"

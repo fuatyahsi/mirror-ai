@@ -1,6 +1,15 @@
-import { router } from "expo-router";
-import { useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Modal,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
+} from "react-native";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { TextField } from "@/components/forms/TextField";
 import { BackButton } from "@/components/layout/BackButton";
@@ -9,11 +18,17 @@ import { Screen } from "@/components/layout/Screen";
 import { calculateNatalChart } from "@/features/astrology/api";
 import { findBirthPlaceByCity, type BirthPlace } from "@/features/astrology/birthPlaces";
 import { searchBirthPlaces } from "@/features/astrology/geocoding";
+import { syncBirthProfile } from "@/features/profileMemory/api";
 import { useI18n } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
 
-type PickerKind = "year" | "month" | "day" | "hour" | "minute";
+type PickerKind = "date" | "time";
+
+const MIN_BIRTH_YEAR = 1960;
+const WHEEL_ITEM_HEIGHT = 52;
+const WHEEL_VISIBLE_ITEMS = 5;
+const WHEEL_VERTICAL_PADDING = WHEEL_ITEM_HEIGHT * Math.floor(WHEEL_VISIBLE_ITEMS / 2);
 
 function formatDateKey(year: number, monthIndex: number, day: number) {
   return `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -52,6 +67,7 @@ function numberRange(start: number, end: number) {
 }
 
 export default function BirthInfoScreen() {
+  const params = useLocalSearchParams<{ returnTo?: string }>();
   const userProfile = useUserStore((state) => state.profile);
   const setBirthInfo = useUserStore((state) => state.setBirthInfo);
   const setNatalChart = useUserStore((state) => state.setNatalChart);
@@ -107,6 +123,11 @@ export default function BirthInfoScreen() {
   const searchingLabel = locale === "en" ? "Searching places..." : "Yer aranıyor...";
   const noPlaceLabel = locale === "en" ? "No city found. Try country + city." : "Şehir bulunamadı. Ülke + şehir deneyin.";
   const canSearchPlace = placeQuery.trim().length >= 2 && !isSearchingPlace;
+  const returnTo =
+    params.returnTo === "/tabs/profile" || params.returnTo === "/tabs/astrology"
+      ? params.returnTo
+      : undefined;
+  const completedFallbackHref = returnTo ?? "/tabs/astrology";
 
   function selectPlace(place: BirthPlace) {
     setSelectedPlace(place);
@@ -123,18 +144,6 @@ export default function BirthInfoScreen() {
     } finally {
       setIsSearchingPlace(false);
     }
-  }
-
-  function selectYear(year: number) {
-    setSelectedYear(year);
-    setSelectedDay((day) => Math.min(day, daysInMonth(year, selectedMonth)));
-    setPickerKind(undefined);
-  }
-
-  function selectMonth(monthIndex: number) {
-    setSelectedMonth(monthIndex);
-    setSelectedDay((day) => Math.min(day, daysInMonth(selectedYear, monthIndex)));
-    setPickerKind(undefined);
   }
 
   async function next() {
@@ -164,13 +173,23 @@ export default function BirthInfoScreen() {
         house_system: "P"
       });
       setNatalChart(chart);
+      try {
+        await syncBirthProfile(birth, chart);
+      } catch {
+        // Local onboarding should keep moving even if remote sync is briefly unavailable.
+      }
 
       if (userProfile.onboarding_completed) {
-        router.replace("/tabs/astrology");
+        router.replace(completedFallbackHref);
       } else {
         router.push("/onboarding/profile-quiz");
       }
     } catch (chartError) {
+      try {
+        await syncBirthProfile(birth);
+      } catch {
+        // Birth data stays local and will be retried by the user on the next save.
+      }
       setError(chartError instanceof Error ? chartError.message : t("birth.chartError"));
       if (!userProfile.onboarding_completed) {
         router.push("/onboarding/profile-quiz");
@@ -182,19 +201,19 @@ export default function BirthInfoScreen() {
 
   return (
     <Screen>
-      <BackButton fallbackHref={userProfile.onboarding_completed ? "/tabs/astrology" : "/onboarding"} />
+      <BackButton fallbackHref={userProfile.onboarding_completed ? completedFallbackHref : "/onboarding"} />
       <PageHeader eyebrow={t("birth.eyebrow")} title={t("birth.title")} subtitle={t("birth.subtitle")} />
 
       <View style={styles.selectorCard}>
         <Text style={styles.selectorTitle}>{t("birth.selectedDate")}</Text>
         <View style={styles.dateRow}>
-          <SelectorButton label={t("birth.day")} value={String(safeSelectedDay)} onPress={() => setPickerKind("day")} />
+          <SelectorButton label={t("birth.day")} value={String(safeSelectedDay)} onPress={() => setPickerKind("date")} />
           <SelectorButton
             label={t("birth.month")}
             value={monthLabels[selectedMonth]}
-            onPress={() => setPickerKind("month")}
+            onPress={() => setPickerKind("date")}
           />
-          <SelectorButton label={t("birth.year")} value={String(selectedYear)} onPress={() => setPickerKind("year")} />
+          <SelectorButton label={t("birth.year")} value={String(selectedYear)} onPress={() => setPickerKind("date")} />
         </View>
         <Text style={styles.selectionText}>{selectedDate}</Text>
       </View>
@@ -202,9 +221,9 @@ export default function BirthInfoScreen() {
       <View style={styles.selectorCard}>
         <Text style={styles.selectorTitle}>{t("birth.time")}</Text>
         <View style={styles.timeRow}>
-          <SelectorButton label={locale === "en" ? "Hour" : "Saat"} value={String(selectedHour).padStart(2, "0")} onPress={() => setPickerKind("hour")} />
+          <SelectorButton label={locale === "en" ? "Hour" : "Saat"} value={String(selectedHour).padStart(2, "0")} onPress={() => setPickerKind("time")} />
           <Text style={styles.timeDivider}>:</Text>
-          <SelectorButton label={locale === "en" ? "Minute" : "Dakika"} value={String(selectedMinute).padStart(2, "0")} onPress={() => setPickerKind("minute")} />
+          <SelectorButton label={locale === "en" ? "Minute" : "Dakika"} value={String(selectedMinute).padStart(2, "0")} onPress={() => setPickerKind("time")} />
         </View>
         <Text style={styles.selectionText}>{birthTime}</Text>
       </View>
@@ -262,34 +281,28 @@ export default function BirthInfoScreen() {
         {isSaving ? t("birth.calculatingChart") : userProfile.onboarding_completed ? t("birth.saveAndCalculate") : t("birth.next")}
       </PrimaryButton>
 
-      <PickerSheet
+      <WheelPickerSheet
         visible={Boolean(pickerKind)}
-        title={pickerKind ? pickerTitle(pickerKind, t, locale) : ""}
-        options={pickerOptions({
-          pickerKind,
-          monthLabels,
-          selectedYear,
-          selectedMonth,
-          selectedDay: safeSelectedDay,
-          selectedHour,
-          selectedMinute,
-          currentMonthDays,
-          onSelectYear: selectYear,
-          onSelectMonth: selectMonth,
-          onSelectDay: (day) => {
-            setSelectedDay(day);
-            setPickerKind(undefined);
-          },
-          onSelectHour: (hour) => {
-            setSelectedHour(hour);
-            setPickerKind(undefined);
-          },
-          onSelectMinute: (minute) => {
-            setSelectedMinute(minute);
-            setPickerKind(undefined);
-          }
-        })}
-        closeLabel={locale === "en" ? "Close" : "Kapat"}
+        mode={pickerKind}
+        locale={locale}
+        monthLabels={monthLabels}
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+        selectedDay={safeSelectedDay}
+        selectedHour={selectedHour}
+        selectedMinute={selectedMinute}
+        currentMonthDays={currentMonthDays}
+        onSelectYear={(year) => {
+          setSelectedYear(year);
+          setSelectedDay((day) => Math.min(day, daysInMonth(year, selectedMonth)));
+        }}
+        onSelectMonth={(monthIndex) => {
+          setSelectedMonth(monthIndex);
+          setSelectedDay((day) => Math.min(day, daysInMonth(selectedYear, monthIndex)));
+        }}
+        onSelectDay={setSelectedDay}
+        onSelectHour={setSelectedHour}
+        onSelectMinute={setSelectedMinute}
         onClose={() => setPickerKind(undefined)}
       />
     </Screen>
@@ -305,19 +318,27 @@ function SelectorButton({ label, value, onPress }: { label: string; value: strin
   );
 }
 
-function pickerTitle(kind: PickerKind, t: ReturnType<typeof useI18n>["t"], locale: string) {
-  const titles = {
-    year: t("birth.year"),
-    month: t("birth.month"),
-    day: t("birth.day"),
-    hour: locale === "en" ? "Hour" : "Saat",
-    minute: locale === "en" ? "Minute" : "Dakika"
-  };
-  return titles[kind];
-}
-
-function pickerOptions(input: {
-  pickerKind?: PickerKind;
+function WheelPickerSheet({
+  visible,
+  mode,
+  locale,
+  monthLabels,
+  selectedYear,
+  selectedMonth,
+  selectedDay,
+  selectedHour,
+  selectedMinute,
+  currentMonthDays,
+  onSelectYear,
+  onSelectMonth,
+  onSelectDay,
+  onSelectHour,
+  onSelectMinute,
+  onClose
+}: {
+  visible: boolean;
+  mode?: PickerKind;
+  locale: string;
   monthLabels: string[];
   selectedYear: number;
   selectedMonth: number;
@@ -330,56 +351,21 @@ function pickerOptions(input: {
   onSelectDay: (day: number) => void;
   onSelectHour: (hour: number) => void;
   onSelectMinute: (minute: number) => void;
-}) {
-  switch (input.pickerKind) {
-    case "year":
-      return numberRange(1960, 2026).map((year) => ({
-        label: String(year),
-        active: year === input.selectedYear,
-        onPress: () => input.onSelectYear(year)
-      }));
-    case "month":
-      return input.monthLabels.map((label, monthIndex) => ({
-        label,
-        active: monthIndex === input.selectedMonth,
-        onPress: () => input.onSelectMonth(monthIndex)
-      }));
-    case "day":
-      return numberRange(1, input.currentMonthDays).map((day) => ({
-        label: String(day),
-        active: day === input.selectedDay,
-        onPress: () => input.onSelectDay(day)
-      }));
-    case "hour":
-      return numberRange(0, 23).map((hour) => ({
-        label: String(hour).padStart(2, "0"),
-        active: hour === input.selectedHour,
-        onPress: () => input.onSelectHour(hour)
-      }));
-    case "minute":
-      return numberRange(0, 59).map((minute) => ({
-        label: String(minute).padStart(2, "0"),
-        active: minute === input.selectedMinute,
-        onPress: () => input.onSelectMinute(minute)
-      }));
-    default:
-      return [];
-  }
-}
-
-function PickerSheet({
-  visible,
-  title,
-  options,
-  closeLabel,
-  onClose
-}: {
-  visible: boolean;
-  title: string;
-  options: { label: string; active: boolean; onPress: () => void }[];
-  closeLabel: string;
   onClose: () => void;
 }) {
+  const title =
+    mode === "time"
+      ? locale === "en"
+        ? "Birth time"
+        : "Doğum saati"
+      : locale === "en"
+        ? "Birth date"
+        : "Doğum tarihi";
+  const doneLabel = locale === "en" ? "Done" : "Tamam";
+  const yearOptions = numberRange(MIN_BIRTH_YEAR, new Date().getFullYear());
+  const dayOptions = numberRange(1, currentMonthDays);
+  const monthOptions = monthLabels.map((label, value) => ({ label, value }));
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
@@ -387,25 +373,119 @@ function PickerSheet({
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{title}</Text>
             <Pressable onPress={onClose} style={styles.modalClose}>
-              <Text style={styles.modalCloseText}>{closeLabel}</Text>
+              <Text style={styles.modalCloseText}>{doneLabel}</Text>
             </Pressable>
           </View>
-          <ScrollView contentContainerStyle={styles.pickerGrid}>
-            {options.map((option) => (
-              <Pressable
-                key={`${title}-${option.label}`}
-                onPress={option.onPress}
-                style={[styles.pickerOption, option.active && styles.pickerOptionActive]}
-              >
-                <Text style={[styles.pickerOptionText, option.active && styles.pickerOptionTextActive]}>
-                  {option.label}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+          {mode === "time" ? (
+            <View style={styles.wheelColumns}>
+              <WheelColumn
+                label={locale === "en" ? "Hour" : "Saat"}
+                options={numberRange(0, 23).map((value) => ({ label: String(value).padStart(2, "0"), value }))}
+                value={selectedHour}
+                visible={visible}
+                onSelect={onSelectHour}
+              />
+              <WheelColumn
+                label={locale === "en" ? "Minute" : "Dakika"}
+                options={numberRange(0, 59).map((value) => ({ label: String(value).padStart(2, "0"), value }))}
+                value={selectedMinute}
+                visible={visible}
+                onSelect={onSelectMinute}
+              />
+            </View>
+          ) : (
+            <View style={styles.wheelColumns}>
+              <WheelColumn
+                label={locale === "en" ? "Day" : "Gün"}
+                options={dayOptions.map((value) => ({ label: String(value), value }))}
+                value={selectedDay}
+                visible={visible}
+                onSelect={onSelectDay}
+              />
+              <WheelColumn
+                label={locale === "en" ? "Month" : "Ay"}
+                options={monthOptions}
+                value={selectedMonth}
+                visible={visible}
+                onSelect={onSelectMonth}
+              />
+              <WheelColumn
+                label={locale === "en" ? "Year" : "Yıl"}
+                options={yearOptions.map((value) => ({ label: String(value), value }))}
+                value={selectedYear}
+                visible={visible}
+                onSelect={onSelectYear}
+              />
+            </View>
+          )}
         </View>
       </View>
     </Modal>
+  );
+}
+
+function WheelColumn({
+  label,
+  options,
+  value,
+  visible,
+  onSelect
+}: {
+  label: string;
+  options: { label: string; value: number }[];
+  value: number;
+  visible: boolean;
+  onSelect: (value: number) => void;
+}) {
+  const scrollRef = useRef<ScrollView>(null);
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((option) => option.value === value)
+  );
+
+  useEffect(() => {
+    if (!visible) return;
+    const handle = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: selectedIndex * WHEEL_ITEM_HEIGHT, animated: false });
+    }, 80);
+    return () => clearTimeout(handle);
+  }, [options.length, selectedIndex, visible]);
+
+  function selectFromScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    const index = Math.max(0, Math.min(options.length - 1, Math.round(event.nativeEvent.contentOffset.y / WHEEL_ITEM_HEIGHT)));
+    const option = options[index];
+    if (option && option.value !== value) onSelect(option.value);
+  }
+
+  return (
+    <View style={styles.wheelColumn}>
+      <Text style={styles.wheelLabel}>{label}</Text>
+      <View style={styles.wheelWindow}>
+        <View pointerEvents="none" style={styles.wheelSelectionBand} />
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          snapToInterval={WHEEL_ITEM_HEIGHT}
+          decelerationRate="fast"
+          contentContainerStyle={styles.wheelContent}
+          onMomentumScrollEnd={selectFromScroll}
+          onScrollEndDrag={selectFromScroll}
+        >
+          {options.map((option) => {
+            const active = option.value === value;
+            return (
+              <Pressable
+                key={`${label}-${option.value}`}
+                onPress={() => onSelect(option.value)}
+                style={[styles.wheelOption, active && styles.wheelOptionActive]}
+              >
+                <Text style={[styles.wheelOptionText, active && styles.wheelOptionTextActive]}>{option.label}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+    </View>
   );
 }
 
@@ -413,7 +493,7 @@ const styles = StyleSheet.create({
   selectorCard: {
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderGlow,
     backgroundColor: colors.surface,
     padding: spacing.md,
     gap: spacing.sm
@@ -445,7 +525,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceSoft,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     justifyContent: "center",
@@ -476,7 +556,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.accent,
-    backgroundColor: colors.accentSoft,
+    backgroundColor: colors.surfaceMid,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.md
@@ -495,14 +575,14 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceSoft,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     gap: 2
   },
   placeOptionActive: {
     borderColor: colors.accent,
-    backgroundColor: colors.accentSoft
+    backgroundColor: colors.surfaceMid
   },
   placeTitle: {
     color: colors.text,
@@ -571,32 +651,60 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontWeight: "900"
   },
-  pickerGrid: {
+  wheelColumns: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-    paddingBottom: spacing.md
+    gap: spacing.sm
   },
-  pickerOption: {
-    width: "23.5%",
-    minHeight: 46,
-    borderRadius: radii.sm,
+  wheelColumn: {
+    flex: 1,
+    gap: spacing.xs
+  },
+  wheelLabel: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1,
+    textAlign: "center",
+    textTransform: "uppercase"
+  },
+  wheelWindow: {
+    height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS,
+    overflow: "hidden",
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center"
+    backgroundColor: colors.surfaceSoft
   },
-  pickerOptionActive: {
+  wheelSelectionBand: {
+    position: "absolute",
+    left: spacing.xs,
+    right: spacing.xs,
+    top: WHEEL_VERTICAL_PADDING,
+    height: WHEEL_ITEM_HEIGHT,
+    borderRadius: radii.sm,
+    borderWidth: 1,
     borderColor: colors.accent,
-    backgroundColor: colors.accent
+    backgroundColor: colors.surfaceMid
   },
-  pickerOptionText: {
+  wheelContent: {
+    paddingVertical: WHEEL_VERTICAL_PADDING
+  },
+  wheelOption: {
+    height: WHEEL_ITEM_HEIGHT,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 2
+  },
+  wheelOptionActive: {
+    borderRadius: radii.sm
+  },
+  wheelOptionText: {
     color: colors.muted,
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "900"
   },
-  pickerOptionTextActive: {
-    color: colors.background
+  wheelOptionTextActive: {
+    color: colors.accent,
+    fontSize: 22
   }
 });

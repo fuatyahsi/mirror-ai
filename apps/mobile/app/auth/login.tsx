@@ -6,19 +6,30 @@ import { TextField } from "@/components/forms/TextField";
 import { BackButton } from "@/components/layout/BackButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Screen } from "@/components/layout/Screen";
+import { loadRemoteUserProfile } from "@/features/profileMemory/api";
 import { useI18n } from "@/i18n";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useUserStore } from "@/stores/useUserStore";
 import { colors } from "@/theme";
 
 export default function LoginScreen() {
   const { signIn, isLoading, error } = useAuthStore();
+  const mergeRemoteProfile = useUserStore((state) => state.mergeRemoteProfile);
   const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   async function submit() {
-    await signIn(email, password);
-    router.replace("/tabs/home");
+    const success = await signIn(email, password);
+    if (success) {
+      try {
+        const remoteProfile = await loadRemoteUserProfile();
+        if (remoteProfile) mergeRemoteProfile(remoteProfile);
+      } catch {
+        // Login should not be blocked by a temporary profile hydration problem.
+      }
+      router.replace("/tabs/home");
+    }
   }
 
   return (

@@ -66,22 +66,23 @@ const styles = StyleSheet.create({
   ring: {
     position: "absolute",
     borderWidth: 1,
-    borderColor: colors.accent
+    borderColor: colors.accentStrong
   },
   outer: {
     width: "100%",
     height: "100%",
-    opacity: 0.3
+    borderColor: colors.accent,
+    opacity: 0.34
   },
   core: {
     position: "absolute",
-    backgroundColor: colors.accent,
+    backgroundColor: colors.accentGold,
     opacity: 0.9
   },
   moon: {
     position: "absolute",
-    backgroundColor: colors.accent,
-    opacity: 0.38,
+    backgroundColor: colors.accentStrong,
+    opacity: 0.45,
     transform: [{ rotate: "8deg" }]
   }
 });

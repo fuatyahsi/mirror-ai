@@ -1,19 +1,44 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, radii, spacing, typography } from "@/theme";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { colors, radii, typography } from "@/theme";
 
 type InsightCardProps = {
   title: string;
   body: string;
   meta?: string;
   accent?: boolean;
+  actionLabel?: string;
+  onPress?: () => void;
 };
 
-export function InsightCard({ title, body, meta, accent }: InsightCardProps) {
+function InsightCardContent({ title, body, meta, actionLabel }: InsightCardProps) {
   return (
-    <View style={[styles.card, accent && styles.accentCard]}>
+    <>
       {meta ? <Text style={styles.meta}>{meta}</Text> : null}
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.body}>{body}</Text>
+      {actionLabel ? <Text style={styles.action}>{actionLabel}</Text> : null}
+    </>
+  );
+}
+
+export function InsightCard(props: InsightCardProps) {
+  const { accent, onPress } = props;
+
+  if (onPress) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        style={({ pressed }) => [styles.card, accent && styles.accentCard, pressed && styles.pressed]}
+      >
+        <InsightCardContent {...props} />
+      </Pressable>
+    );
+  }
+
+  return (
+    <View style={[styles.card, accent && styles.accentCard]}>
+      <InsightCardContent {...props} />
     </View>
   );
 }
@@ -24,13 +49,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    gap: 6
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    gap: 7
   },
   accentCard: {
     borderLeftWidth: 2,
-    borderLeftColor: colors.accent
+    borderLeftColor: colors.accent,
+    borderColor: colors.borderGlow,
+    backgroundColor: colors.surfaceSoft
   },
   meta: {
     color: colors.accent,
@@ -42,8 +69,8 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text,
     fontFamily: typography.display,
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 19,
+    lineHeight: 25,
     fontWeight: "600"
   },
   body: {
@@ -51,5 +78,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 21,
     fontWeight: "300"
+  },
+  action: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  pressed: {
+    opacity: 0.78
   }
 });

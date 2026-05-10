@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mirror AI — Design Canvas</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #0A0B0F; }
+  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #293241; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="root" style="width:100%;height:100%;"></div>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel">
+
+// ── Design tokens ─────────────────────────────────────────
+const T = {
+  bg:'#090B10', surf:'#121722', surfSoft:'#18202E', border:'#293241',
+  text:'#F4EFE7', muted:'#A7AFBD', faint:'#707A8A',
+  accent:'#D8B56D', accentSoft:'#3B3220',
+  fD:"'Cormorant Garamond',serif", fB:"'DM Sans',sans-serif",
+};
+
+// ── Phone shell ───────────────────────────────────────────
+function Phone({ children, bg = T.bg }) {
+  return (
+    <div style={{
+      width: 393, height: 750, background: bg,
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden', position: 'relative',
+      fontFamily: T.fB,
+    }}>
+      {/* status bar */}
+      <div style={{
+        height: 52, flexShrink: 0, display: 'flex', alignItems: 'flex-end',
+        justifyContent: 'space-between', padding: '0 24px 10px',
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
+        background: `linear-gradient(to bottom, ${bg} 60%, transparent)`,
+      }}>
+        <span style={{fontSize:13,fontWeight:600,color:T.text,fontVariantNumeric:'tabular-nums'}}>9:41</span>
+        <div style={{display:'flex',gap:5,alignItems:'center'}}>
+          <svg width="15" height="10" viewBox="0 0 19 12" fill={T.text}>
+            <rect x="0" y="7.5" width="3.2" height="4.5" rx=".7"/><rect x="4.8" y="5" width="3.2" height="7" rx=".7"/>
+            <rect x="9.6" y="2.5" width="3.2" height="9.5" rx=".7"/><rect x="14.4" y="0" width="3.2" height="12" rx=".7"/>
+          </svg>
+          <svg width="22" height="11" viewBox="0 0 27 13" fill="none">
+            <rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke={T.text} strokeOpacity=".35"/>
+            <rect x="2" y="2" width="20" height="9" rx="2" fill={T.text}/>
+          </svg>
+        </div>
+      </div>
+      {/* dynamic island */}
+      <div style={{position:'absolute',top:10,left:'50%',transform:'translateX(-50%)',width:110,height:32,background:'#000',borderRadius:20,zIndex:30}}/>
+      {/* home indicator */}
+      <div style={{position:'absolute',bottom:7,left:'50%',transform:'translateX(-50%)',width:120,height:4,background:'rgba(255,255,255,.45)',borderRadius:99,zIndex:30}}/>
+      {/* content */}
+      <div style={{flex:1,overflowY:'hidden',paddingTop:52}}>{children}</div>
+    </div>
+  );
+}
+
+// ── Mini components ───────────────────────────────────────
+const Eyebrow = ({t}) => <div style={{fontSize:9,color:T.accent,fontFamily:T.fB,fontWeight:600,letterSpacing:'.1em',textTransform:'uppercase'}}>{t}</div>;
+const Title = ({t,size=22}) => <div style={{fontSize:size,color:T.text,fontFamily:T.fD,fontWeight:600,lineHeight:1.15}}>{t}</div>;
+const Sub = ({t}) => <div style={{fontSize:11,color:T.muted,lineHeight:1.6,fontWeight:300}}>{t}</div>;
+const Card = ({title,body,accent,meta}) => (
+  <div style={{background:T.surf,border:`1px solid ${T.border}`,borderLeft:accent?`2px solid ${T.accent}`:`1px solid ${T.border}`,borderRadius:10,padding:'11px 13px',display:'flex',flexDirection:'column',gap:4}}>
+    {meta&&<div style={{fontSize:9,color:T.accent,fontFamily:T.fB,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase'}}>{meta}</div>}
+    {title&&<div style={{fontSize:13,color:T.text,fontFamily:T.fD,fontWeight:600,lineHeight:1.25}}>{title}</div>}
+    {body&&<div style={{fontSize:10,color:T.muted,lineHeight:1.55,fontWeight:300}}>{body}</div>}
+  </div>
+);
+const PrimaryBtn = ({label}) => (
+  <div style={{background:T.accent,borderRadius:8,padding:'11px 16px',color:'#08090C',fontFamily:T.fB,fontSize:13,fontWeight:700,textAlign:'center'}}>{label}</div>
+);
+const SecondaryBtn = ({label}) => (
+  <div style={{borderRadius:8,border:`1px solid ${T.border}`,padding:'11px 16px',color:T.text,fontFamily:T.fB,fontSize:13,fontWeight:700,textAlign:'center'}}>{label}</div>
+);
+const Header = ({eyebrow,title,sub,size}) => (
+  <div style={{display:'flex',flexDirection:'column',gap:4,marginBottom:2}}>
+    {eyebrow&&<Eyebrow t={eyebrow}/>}
+    <Title t={title} size={size}/>
+    {sub&&<Sub t={sub}/>}
+  </div>
+);
+const Scr = ({children,pad='14px 16px 20px',gap=10}) => (
+  <div style={{display:'flex',flexDirection:'column',gap,padding:pad,overflowY:'hidden',height:'100%'}}>{children}</div>
+);
+const Stars = () => (
+  <div style={{position:'absolute',inset:0,pointerEvents:'none',overflow:'hidden'}}>
+    {[[8,6],[80,12],[48,4],[92,20],[22,30],[66,26],[5,52],[90,46],[57,40],[30,65],[75,60],[15,76],[94,73],[52,83]].map(([x,y],i)=>(
+      <div key={i} style={{position:'absolute',left:`${x}%`,top:`${y}%`,width:1.5,height:1.5,borderRadius:'50%',background:T.accent,opacity:.4}}/>
+    ))}
+  </div>
+);
+const MirrorMark = ({size=44}) => (
+  <svg width={size} height={size} viewBox="0 0 52 52" fill="none">
+    <circle cx="26" cy="26" r="24" stroke={T.accent} strokeWidth=".6" opacity=".3"/>
+    <circle cx="26" cy="26" r="18" stroke={T.accent} strokeWidth=".6" opacity=".5"/>
+    <circle cx="26" cy="26" r="11" stroke={T.accent} strokeWidth=".7" opacity=".8"/>
+    <circle cx="26" cy="26" r="4"  fill={T.accent}   opacity=".9"/>
+    <path d="M26 9 C19 9 14 17 14 26 C14 17 18 11 24 10 Z" fill={T.accent} opacity=".4"/>
+  </svg>
+);
+const TarotBack = ({w=70,h=110}) => {
+  const lines = Array.from({length:8},(_,i)=>{const a=i*45*Math.PI/180;return{x:Math.sin(a)*18,y:-Math.cos(a)*18};});
+  return (
+    <svg width={w} height={h} viewBox="0 0 70 110" fill="none">
+      <rect x="1" y="1" width="68" height="108" rx="7" fill="#0D1119" stroke={T.accent} strokeWidth=".5" strokeOpacity=".5"/>
+      <g transform="translate(35,55)">
+        {lines.map((l,i)=><line key={i} x1="0" y1="0" x2={l.x.toFixed(1)} y2={l.y.toFixed(1)} stroke={T.accent} strokeWidth=".5" strokeOpacity=".3"/>)}
+        <circle cx="0" cy="0" r="18" stroke={T.accent} strokeWidth=".5" strokeOpacity=".2" fill="none"/>
+        <circle cx="0" cy="0" r="10" stroke={T.accent} strokeWidth=".5" strokeOpacity=".4" fill="none"/>
+        <circle cx="0" cy="0" r="2"  fill={T.accent}   fillOpacity=".5"/>
+      </g>
+    </svg>
+  );
+};
+const BottomBar = ({active}) => {
+  const tabs=[{id:'home',icon:'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z'},{id:'tarot',icon:'M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z'},{id:'coffee',icon:'M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z'},{id:'rel',icon:'M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z'},{id:'profile',icon:'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z'}];
+  const labels={home:'Ana',tarot:'Tarot',coffee:'Kahve',rel:'İlişki',profile:'Profil'};
+  return (
+    <div style={{display:'flex',background:T.surfSoft,borderTop:`1px solid ${T.border}`,paddingBottom:24,paddingTop:7,marginTop:'auto',flexShrink:0}}>
+      {tabs.map(t=>(
+        <div key={t.id} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active===t.id?T.accent:T.faint} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d={t.icon}/>
+          </svg>
+          <span style={{fontSize:8,fontFamily:T.fB,fontWeight:500,color:active===t.id?T.accent:T.faint}}>{labels[t.id]}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+const ScoreBar = ({label,val}) => (
+  <div style={{display:'flex',flexDirection:'column',gap:3}}>
+    <div style={{display:'flex',justifyContent:'space-between'}}>
+      <span style={{fontSize:10,color:T.muted,fontFamily:T.fB}}>{label}</span>
+      <span style={{fontSize:10,color:T.accent,fontFamily:T.fB,fontWeight:700}}>{val}</span>
+    </div>
+    <div style={{height:2.5,borderRadius:2,background:T.border}}>
+      <div style={{height:'100%',borderRadius:2,background:T.accent,width:`${val}%`}}/>
+    </div>
+  </div>
+);
+
+// ══════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════
+
+// 1 · Splash
+const S_Splash = () => (
+  <Phone>
+    <div style={{position:'relative',height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20}}>
+      <Stars/>
+      <div style={{zIndex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:16,textAlign:'center'}}>
+        <MirrorMark size={60}/>
+        <div style={{fontSize:36,color:T.text,fontFamily:T.fD,fontWeight:400,letterSpacing:'.04em'}}>Mirror AI</div>
+        <div style={{fontSize:12,color:T.muted,fontFamily:T.fB,fontWeight:300,letterSpacing:'.12em',textTransform:'uppercase'}}>Kişisel Hafızalı İçgörü</div>
+        <div style={{width:28,height:1,background:T.accent,opacity:.6}}/>
+        <div style={{fontSize:10,color:T.faint,fontFamily:T.fB}}>dokunarak devam et</div>
+      </div>
+    </div>
+  </Phone>
+);
+
+// 2 · Onboarding Welcome
+const S_Welcome = () => (
+  <Phone>
+    <div style={{position:'relative',height:'100%',overflow:'hidden'}}>
+      <Stars/>
+      <Scr gap={10}>
+        <MirrorMark size={38}/>
+        <div style={{display:'flex',flexDirection:'column',gap:4}}>
+          <Eyebrow t="Kişisel hafızalı içgörü"/>
+          <Title t="Seni hatırlayan spiritüel asistan" size={26}/>
+          <Sub t="Tarot, kahve falı, ilişki analizi ve günlük içgörüleri kişisel profilinle birlikte yorumlayan sakin bir alan."/>
+        </div>
+        <Card title="Kesin kehanet değil" body="Sembolik ve farkındalık amaçlı yorumlar." accent/>
+        <Card title="İlk adım: mistik profil" body="Kısa bir test ile yorum stilini kişiselleştireceğiz."/>
+        <div style={{marginTop:'auto',display:'flex',flexDirection:'column',gap:8}}>
+          <PrimaryBtn label="Başla"/>
+          <SecondaryBtn label="Zaten hesabım var"/>
+        </div>
+      </Scr>
+    </div>
+  </Phone>
+);
+
+// 3 · Profile Quiz
+const S_Quiz = () => (
+  <Phone>
+    <Scr>
+      <Header eyebrow="2 / 3 — Profil testi" title="Yorumların seni nasıl okumalı?" sub="Bu test tanı koymaz; yorum stilini ayarlar."/>
+      {['Net sinyal alamadığında ne yaparsın?','Geçmiş ilişkilerinde hangi döngüyü tekrar ettin?','Bir yorumun sana doğru gelmesi için ne gerekir?'].map((q,qi)=>(
+        <div key={qi} style={{background:T.surf,border:`1px solid ${T.border}`,borderRadius:10,padding:'11px 13px',display:'flex',flexDirection:'column',gap:7}}>
+          <div style={{fontSize:12,color:T.text,fontFamily:T.fD,fontWeight:600,lineHeight:1.3}}>{q}</div>
+          {['Seçenek A','Seçenek B','Seçenek C'].map((opt,oi)=>(
+            <div key={oi} style={{padding:'7px 11px',borderRadius:7,border:`1px solid ${oi===1?T.accent:T.border}`,background:oi===1?T.accentSoft:'transparent',color:oi===1?T.text:T.muted,fontFamily:T.fB,fontSize:11}}>{['İçime kapanır, beklerim.','Daha fazla ipucu ararım.','Direkt sorarım.'][oi]}</div>
+          ))}
+        </div>
+      ))}
+      <PrimaryBtn label="Mistik profilimi oluştur"/>
+    </Scr>
+  </Phone>
+);
+
+// 4 · Mystic Profile Result
+const S_Profile = () => (
+  <Phone>
+    <div style={{position:'relative',height:'100%',overflow:'hidden'}}>
+      <Stars/>
+      <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:18,padding:'0 24px',textAlign:'center'}}>
+        <MirrorMark size={68}/>
+        <div style={{display:'flex',flexDirection:'column',gap:7}}>
+          <Eyebrow t="3 / 3 — Mistik profil"/>
+          <div style={{fontSize:32,color:T.text,fontFamily:T.fD,fontWeight:400,lineHeight:1.1}}>Sezgisel Gözlemci</div>
+          <div style={{width:36,height:1,background:T.accent,opacity:.6,margin:'4px auto'}}/>
+          <div style={{fontSize:12,color:T.muted,fontFamily:T.fB,lineHeight:1.7,fontWeight:300}}>Belirsizliği okuma yeteneğin yüksek; ama çok katmanlı yorumlar zaman zaman seni yorabilir.</div>
+        </div>
+        <Card title="Yorum stili" body={`"sembolik" — yorumlar bu çerçevede kişiselleştirilecek.`} accent/>
+        <div style={{width:'100%'}}><PrimaryBtn label="Ana ekrana geç →"/></div>
+      </div>
+    </div>
+  </Phone>
+);
+
+// 5 · Home
+const S_Home = () => (
+  <Phone>
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <Scr gap={10}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+          <Header eyebrow="Mirror AI" title="Bugün iç aynanda ne var?" size={22}/>
+          <div style={{fontSize:20,color:T.accent,fontFamily:T.fD,opacity:.7}}>☽</div>
+        </div>
+        <div style={{fontSize:10,color:T.faint}}>pazar, 27 nisan 2025</div>
+        <Card meta="Sezgisel Gözlemci" title="Günlük enerji" body="Bugün netlik arayışı ile sezgisel hisleri ayırmak iyi gelebilir." accent/>
+        <PrimaryBtn label="Bugünkü içgörümü göster"/>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {['Tarot','Kahve falı','İlişki analizi','Profilim'].map(l=>(
+            <div key={l} style={{minHeight:42,borderRadius:8,border:`1px solid ${T.border}`,background:T.surf,color:T.text,fontFamily:T.fB,fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>{l}</div>
+          ))}
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div style={{fontSize:14,color:T.text,fontFamily:T.fD,fontWeight:600}}>Son yorumlar</div>
+          <div style={{flex:1,height:1,background:T.border,opacity:.5}}/>
+        </div>
+        {[{t:'Bugünün İç Aynası',type:'Günlük'},{t:'Tarot Aynası',type:'Tarot'},{t:'İlişki Enerji Analizi',type:'İlişki'}].map(r=>(
+          <div key={r.t} style={{background:T.surf,border:`1px solid ${T.border}`,borderRadius:10,padding:'10px 13px',display:'flex',flexDirection:'column',gap:4}}>
+            <div style={{fontSize:9,color:T.accent,fontFamily:T.fB,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase'}}>{r.type}</div>
+            <div style={{fontSize:13,color:T.text,fontFamily:T.fD,fontWeight:600}}>{r.t}</div>
+            <div style={{fontSize:10,color:T.muted,fontFamily:T.fB}}>Sakin bir gözlem hali, tekrar eden düşüncelerin…</div>
+          </div>
+        ))}
+      </Scr>
+      <BottomBar active="home"/>
+    </div>
+  </Phone>
+);
+
+// 6 · Tarot
+const S_Tarot = () => (
+  <Phone>
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <Scr gap={10}>
+        <Header eyebrow="Tarot" title="Kartları hüküm değil ayna olarak aç" sub="Sembolik okuma — kartlar içe bakış daveti sunar." size={20}/>
+        <div style={{display:'flex',flexDirection:'column',gap:5}}>
+          <div style={{fontSize:9,color:T.muted,fontFamily:T.fB,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase'}}>Açılım tipi</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+            {['Tek kart','Üç kart','İlişki','Karar'].map((l,i)=>(
+              <div key={l} style={{padding:'6px 13px',borderRadius:16,border:`1px solid ${i===1?T.accent:T.border}`,background:i===1?T.accentSoft:'transparent',color:i===1?T.text:T.muted,fontFamily:T.fB,fontSize:11,fontWeight:600}}>{l}</div>
+            ))}
+          </div>
+        </div>
+        <div style={{display:'flex',justifyContent:'center',gap:10,padding:'6px 0'}}>
+          <TarotBack/><TarotBack/><TarotBack/>
+        </div>
+        {['Konu','Sorun'].map(l=>(
+          <div key={l} style={{display:'flex',flexDirection:'column',gap:4}}>
+            <div style={{fontSize:9,color:T.muted,fontFamily:T.fB,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase'}}>{l}</div>
+            <div style={{background:T.surf,border:`1px solid ${T.border}`,borderRadius:8,padding:'10px 12px',color:T.muted,fontSize:12,fontFamily:T.fB}}>{l==='Konu'?'relationship':l==='Sorun'?'Bu kişiyle devam etmeli miyim?':''}</div>
+          </div>
+        ))}
+        <PrimaryBtn label="Kartları aç"/>
+      </Scr>
+      <BottomBar active="tarot"/>
+    </div>
+  </Phone>
+);
+
+// 7 · Coffee
+const S_Coffee = () => (
+  <Phone>
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <Scr gap={10}>
+        <Header eyebrow="Kahve falı" title="Fincandaki sembolleri kişisel bağlamla oku" size={20}/>
+        <div style={{background:T.surf,border:`1px dashed ${T.border}`,borderRadius:10,padding:'16px',display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+          <div style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.faint} strokeWidth="1.5" strokeLinecap="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+          <div style={{fontSize:11,color:T.muted,fontFamily:T.fB,fontWeight:600,borderRadius:7,border:`1px solid ${T.border}`,padding:'7px 14px'}}>Fincan fotoğrafı seç</div>
+          <div style={{fontSize:10,color:T.faint,fontFamily:T.fB,textAlign:'center',lineHeight:1.5}}>Fotoğraf Supabase Storage'da saklanacak.</div>
+        </div>
+        {['Konu','Sorun','Ek bağlam'].map((l,i)=>(
+          <div key={l} style={{display:'flex',flexDirection:'column',gap:4}}>
+            <div style={{fontSize:9,color:T.muted,fontFamily:T.fB,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase'}}>{l}</div>
+            <div style={{background:T.surf,border:`1px solid ${T.border}`,borderRadius:8,padding:i>0?'28px 12px 10px':'10px 12px',color:T.faint,fontSize:11,fontFamily:T.fB}}>{['love','Aklımdaki kişiyle aramızdaki enerji ne söylüyor?','Son günlerde biraz uzaklaştı.'][i]}</div>
+          </div>
+        ))}
+        <PrimaryBtn label="Analizi başlat"/>
+      </Scr>
+      <BottomBar active="coffee"/>
+    </div>
+  </Phone>
+);
+
+// 8 · Relationship
+const S_Relationship = () => (
+  <Phone>
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <Scr gap={10}>
+        <Header eyebrow="İlişki enerjisi" title="Dinamiği kesin hüküm kurmadan ayır" sub="Çekim, netlik ve belirsizlik temalarını analiz eder." size={20}/>
+        {['Kişi adı / takma ad','Ana sorun','Son bağlam'].map((l,i)=>(
+          <div key={l} style={{display:'flex',flexDirection:'column',gap:4}}>
+            <div style={{fontSize:9,color:T.muted,fontFamily:T.fB,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase'}}>{l}</div>
+            <div style={{background:T.surf,border:`1px solid ${T.border}`,borderRadius:8,padding:i>0?'28px 12px 10px':'10px 12px',color:i===0?T.muted:T.faint,fontSize:11,fontFamily:T.fB}}>{['A.','Bu kişi bana karşı ne hissediyor olabilir?','Son mesajıma geç cevap verdi.'][i]}</div>
+          </div>
+        ))}
+        <div style={{display:'flex',flexDirection:'column',gap:4}}>
+          <div style={{fontSize:9,color:T.muted,fontFamily:T.fB,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase'}}>Son durum</div>
+          <div style={{display:'flex',gap:6}}>
+            {['Uzaklaştı','Yakın','Belirsiz','Bitti'].map((l,i)=>(
+              <div key={l} style={{padding:'6px 11px',borderRadius:16,border:`1px solid ${i===0?T.accent:T.border}`,background:i===0?T.accentSoft:'transparent',color:i===0?T.text:T.muted,fontFamily:T.fB,fontSize:10,fontWeight:600}}>{l}</div>
+            ))}
+          </div>
+        </div>
+        <PrimaryBtn label="Analizi başlat"/>
+      </Scr>
+      <BottomBar active="rel"/>
+    </div>
+  </Phone>
+);
+
+// 9 · Reading Detail (Tarot)
+const S_ReadingTarot = () => (
+  <Phone>
+    <Scr gap={9}>
+      <div style={{display:'flex',alignItems:'center',gap:5}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.accent} strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        <span style={{fontSize:11,color:T.accent,fontFamily:T.fB,fontWeight:600}}>Geri</span>
+      </div>
+      <Header eyebrow="Tarot" title="Tarot Aynası" sub="Kartlar bu konuyu görünmeyen duygu ve karar ekseni üzerinden okuyor." size={20}/>
+      <div style={{display:'flex',justifyContent:'center',gap:8}}>
+        {[['Geçmiş','The Moon','düz'],['Şimdi','Two of Cups','ters'],['Yön','Justice','düz']].map(([pos,card,ori])=>(
+          <div key={pos} style={{width:68,height:106,borderRadius:7,background:T.surf,border:`1px solid ${T.accent}`,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'6px 4px'}}>
+            <div style={{fontSize:7,color:T.accent,fontFamily:T.fB,fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>{pos}</div>
+            <div style={{fontSize:9,color:T.text,fontFamily:T.fD,fontWeight:600,textAlign:'center',lineHeight:1.3}}>{card}</div>
+            <div style={{fontSize:7,color:T.faint,fontFamily:T.fB}}>{ori}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:9,color:T.faint,fontFamily:T.fB,textAlign:'center'}}>Kartlara dokun — çevir</div>
+      {['Kişisel Bağlam','Geçmiş: The Moon','Şimdi: Two of Cups'].map(t=><Card key={t} title={t} body="Sembolik okuma, sorunun içinde hem sezgisel bir çağrı hem de sınır koyma ihtiyacı gösteriyor." accent/>)}
+      <Card title="Öneri" body="Kartları bir hüküm gibi değil, daha iyi sorular için bir ayna gibi kullan."/>
+    </Scr>
+  </Phone>
+);
+
+// 10 · Reading Detail (Relationship)
+const S_ReadingRel = () => (
+  <Phone>
+    <Scr gap={9}>
+      <div style={{display:'flex',alignItems:'center',gap:5}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.accent} strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        <span style={{fontSize:11,color:T.accent,fontFamily:T.fB,fontWeight:600}}>Geri</span>
+      </div>
+      <Header eyebrow="İlişki Analizi" title="İlişki Enerji Analizi" sub="Bu kişi ile dinamikte çekim kadar belirsizlik de görünür." size={20}/>
+      {['Kişisel Bağlam','Duygusal Çekim','İletişim Netliği','Riskli Patern'].map(t=><Card key={t} title={t} body="Verilen bilgiler karşılıklı merak ihtimalini dışlamıyor, ama bunu kesin ilgi olarak yorumlamak sağlıklı olmaz." accent/>)}
+      <div style={{background:T.surf,border:`1px solid ${T.border}`,borderRadius:10,padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
+        <div style={{fontSize:13,color:T.text,fontFamily:T.fD,fontWeight:600}}>Enerji haritası</div>
+        <ScoreBar label="Duygusal çekim" val={72}/>
+        <ScoreBar label="İletişim netliği" val={48}/>
+        <ScoreBar label="Belirsizlik" val={81}/>
+        <ScoreBar label="Projeksiyon riski" val={67}/>
+      </div>
+    </Scr>
+  </Phone>
+);
+
+// 11 · Profile
+const S_ProfileTab = () => (
+  <Phone>
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <Scr gap={10}>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12,paddingTop:4}}>
+          <div style={{width:60,height:60,borderRadius:'50%',background:T.accentSoft,border:`1px solid ${T.accent}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <span style={{fontSize:22,color:T.accent,fontFamily:T.fD,fontWeight:600}}>S</span>
+          </div>
+          <div style={{textAlign:'center',display:'flex',flexDirection:'column',gap:3}}>
+            <div style={{fontSize:20,color:T.text,fontFamily:T.fD,fontWeight:600}}>Sezgisel Gözlemci</div>
+            <div style={{fontSize:10,color:T.muted,fontFamily:T.fB,fontWeight:300,lineHeight:1.6,maxWidth:220}}>Belirsizliği okuma yeteneğin yüksek; ama çok katmanlı yorumlar seni yorabilir.</div>
+          </div>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+          {[['120','Kredi'],['7','Yorum'],['3','Geri Bildirim']].map(([v,l])=>(
+            <div key={l} style={{background:T.surf,border:`1px solid ${T.border}`,borderRadius:10,padding:'10px 8px',display:'flex',flexDirection:'column',gap:3,alignItems:'center'}}>
+              <div style={{fontSize:20,color:T.accent,fontFamily:T.fD,fontWeight:600}}>{v}</div>
+              <div style={{fontSize:9,color:T.muted,fontFamily:T.fB,textAlign:'center'}}>{l}</div>
+            </div>
+          ))}
+        </div>
+        <Card title="Natal haritam" body="Güneş İkizler, Ay Balık, Yükselen Aslan." meta="Astroloji" accent/>
+        <Card title="Hafıza olayları" body="Kaydettiğin anlar yorumların bağlamını derinleştirir."/>
+        <div style={{background:T.accentSoft,border:`1px solid ${T.accent}`,borderRadius:10,padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <div style={{fontSize:13,color:T.text,fontFamily:T.fD,fontWeight:600}}>Krediler</div>
+            <div style={{fontSize:11,color:T.muted,fontFamily:T.fB}}>Mevcut: 120 kredi</div>
+          </div>
+          <div style={{padding:'6px 12px',borderRadius:7,background:T.accent,color:'#08090C',fontFamily:T.fB,fontSize:11,fontWeight:700}}>Satın al</div>
+        </div>
+        <SecondaryBtn label="Çıkış yap"/>
+      </Scr>
+      <BottomBar active="profile"/>
+    </div>
+  </Phone>
+);
+
+// 12 · Natal Chart
+const S_Natal = () => {
+  const CX=146,CY=146,R_OUT=134,R_SIGN=111,R_HOUSE=91,R_IN=76;
+  const SIGNS=['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+  const ELEMS=['fire','earth','air','water','fire','earth','air','water','fire','earth','air','water'];
+  const EFILL={fire:'rgba(232,168,124,.18)',earth:'rgba(139,201,160,.15)',air:'rgba(168,200,232,.15)',water:'rgba(196,168,224,.15)'};
+  const PLNTS=[{g:'☉',d:83,c:'#E8C870'},{g:'☽',d:345,c:'#C8D4E8'},{g:'AC',d:130,c:T.accent},{g:'☿',d:70,c:'#A7AFBD'},{g:'♀',d:148,c:'#E0A8B8'},{g:'♂',d:100,c:'#E28484'}];
+  const pol=(r,deg)=>{const rad=(deg-90)*Math.PI/180;return{x:CX+r*Math.cos(rad),y:CY+r*Math.sin(rad)};};
+  const seg=(r1,r2,s,e)=>{const a1=pol(r1,s),a2=pol(r2,s),b1=pol(r1,e),b2=pol(r2,e);return `M${a1.x.toFixed(1)} ${a1.y.toFixed(1)} A${r1} ${r1} 0 0 1 ${b1.x.toFixed(1)} ${b1.y.toFixed(1)} L${b2.x.toFixed(1)} ${b2.y.toFixed(1)} A${r2} ${r2} 0 0 0 ${a2.x.toFixed(1)} ${a2.y.toFixed(1)} Z`;};
+  return (
+    <Phone>
+      <Scr gap={10}>
+        <div style={{display:'flex',alignItems:'center',gap:5}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.accent} strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <span style={{fontSize:11,color:T.accent,fontFamily:T.fB,fontWeight:600}}>Profil</span>
+        </div>
+        <Header eyebrow="Natal Harita" title="Doğum haritanın şiiri" sub="Swiss Ephemeris ile hesaplandı." size={20}/>
+        <div style={{display:'flex',justifyContent:'center'}}>
+          <svg width="292" height="292" viewBox="0 0 292 292">
+            {SIGNS.map((s,i)=>{const st=i*30,en=st+30,m=pol(R_SIGN+(R_OUT-R_SIGN)/2,st+15);return(<g key={i}><path d={seg(R_SIGN,R_OUT,st,en)} fill={EFILL[ELEMS[i]]} stroke="#293241" strokeWidth=".5"/><text x={m.x.toFixed(1)} y={(m.y+4).toFixed(1)} textAnchor="middle" fontSize="12" fill={T.accent} fontFamily="serif" opacity=".85">{s}</text></g>);})}
+            {Array.from({length:12},(_,i)=>{const p1=pol(R_HOUSE,i*30),p2=pol(R_SIGN,i*30);return <line key={i} x1={p1.x.toFixed(1)} y1={p1.y.toFixed(1)} x2={p2.x.toFixed(1)} y2={p2.y.toFixed(1)} stroke="#293241" strokeWidth=".5"/>;} )}
+            {Array.from({length:12},(_,i)=>{const m=pol((R_HOUSE+R_SIGN)/2,i*30+15);return <text key={i} x={m.x.toFixed(1)} y={(m.y+3).toFixed(1)} textAnchor="middle" fontSize="7" fill="#707A8A">{i+1}</text>;})}
+            <circle cx={CX} cy={CY} r={R_HOUSE} fill="#0D1119" stroke="#293241" strokeWidth=".6"/>
+            <circle cx={CX} cy={CY} r={R_IN}    fill="#090B10" stroke="#293241" strokeWidth=".5"/>
+            {PLNTS.map((p,i)=>{const o=pol(R_IN,p.d);return <line key={i} x1={CX} y1={CY} x2={o.x.toFixed(1)} y2={o.y.toFixed(1)} stroke={p.c} strokeWidth=".8" opacity=".4"/>;} )}
+            {PLNTS.map((p,i)=>{const pt=pol(R_IN-7,p.d);return(<g key={i}><circle cx={pt.x.toFixed(1)} cy={pt.y.toFixed(1)} r="6.5" fill="#121722" stroke={p.c} strokeWidth="1.2"/><text x={pt.x.toFixed(1)} y={(pt.y+3.2).toFixed(1)} textAnchor="middle" fontSize="6.5" fill={p.c} fontFamily="serif">{p.g}</text></g>);})}
+            <circle cx={CX} cy={CY} r="3.5" fill={T.accent} opacity=".7"/>
+          </svg>
+        </div>
+        <Card title="Sembolik yorum" body="Güneş İkizler'de iletişim ana tema. Ay Balık'ta duygusal derinlik. Yükselen Aslan dış dünyaya güçlü görünme ihtiyacı." accent/>
+      </Scr>
+    </Phone>
+  );
+};
+
+// 13 · Memory
+const S_Memory = () => (
+  <Phone>
+    <Scr gap={10}>
+      <div style={{display:'flex',alignItems:'center',gap:5}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.accent} strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        <span style={{fontSize:11,color:T.accent,fontFamily:T.fB,fontWeight:600}}>Profil</span>
+      </div>
+      <Header eyebrow="Hafıza" title="Mirror seni hatırlıyor" sub="Kaydettiğin anlar yorumların bağlamını derinleştirir." size={20}/>
+      <PrimaryBtn label="+ Yeni an ekle"/>
+      {[
+        {icon:'💫',date:'2024-12-10',text:'A. ile son görüşme — uzaklaştığını fark ettim ama ses çıkarmadım.'},
+        {icon:'🔄',date:'2024-11-23',text:'Yine ulaşılması zor birine ilgi duyduğumu fark ettim.'},
+        {icon:'☕',date:'2024-10-05',text:'Kahve falı: "yol" sembolü o ay başladığım projeyi anlatıyordu.'},
+        {icon:'🌙',date:'2024-09-18',text:'Tekrarlayan kapı rüyası — karar noktasında hissediyorum.'},
+      ].map((m,i,arr)=>(
+        <div key={i} style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0}}>
+            <div style={{width:28,height:28,borderRadius:'50%',background:T.accentSoft,border:`1px solid ${T.accent}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>{m.icon}</div>
+            {i<arr.length-1&&<div style={{width:1,height:28,background:T.border,opacity:.4}}/>}
+          </div>
+          <div style={{flex:1,paddingBottom:10}}>
+            <div style={{fontSize:9,color:T.faint,fontFamily:T.fB,marginBottom:3}}>{m.date}</div>
+            <div style={{fontSize:11,color:T.muted,fontFamily:T.fB,lineHeight:1.6,fontWeight:300}}>{m.text}</div>
+          </div>
+        </div>
+      ))}
+    </Scr>
+  </Phone>
+);
+
+// 14 · Credits
+const S_Credits = () => (
+  <Phone>
+    <Scr gap={10}>
+      <div style={{display:'flex',alignItems:'center',gap:5}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.accent} strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        <span style={{fontSize:11,color:T.accent,fontFamily:T.fB,fontWeight:600}}>Profil</span>
+      </div>
+      <Header eyebrow="Krediler" title="Yorumlar için yakıt" sub="Her yorum 1 kredi kullanır." size={20}/>
+      <div style={{background:T.accentSoft,border:`1px solid ${T.accent}`,borderRadius:12,padding:'16px',display:'flex',alignItems:'center',gap:14}}>
+        <div style={{fontSize:38,color:T.accent,fontFamily:T.fD,fontWeight:300,lineHeight:1}}>120</div>
+        <div>
+          <div style={{fontSize:12,color:T.text,fontFamily:T.fB,fontWeight:600}}>Mevcut kredi</div>
+          <div style={{fontSize:10,color:T.muted,fontFamily:T.fB}}>Son yenileme: bugün</div>
+        </div>
+      </div>
+      {[['Başlangıç','İlk 20 kredi','Ücretsiz',20,false],['Ay Paketi','Aylık yenilenir','₺89',100,true],['Yıllık Premium','Sınırsız + hafıza','₺399/yıl',999,false]].map(([label,desc,price,credits,sel])=>(
+        <div key={label} style={{background:sel?T.accentSoft:T.surf,border:`1px solid ${sel?T.accent:T.border}`,borderRadius:10,padding:'13px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <div style={{fontSize:14,color:T.text,fontFamily:T.fD,fontWeight:600}}>{label}</div>
+            <div style={{fontSize:10,color:T.muted,fontFamily:T.fB,marginTop:2}}>{desc}</div>
+          </div>
+          <div style={{textAlign:'right'}}>
+            <div style={{fontSize:13,color:sel?T.accent:T.text,fontFamily:T.fB,fontWeight:700}}>{price}</div>
+            <div style={{fontSize:9,color:T.faint,fontFamily:T.fB}}>{credits===999?'sınırsız':`${credits} kredi`}</div>
+          </div>
+        </div>
+      ))}
+      <PrimaryBtn label="Satın al"/>
+    </Scr>
+  </Phone>
+);
+
+// ══════════════════════════════════════════════════════════
+// DESIGN CANVAS
+// ══════════════════════════════════════════════════════════
+function App() {
+  return (
+    <DesignCanvas title="Mirror AI — Tüm Ekranlar">
+      <DCSection id="s1" title="Onboarding">
+        <DCArtboard id="a01" label="01 Splash"          width={393} height={750}><S_Splash/></DCArtboard>
+        <DCArtboard id="a02" label="02 Hoşgeldin"       width={393} height={750}><S_Welcome/></DCArtboard>
+        <DCArtboard id="a03" label="03 Profil Testi"    width={393} height={750}><S_Quiz/></DCArtboard>
+        <DCArtboard id="a04" label="04 Mistik Profil"   width={393} height={750}><S_Profile/></DCArtboard>
+      </DCSection>
+      <DCSection id="s2" title="Ana Akış">
+        <DCArtboard id="a05" label="05 Ana Ekran"       width={393} height={750}><S_Home/></DCArtboard>
+        <DCArtboard id="a06" label="06 Tarot"           width={393} height={750}><S_Tarot/></DCArtboard>
+        <DCArtboard id="a07" label="07 Kahve Falı"      width={393} height={750}><S_Coffee/></DCArtboard>
+        <DCArtboard id="a08" label="08 İlişki Analizi"  width={393} height={750}><S_Relationship/></DCArtboard>
+      </DCSection>
+      <DCSection id="s3" title="Yorumlar">
+        <DCArtboard id="a09" label="09 Yorum — Tarot"   width={393} height={750}><S_ReadingTarot/></DCArtboard>
+        <DCArtboard id="a10" label="10 Yorum — İlişki"  width={393} height={750}><S_ReadingRel/></DCArtboard>
+      </DCSection>
+      <DCSection id="s4" title="Profil & Yeni Ekranlar">
+        <DCArtboard id="a11" label="11 Profil"          width={393} height={750}><S_ProfileTab/></DCArtboard>
+        <DCArtboard id="a12" label="12 Natal Harita ✦"  width={393} height={750}><S_Natal/></DCArtboard>
+        <DCArtboard id="a13" label="13 Hafıza ✦"        width={393} height={750}><S_Memory/></DCArtboard>
+        <DCArtboard id="a14" label="14 Krediler ✦"      width={393} height={750}><S_Credits/></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

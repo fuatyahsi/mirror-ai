@@ -19,7 +19,7 @@ export function PageHeader({ eyebrow, title, subtitle }: PageHeaderProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: 5,
+    gap: 6,
     marginBottom: spacing.xs
   },
   eyebrow: {
@@ -32,14 +32,14 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text,
     fontFamily: typography.display,
-    fontSize: 34,
-    lineHeight: 39,
+    fontSize: 33,
+    lineHeight: 38,
     fontWeight: "600",
     letterSpacing: 0
   },
   subtitle: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 22,
     fontWeight: "300"
   }

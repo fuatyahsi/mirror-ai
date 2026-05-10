@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: "transparent",
+    backgroundColor: colors.surfaceSoft,
     overflow: "hidden"
   },
   option: {
@@ -73,6 +73,6 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   optionTextActive: {
-    color: colors.background
+    color: colors.text
   }
 });

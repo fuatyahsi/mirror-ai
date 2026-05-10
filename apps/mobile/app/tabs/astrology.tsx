@@ -7,11 +7,12 @@ import { InsightCard } from "@/components/cards/InsightCard";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Screen } from "@/components/layout/Screen";
+import { SubtlePremiumOffer } from "@/components/paywall/SubtlePremiumOffer";
 import { calculateNatalChart, isUserFacingChartWarning } from "@/features/astrology/api";
 import { useI18n, type Locale, type TranslationKey } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
-import { colors, radii, spacing, typography } from "@/theme";
-import type { MysticProfile } from "@/types/profile";
+import { colors, featureColors, radii, spacing, typography } from "@/theme";
+import type { BirthInfo, MysticProfile } from "@/types/profile";
 import type { HousePoint, NatalAspect, NatalChart, ZodiacPoint } from "@/types/astrology";
 
 type AstrologyView = "birth" | "star" | "natal";
@@ -78,9 +79,10 @@ export default function AstrologyScreen() {
     <Screen>
       <PageHeader eyebrow={t("astrology.eyebrow")} title={t("astrology.title")} subtitle={t("astrology.subtitle")} />
       <SegmentedControl activeView={activeView} onChange={setActiveView} />
-      {activeView === "birth" ? <BirthChartView chart={chart} profile={profile.mystic_profile} /> : null}
+      {activeView === "birth" ? <BirthChartView chart={chart} birth={profile.birth} profile={profile.mystic_profile} /> : null}
       {activeView === "star" ? <StarChartView chart={chart} profile={profile.mystic_profile} /> : null}
-      {activeView === "natal" ? <NatalHoroscopeView chart={chart} profile={profile.mystic_profile} /> : null}
+      {activeView === "natal" ? <NatalHoroscopeView chart={chart} birth={profile.birth} profile={profile.mystic_profile} /> : null}
+      <SubtlePremiumOffer feature="deep_birth_chart" compact />
       {visibleWarnings.length > 0 ? (
         <InsightCard title={t("astrology.warningsTitle")} body={visibleWarnings.join("\n")} />
       ) : null}
@@ -110,9 +112,9 @@ function SegmentedControl({ activeView, onChange }: { activeView: AstrologyView;
   );
 }
 
-function BirthChartView({ chart, profile }: { chart: NatalChart; profile?: MysticProfile }) {
+function BirthChartView({ chart, birth, profile }: { chart: NatalChart; birth: BirthInfo; profile?: MysticProfile }) {
   const { locale, t } = useI18n();
-  const birthInterpretations = buildBirthDataInterpretations(chart, profile, locale, t);
+  const birthInterpretations = buildBirthDataInterpretations(chart, profile, birth, locale, t);
   const corePoints = [
     { label: t("astrology.sun"), point: chart.sun },
     { label: t("astrology.moon"), point: chart.moon },
@@ -145,12 +147,12 @@ function BirthChartView({ chart, profile }: { chart: NatalChart; profile?: Mysti
 
       <Section title={t("astrology.referencesTitle")}>
         <ReferenceLine label={t("astrology.engine")} value={chart.engine.name} />
-        <ReferenceLine label={t("astrology.birthData")} value={formatBirthData(chart)} />
+        <ReferenceLine label={t("astrology.birthData")} value={formatBirthData(chart, birth)} />
         <ReferenceLine label="UTC" value={chart.time.utc} />
         <ReferenceLine label="JD UT" value={String(chart.time.julian_day_ut)} />
         <ReferenceLine
           label={t("astrology.location")}
-          value={`${chart.input.latitude.toFixed(4)}, ${chart.input.longitude.toFixed(4)} / ${chart.input.timezone}`}
+          value={formatLocationData(chart, birth)}
         />
         <Text style={styles.referenceBody}>{t("astrology.referenceBody")}</Text>
       </Section>
@@ -217,9 +219,9 @@ function StarChartView({ chart, profile }: { chart: NatalChart; profile?: Mystic
   );
 }
 
-function NatalHoroscopeView({ chart, profile }: { chart: NatalChart; profile?: MysticProfile }) {
+function NatalHoroscopeView({ chart, birth, profile }: { chart: NatalChart; birth: BirthInfo; profile?: MysticProfile }) {
   const { locale, t } = useI18n();
-  const interpretations = buildNatalInterpretations(chart, profile, locale, t);
+  const interpretations = buildNatalInterpretations(chart, profile, birth, locale, t);
 
   return (
     <>
@@ -239,29 +241,109 @@ function NatalHoroscopeView({ chart, profile }: { chart: NatalChart; profile?: M
   );
 }
 
+const WHEEL_SIZE = 286;
+const WHEEL_CENTER = WHEEL_SIZE / 2;
+const zodiacLabels = ["Koc", "Boga", "Ikiz", "Yeng", "Asl", "Bas", "Ter", "Akr", "Yay", "Ogl", "Kov", "Bal"];
+const planetPalette = [colors.accentGold, colors.accentTeal, colors.accentRose, colors.accentBlue, colors.accentStrong];
+
 function ChartWheel({ chart }: { chart: NatalChart }) {
-  const wheelPoints = [
-    chart.sun.sign_label,
-    chart.moon.sign_label,
-    chart.ascendant.sign_label,
-    chart.midheaven?.sign_label
-  ].filter(Boolean);
+  const planetMarkers = [
+    { label: "SUN", point: chart.sun, color: colors.accentGold, radius: 91 },
+    { label: "MOON", point: chart.moon, color: colors.accentTeal, radius: 70 },
+    { label: "ASC", point: chart.ascendant, color: colors.accentBlue, radius: 104 },
+    chart.midheaven ? { label: "MC", point: chart.midheaven, color: colors.accentRose, radius: 82 } : null,
+    findPlanet(chart, "venus") ? { label: "VEN", point: findPlanet(chart, "venus") as ZodiacPoint, color: colors.accentStrong, radius: 58 } : null
+  ].filter(Boolean) as { label: string; point: ZodiacPoint; color: string; radius: number }[];
+  const aspectLines = chart.aspects.slice(0, 5).map((aspect, index) => ({
+    angle: (index * 31 + Math.round(aspect.orb * 14)) % 180,
+    color: planetPalette[index % planetPalette.length]
+  }));
 
   return (
-    <View style={styles.wheel}>
-      <View style={styles.wheelRingOuter} />
-      <View style={styles.wheelRingMiddle} />
-      <View style={styles.wheelRingInner} />
-      <View style={styles.wheelAxisVertical} />
-      <View style={styles.wheelAxisHorizontal} />
-      <MirrorMark size={42} />
-      {wheelPoints.slice(0, 4).map((label, index) => (
-        <Text key={`${label}-${index}`} style={[styles.wheelLabel, wheelLabelStyles[index]]}>
-          {label}
-        </Text>
-      ))}
+    <View style={styles.chartVisual}>
+      <View style={styles.wheelFrame}>
+        <View style={styles.wheelGlow} />
+        <View style={styles.wheelRingOuter} />
+        <View style={styles.wheelRingMiddle} />
+        <View style={styles.wheelRingInner} />
+        <View style={styles.wheelHorizon} />
+        <View style={styles.wheelMeridian} />
+        {zodiacLabels.map((label, index) => {
+          const angle = index * 30;
+          const labelPosition = wheelPosition(angle, 127, 32);
+          return (
+            <View key={label} style={[styles.zodiacLabelWrap, labelPosition]}>
+              <Text style={styles.zodiacLabel}>{label}</Text>
+            </View>
+          );
+        })}
+        {Array.from({ length: 36 }).map((_, index) => {
+          const isMajor = index % 3 === 0;
+          return (
+            <View
+              key={`tick-${index}`}
+              style={[
+                styles.zodiacTick,
+                isMajor ? styles.zodiacTickMajor : null,
+                { transform: [{ rotate: `${index * 10}deg` }, { translateY: -131 }] }
+              ]}
+            />
+          );
+        })}
+        {aspectLines.map((line, index) => (
+          <View
+            key={`${line.angle}-${index}`}
+            style={[
+              styles.aspectLine,
+              {
+                backgroundColor: line.color,
+                transform: [{ rotate: `${line.angle}deg` }]
+              }
+            ]}
+          />
+        ))}
+        {planetMarkers.map((marker) => (
+          <View
+            key={marker.label}
+            style={[
+              styles.planetMarker,
+              wheelPosition(marker.point.absolute_degree, marker.radius, 42),
+              { borderColor: marker.color }
+            ]}
+          >
+            <View style={[styles.planetDot, { backgroundColor: marker.color }]} />
+            <Text style={[styles.planetLabel, { color: marker.color }]}>{marker.label}</Text>
+            <Text numberOfLines={1} style={styles.planetSign}>
+              {marker.point.sign_label}
+            </Text>
+          </View>
+        ))}
+        <View style={styles.wheelCore}>
+          <MirrorMark size={34} />
+        </View>
+      </View>
+      <View style={styles.chartBadgeRow}>
+        {planetMarkers.slice(0, 4).map((marker) => (
+          <View key={`badge-${marker.label}`} style={[styles.chartBadge, { borderColor: marker.color }]}>
+            <Text style={[styles.chartBadgeLabel, { color: marker.color }]}>{marker.label}</Text>
+            <Text numberOfLines={1} style={styles.chartBadgeValue}>
+              {marker.point.sign_label} {marker.point.degree.toFixed(1)}
+            </Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
+}
+
+function wheelPosition(degree: number, radius: number, size: number) {
+  const angle = (degree - 90) * (Math.PI / 180);
+  return {
+    left: WHEEL_CENTER + Math.cos(angle) * radius - size / 2,
+    top: WHEEL_CENTER + Math.sin(angle) * radius - size / 2,
+    width: size,
+    height: size
+  };
 }
 
 function PointCard({ label, point }: { label: string; point?: ZodiacPoint }) {
@@ -389,6 +471,7 @@ type NatalInterpretation = {
 function buildBirthDataInterpretations(
   chart: NatalChart,
   profile: MysticProfile | undefined,
+  birth: BirthInfo | undefined,
   locale: Locale,
   t: (key: TranslationKey, values?: Record<string, string | number>) => string
 ): NatalInterpretation[] {
@@ -397,14 +480,15 @@ function buildBirthDataInterpretations(
   const style = profile?.preferred_reading_style ?? t("result.readingStyleFallback");
   const clarity = scoreText(profile?.rationality_need, locale);
   const uncertainty = scoreText(profile?.uncertainty_tolerance, locale);
-  const location = `${chart.input.latitude.toFixed(4)}, ${chart.input.longitude.toFixed(4)} / ${chart.input.timezone}`;
+  const birthData = formatBirthData(chart, birth);
+  const location = formatLocationData(chart, birth);
 
   return [
     {
       title: copy.birthCalculationTitle,
       body: fill(copy.birthCalculationBody, {
         engine: chart.engine.name,
-        birth: formatBirthData(chart),
+        birth: birthData,
         sun: formatPointShort(chart.sun),
         moon: formatPointShort(chart.moon),
         ascendant: formatPointShort(chart.ascendant),
@@ -415,7 +499,8 @@ function buildBirthDataInterpretations(
       action: fill(copy.birthCalculationAction, { clarity, style }),
       references: [
         `${t("astrology.engine")}: ${chart.engine.name}`,
-        `${t("astrology.birthData")}: ${formatBirthData(chart)}`,
+        `${t("astrology.birthData")}: ${birthData}`,
+        `${t("astrology.location")}: ${location}`,
         `${t("astrology.sun")}: ${formatPointShort(chart.sun)}`,
         `${t("astrology.moon")}: ${formatPointShort(chart.moon)}`,
         `${t("astrology.ascendant")}: ${formatPointShort(chart.ascendant)}`,
@@ -498,6 +583,7 @@ function buildPlanetPlacementInterpretations(
 function buildNatalInterpretations(
   chart: NatalChart,
   profile: MysticProfile | undefined,
+  birth: BirthInfo | undefined,
   locale: Locale,
   t: (key: TranslationKey, values?: Record<string, string | number>) => string
 ): NatalInterpretation[] {
@@ -514,6 +600,7 @@ function buildNatalInterpretations(
   const emotional = scoreText(profile?.emotional_intensity, locale);
   const spiritual = scoreText(profile?.spiritual_openness, locale);
   const relationshipPattern = profile?.relationship_pattern ?? copy.firstReadings;
+  const birthData = formatBirthData(chart, birth);
 
   return [
     {
@@ -574,13 +661,14 @@ function buildNatalInterpretations(
       title: copy.integrationTitle,
       body: fill(copy.integration, {
         saturn: saturn ? formatPointShort(saturn) : t("common.notSet"),
-        birth: formatBirthData(chart),
+        birth: birthData,
         style,
         profile: title
       }),
       action: fill(copy.integrationAction, { style }),
       references: [
-        `${t("astrology.birthData")}: ${formatBirthData(chart)}`,
+        `${t("astrology.birthData")}: ${birthData}`,
+        `${t("astrology.location")}: ${formatLocationData(chart, birth)}`,
         saturn ? pointReference("Saturn", saturn) : undefined,
         `${copy.profile}: ${title}`,
         `${copy.readingStyle}: ${style}`
@@ -898,16 +986,29 @@ function aspectReference(aspect: NatalAspect) {
   return `${aspect.label}: ${aspect.between.join(" - ")} / ${aspect.orb.toFixed(1)} orb`;
 }
 
-function formatBirthData(chart: NatalChart) {
-  return `${chart.input.birth_date} / ${chart.input.birth_time ?? "12:00"} / ${chart.input.timezone}`;
+function formatBirthData(chart: NatalChart, birth?: BirthInfo) {
+  const place = formatPlaceName(birth);
+  const time = chart.input.birth_time ?? birth?.birth_time ?? "12:00";
+  const parts = [chart.input.birth_date, time, place, `TZ ${chart.input.timezone}`].filter(Boolean);
+  return parts.join(" / ");
 }
 
-const wheelLabelStyles = [
-  { top: 12, alignSelf: "center" },
-  { right: 10, top: "43%" },
-  { bottom: 12, alignSelf: "center" },
-  { left: 10, top: "43%" }
-] as const;
+function formatLocationData(chart: NatalChart, birth?: BirthInfo) {
+  const place = formatPlaceName(birth);
+  const coordinates = `${chart.input.latitude.toFixed(4)}, ${chart.input.longitude.toFixed(4)}`;
+  return [place, coordinates, `TZ ${chart.input.timezone}`].filter(Boolean).join(" / ");
+}
+
+function formatPlaceName(birth?: BirthInfo) {
+  const city = birth?.birth_city?.trim();
+  const country = birth?.birth_country?.trim();
+
+  if (city && country) {
+    return `${city}, ${country}`;
+  }
+
+  return city || country || "";
+}
 
 const styles = StyleSheet.create({
   segmented: {
@@ -915,7 +1016,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceSoft,
     padding: 4,
     gap: 4
   },
@@ -927,7 +1028,7 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   segmentActive: {
-    backgroundColor: colors.accent
+    backgroundColor: featureColors.astrology.accent
   },
   segmentText: {
     color: colors.muted,
@@ -935,13 +1036,13 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   segmentTextActive: {
-    color: colors.background
+    color: colors.text
   },
   hero: {
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: featureColors.astrology.accent,
+    backgroundColor: featureColors.astrology.surfaceDeep,
     padding: spacing.md,
     gap: spacing.md
   },
@@ -961,53 +1062,159 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     fontWeight: "300"
   },
-  wheel: {
-    width: "100%",
-    aspectRatio: 1,
-    maxHeight: 280,
+  chartVisual: {
+    gap: spacing.sm,
+    alignItems: "center"
+  },
+  wheelFrame: {
+    width: WHEEL_SIZE,
+    height: WHEEL_SIZE,
+    borderRadius: WHEEL_SIZE / 2,
+    borderWidth: 1,
+    borderColor: colors.accentBlue,
+    backgroundColor: "#07152A",
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center"
+    alignSelf: "center",
+    shadowColor: colors.accentBlue,
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 5
+  },
+  wheelGlow: {
+    position: "absolute",
+    width: 172,
+    height: 172,
+    borderRadius: 86,
+    backgroundColor: "rgba(94,196,192,0.08)"
   },
   wheelRingOuter: {
     position: "absolute",
-    width: "88%",
-    height: "88%",
+    width: 250,
+    height: 250,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.accent
+    borderColor: "rgba(110,176,232,0.82)"
   },
   wheelRingMiddle: {
     position: "absolute",
-    width: "68%",
-    height: "68%",
+    width: 190,
+    height: 190,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: "rgba(94,196,192,0.34)"
   },
   wheelRingInner: {
     position: "absolute",
-    width: "42%",
-    height: "42%",
+    width: 112,
+    height: 112,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: "rgba(216,181,109,0.36)"
   },
-  wheelAxisVertical: {
-    position: "absolute",
-    width: 1,
-    height: "84%",
-    backgroundColor: colors.border
-  },
-  wheelAxisHorizontal: {
+  wheelHorizon: {
     position: "absolute",
     height: 1,
-    width: "84%",
-    backgroundColor: colors.border
+    width: 248,
+    backgroundColor: "rgba(110,176,232,0.26)"
   },
-  wheelLabel: {
+  wheelMeridian: {
     position: "absolute",
-    color: colors.accent,
+    width: 1,
+    height: 248,
+    backgroundColor: "rgba(110,176,232,0.26)"
+  },
+  zodiacTick: {
+    position: "absolute",
+    left: WHEEL_CENTER - 1,
+    top: WHEEL_CENTER - 5,
+    width: 2,
+    height: 10,
+    borderRadius: 2,
+    backgroundColor: "rgba(110,176,232,0.35)"
+  },
+  zodiacTickMajor: {
+    height: 16,
+    backgroundColor: "rgba(216,181,109,0.72)"
+  },
+  zodiacLabelWrap: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  zodiacLabel: {
+    color: colors.accentBlue,
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 0.3
+  },
+  aspectLine: {
+    position: "absolute",
+    left: WHEEL_CENTER - 90,
+    top: WHEEL_CENTER,
+    width: 180,
+    height: 1,
+    opacity: 0.42
+  },
+  planetMarker: {
+    position: "absolute",
+    borderRadius: 21,
+    borderWidth: 1,
+    backgroundColor: "rgba(8,14,32,0.94)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 2
+  },
+  planetDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginBottom: 1
+  },
+  planetLabel: {
+    fontSize: 8,
+    lineHeight: 10,
+    fontWeight: "900"
+  },
+  planetSign: {
+    color: colors.text,
+    fontSize: 7,
+    lineHeight: 9,
+    maxWidth: 36
+  },
+  wheelCore: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 1,
+    borderColor: "rgba(216,181,109,0.36)",
+    backgroundColor: "rgba(7,5,15,0.72)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  chartBadgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: spacing.xs
+  },
+  chartBadge: {
+    minWidth: "46%",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    backgroundColor: "rgba(8,14,32,0.74)",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    gap: 2
+  },
+  chartBadgeLabel: {
+    fontSize: 10,
+    fontWeight: "900"
+  },
+  chartBadgeValue: {
+    color: colors.text,
     fontSize: 12,
     fontWeight: "800"
   },
@@ -1022,7 +1229,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceSoft,
     padding: spacing.md,
     gap: spacing.xs
   },
@@ -1038,7 +1245,7 @@ const styles = StyleSheet.create({
     fontWeight: "600"
   },
   pointMeta: {
-    color: colors.accent,
+    color: featureColors.astrology.accent,
     fontSize: 12,
     fontWeight: "800"
   },
@@ -1076,13 +1283,13 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceSoft,
     padding: spacing.sm,
     gap: 4,
     marginTop: spacing.xs
   },
   actionTitle: {
-    color: colors.accent,
+    color: featureColors.astrology.accent,
     fontSize: 11,
     fontWeight: "900",
     textTransform: "uppercase"
@@ -1093,7 +1300,7 @@ const styles = StyleSheet.create({
     lineHeight: 20
   },
   referenceHeading: {
-    color: colors.accent,
+    color: colors.accentGold,
     fontSize: 11,
     fontWeight: "900",
     textTransform: "uppercase",
@@ -1130,7 +1337,7 @@ const styles = StyleSheet.create({
     lineHeight: 17
   },
   rowValue: {
-    color: colors.accent,
+    color: featureColors.astrology.accent,
     fontSize: 12,
     lineHeight: 17,
     fontWeight: "800",

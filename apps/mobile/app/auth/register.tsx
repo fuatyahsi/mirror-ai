@@ -17,8 +17,10 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
 
   async function submit() {
-    await register(email, password);
-    router.replace("/onboarding/birth-info");
+    const success = await register(email, password);
+    if (success) {
+      router.replace("/onboarding/birth-info");
+    }
   }
 
   return (

@@ -9,7 +9,7 @@ import { Screen } from "@/components/layout/Screen";
 import { calculateNatalChart } from "@/features/astrology/api";
 import { useI18n } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
-import { colors, spacing } from "@/theme";
+import { colors, radii, spacing } from "@/theme";
 
 export default function OnboardingResultScreen() {
   const userProfile = useUserStore((state) => state.profile);
@@ -116,8 +116,8 @@ const styles = StyleSheet.create({
   },
   score: {
     width: "48%",
-    borderRadius: 8,
-    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceSoft,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     lineHeight: 17
   },
   scoreValue: {
-    color: colors.accent,
+    color: colors.accentGold,
     fontSize: 24,
     fontWeight: "900"
   }

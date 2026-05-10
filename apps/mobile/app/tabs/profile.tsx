@@ -9,7 +9,7 @@ import { LanguageSwitch } from "@/components/settings/LanguageSwitch";
 import { useI18n } from "@/i18n";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
-import { colors, radii, spacing } from "@/theme";
+import { colors, featureColors, radii, spacing } from "@/theme";
 
 export default function ProfileScreen() {
   const signOut = useAuthStore((state) => state.signOut);
@@ -33,6 +33,14 @@ export default function ProfileScreen() {
       <InsightCard
         title={t("profile.birthInfo")}
         body={`${profile.birth.birth_city || t("profile.noCity")} / ${profile.birth.birth_date || t("profile.noDate")}`}
+        actionLabel={t("profile.editBirthInfo")}
+        accent
+        onPress={() =>
+          router.push({
+            pathname: "/onboarding/birth-info",
+            params: { returnTo: "/tabs/profile" }
+          })
+        }
       />
       <InsightCard
         title={t("profile.astrology")}
@@ -78,15 +86,15 @@ const styles = StyleSheet.create({
   },
   stat: {
     flex: 1,
-    borderRadius: radii.sm,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: featureColors.profile.accent,
+    backgroundColor: featureColors.profile.surface,
     padding: spacing.md,
     gap: spacing.xs
   },
   statValue: {
-    color: colors.accent,
+    color: featureColors.profile.accent,
     fontSize: 24,
     fontWeight: "900"
   },
@@ -98,7 +106,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceSoft,
     padding: spacing.md,
     gap: spacing.sm
   },

@@ -39,6 +39,8 @@ export function toReadingOutput(
       limitations: translate(locale, "mapper.limitationsFallback")
     },
     source_context: data.source_context,
-    safety_note: data.safety_note || translate(locale, "mapper.safetyFallback")
+    safety_note: data.safety_note || translate(locale, "mapper.safetyFallback"),
+    deep_report: data.deep_report,
+    weekly_report: data.weekly_report
   };
 }
