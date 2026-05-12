@@ -33,7 +33,7 @@ export type GenerateReadingRequest = {
   memory?: Record<string, unknown>[];
   astrology?: Record<string, unknown> | null;
   locale?: "tr" | "en";
-  accessMode?: "basic" | "deep";
+  accessMode?: "basic" | "timing" | "deep";
 };
 
 export type RelationshipDeepReport = {

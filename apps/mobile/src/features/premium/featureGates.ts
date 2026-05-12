@@ -127,6 +127,7 @@ export function featureTrustNote(feature: PremiumFeatureKey, locale: "tr" | "en"
 export function featureAccessModel(feature: PremiumFeatureKey): FeatureAccessModel {
   if (feature === "detailed_coffee") return "credits";
   if (
+    feature === "relationship_timing" ||
     feature === "deep_synastry" ||
     feature === "weekly_relationship_report" ||
     feature === "premium_tarot" ||
@@ -156,7 +157,7 @@ function defaultRequiredPlan(feature: PremiumFeatureKey): "plus" | "credits" {
 
 function featureReason(feature: PremiumFeatureKey) {
   if (feature === "relationship_loop") return "relationship_loop_requires_plus";
-  if (feature === "relationship_timing") return "relationship_timing_requires_plus";
+  if (feature === "relationship_timing") return "relationship_timing_requires_plus_or_credits";
   if (feature === "deep_synastry") return "deep_synastry_requires_plus";
   if (feature === "weekly_relationship_report") return "weekly_report_requires_plus";
   if (feature === "unlimited_people") return "free_person_limit_reached";
@@ -191,23 +192,23 @@ const trFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
   },
   relationship_timing: {
     title: "Bugün ne yapmalıyım?",
-    subtitle: "Mesaj tonu, zamanlama ve dikkat edilmesi gereken alan açılsın.",
+    subtitle: "Mesaj at / bekle kararı, ton ve örnek mesaj açılsın.",
     outcome:
       "Kullanıcı sadece yorum değil, bugün atılacak daha sakin ve net adımı görür.",
     freePreview: "Ücretsiz katmanda genel ilişki enerjisi görünür.",
-    unlockLabel: "Açılacak zamanlama koçu",
-    accessLabel: "Plus",
-    cta: "Bugünkü adımı aç",
+    unlockLabel: "Açılacak hızlı mesaj koçu",
+    accessLabel: "Plus veya 1 kredi",
+    cta: "1 krediyle mesaj koçunu aç",
     bullets: [
-      "Bugünün transitleriyle ilişki hassasiyeti",
-      "Mesaj atmalı mıyım sorusuna net ton önerisi",
-      "Zorlamaman gereken davranış",
-      "Gerekirse kısa ve sakin örnek mesaj"
+      "Mesaj at / bekle kararını açık gör",
+      "Ton, sınır ve zamanlama önerisi al",
+      "Fazla okumaman gereken işareti ayır",
+      "Gerekirse kısa ve sakin örnek mesaj kullan"
     ],
     receipt: [
-      "Günlük zamanlama yorumu",
-      "Mesaj tonu",
-      "Yap / yapma önerisi"
+      "Mesaj kararı",
+      "Kopyalanabilir örnek mesaj",
+      "Yap / yapma rehberi"
     ],
     trustNote: "Kararı kullanıcının özerkliğinde bırakır; manipülatif ilişki yönlendirmesi yapmaz."
   },
@@ -415,15 +416,15 @@ const enFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "You get more than a reading: a calmer, clearer step for today.",
     freePreview: "The free layer shows the general relationship energy.",
     unlockLabel: "Timing coach unlocked",
-    accessLabel: "Plus",
-    cta: "Unlock today's step",
+    accessLabel: "Plus or 1 credit",
+    cta: "Unlock message coach with 1 credit",
     bullets: [
-      "Today's transit sensitivity for the relationship",
-      "Message tone for should-I-text questions",
+      "A clear message-or-wait decision",
+      "Tone, boundary and timing guidance",
       "What behavior to avoid pushing",
       "A short calm message sample when useful"
     ],
-    receipt: ["Daily timing reading", "Message tone", "Do / do-not guidance"],
+    receipt: ["Message decision", "Copy-paste message", "Do / do-not guidance"],
     trustNote: "It keeps your autonomy central and avoids manipulative relationship advice."
   },
   deep_synastry: {

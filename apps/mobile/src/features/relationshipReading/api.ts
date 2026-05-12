@@ -25,7 +25,7 @@ export async function generateRelationshipReading(input: {
   natalChart?: NatalChart;
   locale?: Locale;
   useRemote?: boolean;
-  accessMode?: "basic" | "deep";
+  accessMode?: "basic" | "timing" | "deep";
 }) {
   const accessMode = input.accessMode ?? "deep";
   const timingContext = buildRelationshipTimingContext({

@@ -14,6 +14,8 @@ export function requiredCredits(readingType: string) {
       return 3;
     case "relationship":
       return 4;
+    case "relationship_timing":
+      return 1;
     case "weekly_relationship":
       return 4;
     case "deep_birth_chart":
@@ -31,6 +33,7 @@ export function isPremiumReading(readingType: string) {
   return [
     "coffee",
     "relationship",
+    "relationship_timing",
     "weekly_relationship",
     "deep_birth_chart",
     "deep_numerology",

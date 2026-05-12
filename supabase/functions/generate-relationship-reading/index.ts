@@ -13,8 +13,10 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const locale = normalizeLocale(body.locale);
     const labels = sourceLabels(locale);
-    const accessMode = body.access_mode === "basic" ? "basic" : "deep";
-    const creditAccess = user && accessMode === "deep" ? await requirePaidAccess("relationship", user.id) : null;
+    const accessMode = body.access_mode === "basic" ? "basic" : body.access_mode === "timing" ? "timing" : "deep";
+    const paidReadingType =
+      accessMode === "deep" ? "relationship" : accessMode === "timing" ? "relationship_timing" : null;
+    const creditAccess = user && paidReadingType ? await requirePaidAccess(paidReadingType, user.id) : null;
 
     const [
       { data: dbUserProfile },
@@ -170,7 +172,11 @@ Deno.serve(async (req) => {
             ? locale === "en"
               ? "Synthesize natal chart + partner chart + synastry + timing + journal memory. Do not reduce this to compatibility score."
               : "Natal harita + karşı taraf haritası + sinastri + zamanlama + günlük hafızasını birlikte sentezle. Bunu sadece uyum skoruna indirgeme."
-            : locale === "en"
+            : accessMode === "timing"
+              ? locale === "en"
+                ? "This is a paid quick message timing coach. Do not create a deep synastry report. Answer whether to message today, the exact tone, a copy-pasteable sample message, and what not to over-read."
+                : "Bu krediyle açılan hızlı mesaj zamanlama koçudur. Derin sinastri raporu üretme. Bugün mesaj atılıp atılmamasını, net tonu, kopyalanabilir örnek mesajı ve fazla okunmaması gereken şeyi cevapla."
+              : locale === "en"
               ? "This is the free basic layer. Give a short relationship mirror from status, question and journal context. Do not present it as deep synastry."
               : "Bu ücretsiz temel katmandır. Statü, soru ve günlük bağlamından kısa ilişki aynası üret. Derin sinastri gibi sunma.",
         access_mode: accessMode,

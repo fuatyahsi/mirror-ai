@@ -58,6 +58,7 @@ function readingSpecificRequirements(input: unknown, languageName: string) {
   const topic = typeof value.topic === "string" ? value.topic : "not provided";
   const question = typeof value.question === "string" ? value.question : "not provided";
   const isDeepRelationship = value.readingType === "relationship" && value.accessMode === "deep";
+  const isRelationshipTiming = value.readingType === "relationship" && value.accessMode === "timing";
 
   if (isDeepRelationship) {
     return `
@@ -95,6 +96,25 @@ Deep relationship synastry report requirements (PREMIUM):
 - Never include exact orb degrees, aspect names, retrograde flags, or planetary jargon outside of deep_report.synastry_pattern.key_aspects[].label.
 - Treat the user's central question "${question}" as the spine of next_action_or_message.action_body.
 - Return only valid JSON matching the schema.`;
+  }
+
+  if (isRelationshipTiming) {
+    return `
+Relationship message timing coach requirements (PAID QUICK ACTION):
+- The user paid for one focused answer, not a long report. Do not create deep_report.
+- Answer the exact question "${question}" as a practical message-timing decision.
+- The title must clearly say whether the recommended action is: send now / send later / wait / do not message today.
+- The summary must be one concrete sentence about the recommended action and emotional tone.
+- sections must be 3 short cards:
+  1) "Bugun mesaj atmali miyim?" / "Should I message today?" — clear recommendation with one caveat.
+  2) "Hangi ton?" / "What tone?" — tone, boundary, and what not to over-read.
+  3) "Ornek mesaj" / "Sample message" — include a copy-pasteable message in ${languageName}, max 2 sentences.
+- advice must include the final action in one sentence.
+- reflection_question must be short and non-compulsive; do not encourage repeated checking.
+- Use timing_context.pressure_score, timing_context.suggested_tone, timing_context.do_not_do, journal_entries, relationship status and profile signals.
+- If chart/synastry evidence is absent, still answer from journal + status + user profile; mention the limitation only in explanation.limitations.
+- Never claim what the partner definitely feels. Never pressure the user to message.
+- Return only valid JSON matching the base reading schema.`;
   }
 
   if (value.readingType === "weekly_relationship") {
@@ -170,12 +190,14 @@ export function buildReadingPrompt(input: unknown) {
   const specificRequirements = readingSpecificRequirements(input, languageName);
   const value = input as { readingType?: unknown; accessMode?: unknown; context?: Record<string, unknown> };
   const isDeepRelationship = value.readingType === "relationship" && value.accessMode === "deep";
+  const isRelationshipTiming = value.readingType === "relationship" && value.accessMode === "timing";
 
   // Mirror the server-side isPremiumReading classification so the prompt
   // surfaces premium-quality directives only for paid surfaces.
   const ctx = (value.context ?? {}) as Record<string, unknown>;
   const isPremium =
     isDeepRelationship ||
+    isRelationshipTiming ||
     value.readingType === "coffee" ||
     value.readingType === "weekly_relationship" ||
     (value.readingType === "tarot" &&
@@ -183,7 +205,7 @@ export function buildReadingPrompt(input: unknown) {
     (value.readingType === "numerology" && value.accessMode === "deep") ||
     (value.readingType === "birth_chart" && value.accessMode === "deep");
 
-  const contextBlock = isDeepRelationship
+  const contextBlock = isDeepRelationship || isRelationshipTiming
     ? buildCuratedRelationshipContext(input, locale)
     : value.readingType === "weekly_relationship"
       ? buildCuratedWeeklyContext(input, locale)

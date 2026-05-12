@@ -190,6 +190,7 @@ export default function RelationshipScreen() {
   const status = getSelectedLabels(relationshipSignalOptions, relationshipSignals, localeKey).join(", ");
   const journalMood = getSelectedLabels(journalSignalOptions, journalSignals, localeKey).join(", ");
   const activeRelationshipProfile = relationshipProfiles.find((profile) => profile.relationship_key === relationshipKey);
+  const isMessageTimingIntent = questionIntent === "message_timing" || /mesaj|yaz|ara|text|message|call/i.test(question);
 
   useEffect(() => {
     const selectedOption = questionIntentOptions.find((option) => option.value === questionIntent) ?? questionIntentOptions[0];
@@ -210,13 +211,14 @@ export default function RelationshipScreen() {
     }
   }
 
-  async function generate(accessMode: "basic" | "deep") {
+  async function generate(accessMode: "basic" | "timing" | "deep") {
     setIsGenerating(true);
     setGenerationError(undefined);
 
     try {
       const partnerBirth = buildPartnerBirth();
       const useDeepLayer = accessMode === "deep";
+      const usePartnerAstrologyLayer = useDeepLayer || (accessMode === "timing" && canCalculateSynastry);
       const journalEntry =
         recentContext.trim() && nickname.trim()
           ? addRelationshipJournalEntry({
@@ -227,7 +229,7 @@ export default function RelationshipScreen() {
           : undefined;
       const nextJournal = journalEntry ? [journalEntry, ...recentJournal] : recentJournal;
       const partnerNatalChart =
-        useDeepLayer && partnerBirth && selectedPlace
+        usePartnerAstrologyLayer && partnerBirth && selectedPlace
           ? await calculateNatalChart({
               birth_date: partnerBirth.birth_date ?? birthDate,
               birth_time: birthTimeKnown ? partnerBirth.birth_time : "12:00",
@@ -237,7 +239,7 @@ export default function RelationshipScreen() {
               house_system: "P"
             })
           : undefined;
-      const synastry = useDeepLayer
+      const synastry = usePartnerAstrologyLayer
         ? buildSynastryReport(userProfile.natal_chart, partnerNatalChart, {
             partnerBirthTimeKnown: birthTimeKnown,
             locale
@@ -301,6 +303,15 @@ export default function RelationshipScreen() {
             : "Derin sinastri Plus veya kredi özelliği. Bir sonraki ekrandan açabilirsin."
         );
         router.push("/paywall?feature=deep_synastry");
+        return;
+      }
+      if (accessMode === "timing" && isPaymentRequiredLikeError(error)) {
+        setGenerationError(
+          locale === "en"
+            ? "The quick message coach is a Plus or 1 credit feature. You can unlock it from the next screen."
+            : "HÄ±zlÄ± mesaj koÃ§u Plus veya 1 kredi ile aÃ§Ä±lÄ±r. Bir sonraki ekrandan aÃ§abilirsin."
+        );
+        router.push("/paywall?feature=relationship_timing");
         return;
       }
       setGenerationError(error instanceof Error ? error.message : t("relationship.error"));
@@ -632,6 +643,33 @@ export default function RelationshipScreen() {
               : ` Mevcut döngü sinyali: ${loopThemes.slice(0, 2).join(" / ")}.`
             : ""}
         </Text>
+      </View>
+
+      <View style={[styles.quickTimingCard, isMessageTimingIntent && styles.quickTimingCardActive]}>
+        <View style={styles.quickTimingHeader}>
+          <View style={styles.quickTimingIcon}>
+            <Ionicons name="send-outline" size={18} color={colors.accentTeal} />
+          </View>
+          <View style={styles.quickTimingText}>
+            <Text style={styles.quickTimingEyebrow}>{locale === "en" ? "QUICK ACTION · 1 CREDIT" : "HIZLI AKSİYON · 1 KREDİ"}</Text>
+            <Text style={styles.quickTimingTitle}>{locale === "en" ? "Should I message today?" : "Bugün mesaj atmalı mıyım?"}</Text>
+          </View>
+        </View>
+        <Text style={styles.quickTimingBody}>
+          {locale === "en"
+            ? "A short paid answer: message-or-wait decision, exact tone, what not to over-read, and a copy-pasteable sample message."
+            : "Kısa ücretli cevap: mesaj at / bekle kararı, net ton, fazla okunmaması gereken şey ve kopyalanabilir örnek mesaj."}
+        </Text>
+        <Text style={styles.quickTimingMeta}>
+          {locale === "en" ? `Plus or 1 credit. Balance: ${userProfile.credits}` : `Plus veya 1 kredi. Bakiye: ${userProfile.credits}`}
+        </Text>
+        <PrimaryButton
+          variant={isMessageTimingIntent ? "primary" : "secondary"}
+          disabled={!nickname.trim() || !question.trim() || isGenerating}
+          onPress={() => generate("timing")}
+        >
+          {isGenerating ? t("common.loadingMirror") : locale === "en" ? "Open quick message coach" : "Hızlı mesaj koçunu aç"}
+        </PrimaryButton>
       </View>
 
       {generationError ? <Text style={styles.error}>{generationError}</Text> : null}
@@ -1879,6 +1917,65 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 13,
     lineHeight: 20
+  },
+  quickTimingCard: {
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: "rgba(94,196,192,0.34)",
+    backgroundColor: "#071C22",
+    padding: spacing.md,
+    gap: spacing.sm
+  },
+  quickTimingCardActive: {
+    borderColor: colors.accentTeal,
+    shadowColor: colors.accentTeal,
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4
+  },
+  quickTimingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  quickTimingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(94,196,192,0.45)",
+    backgroundColor: "rgba(94,196,192,0.12)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  quickTimingText: {
+    flex: 1,
+    gap: 3
+  },
+  quickTimingEyebrow: {
+    color: colors.accentTeal,
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    textTransform: "uppercase"
+  },
+  quickTimingTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 23
+  },
+  quickTimingBody: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 19
+  },
+  quickTimingMeta: {
+    color: colors.accentGold,
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.4
   },
   analysisChoice: {
     borderRadius: radii.md,
