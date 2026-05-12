@@ -1197,5 +1197,5 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 10,
     letterSpacing: 0.6
-  }
+  },
 });

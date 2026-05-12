@@ -252,7 +252,7 @@ const relationshipDeepReportSchema = {
         title: { type: "string" },
         headline: { type: "string" },
         body: { type: "string" },
-        pillar_tags: { type: "array", minItems: 2, maxItems: 5, items: { type: "string" } }
+        pillar_tags: { type: "array", items: { type: "string" } }
       },
       required: ["title", "headline", "body", "pillar_tags"]
     },
@@ -261,13 +261,10 @@ const relationshipDeepReportSchema = {
       properties: {
         headline: { type: "string" },
         body: { type: "string" },
-        strengths: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" } },
-        risk_areas: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" } },
+        strengths: { type: "array", items: { type: "string" } },
+        risk_areas: { type: "array", items: { type: "string" } },
         key_aspects: {
-          type: "array",
-          minItems: 1,
-          maxItems: 6,
-          items: {
+          type: "array", items: {
             type: "object",
             properties: {
               label: { type: "string" },
@@ -285,7 +282,7 @@ const relationshipDeepReportSchema = {
       properties: {
         headline: { type: "string" },
         body: { type: "string" },
-        loop_themes: { type: "array", minItems: 1, maxItems: 4, items: { type: "string" } },
+        loop_themes: { type: "array", items: { type: "string" } },
         journal_evidence: { type: "array", maxItems: 4, items: { type: "string" } },
         user_role: { type: "string" },
         partner_role: { type: "string" }
@@ -322,9 +319,9 @@ const relationshipDeepReportSchema = {
         body: { type: "string" },
         attachment_style: { type: "string" },
         defense_style: { type: "string" },
-        relationship_needs: { type: "array", minItems: 3, maxItems: 5, items: { type: "string" } },
+        relationship_needs: { type: "array", items: { type: "string" } },
         wound_signature: { type: "string" },
-        chart_anchors: { type: "array", minItems: 3, maxItems: 5, items: { type: "string" } }
+        chart_anchors: { type: "array", items: { type: "string" } }
       },
       required: ["headline", "body", "attachment_style", "defense_style", "relationship_needs", "wound_signature", "chart_anchors"]
     },
@@ -335,9 +332,9 @@ const relationshipDeepReportSchema = {
         body: { type: "string" },
         apparent_attachment_style: { type: "string" },
         apparent_defense_style: { type: "string" },
-        likely_triggers: { type: "array", minItems: 3, maxItems: 5, items: { type: "string" } },
-        soft_spots: { type: "array", minItems: 3, maxItems: 5, items: { type: "string" } },
-        chart_anchors: { type: "array", minItems: 3, maxItems: 5, items: { type: "string" } }
+        likely_triggers: { type: "array", items: { type: "string" } },
+        soft_spots: { type: "array", items: { type: "string" } },
+        chart_anchors: { type: "array", items: { type: "string" } }
       },
       required: ["headline", "body", "apparent_attachment_style", "apparent_defense_style", "likely_triggers", "soft_spots", "chart_anchors"]
     },
@@ -347,10 +344,7 @@ const relationshipDeepReportSchema = {
         headline: { type: "string" },
         body: { type: "string" },
         trigger_chains: {
-          type: "array",
-          minItems: 2,
-          maxItems: 4,
-          items: {
+          type: "array", items: {
             type: "object",
             properties: {
               when_user: { type: "string" },
@@ -397,14 +391,14 @@ const relationshipDeepReportSchema = {
       properties: {
         score: { type: "number", minimum: 0, maximum: 1 },
         label: { type: "string", enum: ["low", "moderate", "high"] },
-        factors: { type: "array", minItems: 1, maxItems: 4, items: { type: "string" } }
+        factors: { type: "array", items: { type: "string" } }
       },
       required: ["score", "label", "factors"]
     },
     evidence: {
       type: "object",
       properties: {
-        systems: { type: "array", minItems: 1, maxItems: 6, items: { type: "string" } },
+        systems: { type: "array", items: { type: "string" } },
         swiss_ephemeris_note: { type: "string" },
         time_known: { type: "boolean" }
       },
@@ -468,20 +462,280 @@ function parseGeminiText(data: Record<string, unknown>) {
   return text;
 }
 
-function normalizeReadingOutput(output: ReadingOutput): ReadingOutput {
+type Locale = NonNullable<GenerateReadingRequest["locale"]>;
+
+const deepReportFallbacks: Record<
+  Locale,
+  {
+    pillarTags: string[];
+    strengths: string[];
+    riskAreas: string[];
+    keyAspect: RelationshipDeepReport["synastry_pattern"]["key_aspects"][number];
+    loopThemes: string[];
+    relationshipNeeds: string[];
+    chartAnchors: string[];
+    partnerTriggers: string[];
+    partnerSoftSpots: string[];
+    triggerChains: RelationshipDeepReport["interaction_choreography"]["trigger_chains"];
+    confidenceFactors: string[];
+    evidenceSystems: string[];
+  }
+> = {
+  tr: {
+    pillarTags: ["Sinastri", "İlişki hafızası", "Zamanlama"],
+    strengths: ["Bağın güçlü tarafları ilişki sorusu ve harita temaları birlikte okunarak çıkarıldı."],
+    riskAreas: ["Hassas alanlar kesin hüküm değil, dikkat isteyen ilişki dinamikleri olarak okunmalıdır."],
+    keyAspect: {
+      label: "Ana ilişki teması",
+      meaning: "Bu tema, doğum haritaları ve ilişki hafızası birlikte okunduğunda öne çıkan genel dinamiği gösterir.",
+      sentiment: "neutral"
+    },
+    loopThemes: ["Belirsizlikte anlam arama", "Netlik ihtiyacı"],
+    relationshipNeeds: ["Net iletişim", "Duygusal güven", "Tutarlı temas"],
+    chartAnchors: ["Natal harita", "Sinastri", "İlişki hafızası"],
+    partnerTriggers: ["Baskı hissi", "Belirsiz beklenti", "Hızlı sonuç ihtiyacı"],
+    partnerSoftSpots: ["Sakin ton", "Açık niyet", "Alan tanıyan yaklaşım"],
+    triggerChains: [
+      {
+        when_user: "Belirsizlikte daha fazla işaret aradığında",
+        partner_reaction: "karşı taraf baskı hissedip geri çekilebilir",
+        user_followup: "sen de bunu daha büyük bir kopuş sinyali gibi okuyabilirsin"
+      },
+      {
+        when_user: "netlik ihtiyacını çok hızlı sonuca bağladığında",
+        partner_reaction: "karşı taraf savunmaya geçebilir",
+        user_followup: "senin içindeki güven arayışı yeniden yükselir"
+      }
+    ],
+    confidenceFactors: ["doğum haritası", "sinastri verisi", "ilişki hafızası"],
+    evidenceSystems: ["Swiss Ephemeris", "ilişki hafızası", "Mirror AI yorum katmanı"]
+  },
+  en: {
+    pillarTags: ["Synastry", "Relationship memory", "Timing"],
+    strengths: ["The bond strengths were inferred from the question, chart context, and relationship memory together."],
+    riskAreas: ["Sensitive areas are reflective dynamics, not certainty claims."],
+    keyAspect: {
+      label: "Core relationship theme",
+      meaning: "This theme summarizes the main dynamic emerging from the birth charts and relationship memory.",
+      sentiment: "neutral"
+    },
+    loopThemes: ["Meaning-seeking under uncertainty", "Need for clarity"],
+    relationshipNeeds: ["Clear communication", "Emotional safety", "Consistent contact"],
+    chartAnchors: ["Natal chart", "Synastry", "Relationship memory"],
+    partnerTriggers: ["Feeling pressured", "Unclear expectations", "Rush for certainty"],
+    partnerSoftSpots: ["Calm tone", "Clear intention", "Space-respecting approach"],
+    triggerChains: [
+      {
+        when_user: "When you search for more signs under uncertainty",
+        partner_reaction: "the other person may feel pressured and pull back",
+        user_followup: "you may read that distance as a bigger rupture than it is"
+      },
+      {
+        when_user: "When you push the need for clarity toward a fast conclusion",
+        partner_reaction: "the other person may become defensive",
+        user_followup: "your need for reassurance rises again"
+      }
+    ],
+    confidenceFactors: ["birth chart", "synastry data", "relationship memory"],
+    evidenceSystems: ["Swiss Ephemeris", "relationship memory", "Mirror AI interpretation layer"]
+  }
+};
+
+function normalizeStringList(value: unknown, min: number, max: number, fallback: string[]): string[] {
+  const raw = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+  const cleaned: string[] = [];
+
+  for (const item of raw) {
+    if (typeof item !== "string") continue;
+    const text = item.trim();
+    if (text && !cleaned.includes(text)) cleaned.push(text);
+    if (cleaned.length >= max) break;
+  }
+
+  for (const item of fallback) {
+    const text = item.trim();
+    if (cleaned.length >= min) break;
+    if (text && !cleaned.includes(text)) cleaned.push(text);
+  }
+
+  return cleaned.slice(0, max);
+}
+
+function normalizeNumber(value: unknown, min: number, max: number, fallback: number): number {
+  const numberValue = typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  return Math.max(min, Math.min(max, numberValue));
+}
+
+function normalizeEnum<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === "string" && allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+function normalizeKeyAspects(
+  value: unknown,
+  fallback: RelationshipDeepReport["synastry_pattern"]["key_aspects"][number]
+): RelationshipDeepReport["synastry_pattern"]["key_aspects"] {
+  const raw = Array.isArray(value) ? value : [];
+  const normalized = raw
+    .map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+      const aspect = item as Record<string, unknown>;
+      const label = typeof aspect.label === "string" ? aspect.label.trim() : "";
+      const meaning = typeof aspect.meaning === "string" ? aspect.meaning.trim() : "";
+      if (!label && !meaning) return null;
+      return {
+        label: label || fallback.label,
+        meaning: meaning || fallback.meaning,
+        sentiment: normalizeEnum(aspect.sentiment, ["supportive", "tense", "neutral"] as const, "neutral")
+      };
+    })
+    .filter((item): item is RelationshipDeepReport["synastry_pattern"]["key_aspects"][number] => Boolean(item))
+    .slice(0, 6);
+
+  return normalized.length ? normalized : [fallback];
+}
+
+function normalizeTriggerChains(
+  value: unknown,
+  fallback: RelationshipDeepReport["interaction_choreography"]["trigger_chains"]
+): RelationshipDeepReport["interaction_choreography"]["trigger_chains"] {
+  const raw = Array.isArray(value) ? value : [];
+  const normalized = raw
+    .map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+      const chain = item as Record<string, unknown>;
+      const whenUser = typeof chain.when_user === "string" ? chain.when_user.trim() : "";
+      const partnerReaction = typeof chain.partner_reaction === "string" ? chain.partner_reaction.trim() : "";
+      const userFollowup = typeof chain.user_followup === "string" ? chain.user_followup.trim() : "";
+      if (!whenUser && !partnerReaction && !userFollowup) return null;
+      return {
+        when_user: whenUser || fallback[0].when_user,
+        partner_reaction: partnerReaction || fallback[0].partner_reaction,
+        user_followup: userFollowup || fallback[0].user_followup
+      };
+    })
+    .filter((item): item is RelationshipDeepReport["interaction_choreography"]["trigger_chains"][number] =>
+      Boolean(item)
+    )
+    .slice(0, 4);
+
+  for (const chain of fallback) {
+    if (normalized.length >= 2) break;
+    normalized.push(chain);
+  }
+
+  return normalized.slice(0, 4);
+}
+
+function normalizeRelationshipDeepReport(
+  report: RelationshipDeepReport | undefined,
+  locale: Locale
+): RelationshipDeepReport | undefined {
+  if (!report) return undefined;
+
+  const fallback = deepReportFallbacks[locale];
+  const bondProfile = (report.bond_profile ?? {}) as RelationshipDeepReport["bond_profile"];
+  const synastryPattern = (report.synastry_pattern ?? {}) as RelationshipDeepReport["synastry_pattern"];
+  const repeatedLoop = (report.repeated_loop ?? {}) as RelationshipDeepReport["repeated_loop"];
+  const userBlueprint = (report.user_blueprint ?? {}) as RelationshipDeepReport["user_blueprint"];
+  const partnerBlueprint = (report.partner_blueprint ?? {}) as RelationshipDeepReport["partner_blueprint"];
+  const choreography = (report.interaction_choreography ?? {}) as RelationshipDeepReport["interaction_choreography"];
+  const confidence = (report.confidence ?? {}) as RelationshipDeepReport["confidence"];
+  const evidence = (report.evidence ?? {}) as RelationshipDeepReport["evidence"];
+
+  return {
+    ...report,
+    bond_profile: {
+      ...bondProfile,
+      pillar_tags: normalizeStringList(bondProfile.pillar_tags, 2, 5, fallback.pillarTags)
+    },
+    synastry_pattern: {
+      ...synastryPattern,
+      strengths: normalizeStringList(synastryPattern.strengths, 1, 3, fallback.strengths),
+      risk_areas: normalizeStringList(synastryPattern.risk_areas, 1, 3, fallback.riskAreas),
+      key_aspects: normalizeKeyAspects(synastryPattern.key_aspects, fallback.keyAspect)
+    },
+    repeated_loop: {
+      ...repeatedLoop,
+      loop_themes: normalizeStringList(repeatedLoop.loop_themes, 1, 4, fallback.loopThemes),
+      journal_evidence: normalizeStringList(repeatedLoop.journal_evidence, 0, 4, [])
+    },
+    user_blueprint: {
+      ...userBlueprint,
+      relationship_needs: normalizeStringList(
+        userBlueprint.relationship_needs,
+        3,
+        5,
+        fallback.relationshipNeeds
+      ),
+      chart_anchors: normalizeStringList(userBlueprint.chart_anchors, 3, 5, fallback.chartAnchors)
+    },
+    partner_blueprint: {
+      ...partnerBlueprint,
+      likely_triggers: normalizeStringList(partnerBlueprint.likely_triggers, 3, 5, fallback.partnerTriggers),
+      soft_spots: normalizeStringList(partnerBlueprint.soft_spots, 3, 5, fallback.partnerSoftSpots),
+      chart_anchors: normalizeStringList(partnerBlueprint.chart_anchors, 3, 5, fallback.chartAnchors)
+    },
+    interaction_choreography: {
+      ...choreography,
+      trigger_chains: normalizeTriggerChains(choreography.trigger_chains, fallback.triggerChains)
+    },
+    scores: {
+      emotional_pull: normalizeNumber(report.scores?.emotional_pull, 0, 100, 60),
+      communication_clarity: normalizeNumber(report.scores?.communication_clarity, 0, 100, 55),
+      uncertainty_level: normalizeNumber(report.scores?.uncertainty_level, 0, 100, 50),
+      user_projection_risk: normalizeNumber(report.scores?.user_projection_risk, 0, 100, 45),
+      synastry_overall: normalizeNumber(report.scores?.synastry_overall, 0, 100, 60)
+    },
+    confidence: {
+      ...confidence,
+      score: normalizeNumber(confidence.score, 0, 1, 0.68),
+      label: normalizeEnum(confidence.label, ["low", "moderate", "high"] as const, "moderate"),
+      factors: normalizeStringList(confidence.factors, 1, 4, fallback.confidenceFactors)
+    },
+    evidence: {
+      ...evidence,
+      systems: normalizeStringList(evidence.systems, 1, 6, fallback.evidenceSystems)
+    }
+  };
+}
+
+function normalizeReadingOutput(output: ReadingOutput, locale: Locale): ReadingOutput {
+  const fallbackSection =
+    locale === "tr"
+      ? {
+          title: "Kişisel yorum",
+          body: "Mirror AI bu okumayı sembolik içgörü ve kişisel farkındalık amacıyla yorumladı.",
+          references: ["kullanıcı sorusu"]
+        }
+      : {
+          title: "Personal reading",
+          body: "Mirror AI interpreted this as symbolic insight for self-reflection.",
+          references: ["user question"]
+        };
+
+  const sections = (Array.isArray(output.sections) ? output.sections : [])
+    .map((section) => ({
+      title: section.title || fallbackSection.title,
+      body: section.body || fallbackSection.body,
+      references: normalizeStringList(section.references, 1, 7, fallbackSection.references)
+    }))
+    .slice(0, 5);
+
+  while (sections.length < 2) {
+    sections.push(fallbackSection);
+  }
+
   return {
     title: output.title || "Mirror AI Reading",
     summary: output.summary || "The reading could not produce a summary.",
     tone: output.tone || "reflective",
-    sections: Array.isArray(output.sections) && output.sections.length > 0 ? output.sections : [],
+    sections,
     advice: output.advice || "Use this as a reflective prompt, not a certainty claim.",
     reflection_question:
       output.reflection_question || "What feels more grounded when you keep your choice central?",
     explanation: {
       based_on:
-        output.explanation?.based_on && output.explanation.based_on.length > 0
-          ? output.explanation.based_on
-          : ["user input", "selected reading type"],
+        normalizeStringList(output.explanation?.based_on, 1, 6, ["user input", "selected reading type"]),
       confidence:
         typeof output.explanation?.confidence === "number"
           ? Math.max(0, Math.min(1, output.explanation.confidence))
@@ -491,7 +745,7 @@ function normalizeReadingOutput(output: ReadingOutput): ReadingOutput {
         "This is a symbolic AI reading for self-reflection and entertainment."
     },
     safety_note: output.safety_note || safetyNote,
-    deep_report: output.deep_report,
+    deep_report: normalizeRelationshipDeepReport(output.deep_report, locale),
     weekly_report: output.weekly_report
   };
 }
@@ -590,7 +844,7 @@ export const geminiAIProvider: AIProvider = {
     }
 
     const text = parseGeminiText(data);
-    return normalizeReadingOutput(JSON.parse(text) as ReadingOutput);
+    return normalizeReadingOutput(JSON.parse(text) as ReadingOutput, request.locale ?? "tr");
   }
 };
 
