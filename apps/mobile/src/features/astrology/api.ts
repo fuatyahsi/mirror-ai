@@ -1,10 +1,10 @@
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { canUseMockFallbacks, isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { createMockNatalChart } from "@/features/astrology/mockChart";
 import type { NatalChart, NatalChartInput } from "@/types/astrology";
 
 const astrologyServiceUrl = process.env.EXPO_PUBLIC_ASTROLOGY_SERVICE_URL;
 const astrologyRequestTimeoutMs = 2500;
-const strictAstrologyBackend = process.env.EXPO_PUBLIC_ASTROLOGY_STRICT === "true";
+const strictAstrologyBackend = process.env.EXPO_PUBLIC_ASTROLOGY_STRICT === "true" || !canUseMockFallbacks;
 const shouldUseDirectAstrologyService = Boolean(astrologyServiceUrl) && __DEV__;
 
 export async function calculateNatalChart(input: NatalChartInput): Promise<NatalChart> {

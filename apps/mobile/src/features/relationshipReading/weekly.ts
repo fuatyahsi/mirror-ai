@@ -1,5 +1,5 @@
 import { toReadingOutput } from "@/features/readings/readingMapper";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { assertRemoteServicesAvailable, isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { Locale } from "@/i18n";
 
 export type WeeklyReportInput = {
@@ -9,6 +9,7 @@ export type WeeklyReportInput = {
 };
 
 export async function generateWeeklyRelationshipReport(input: WeeklyReportInput) {
+  assertRemoteServicesAvailable();
   if (!isSupabaseConfigured) {
     throw new Error(
       input.locale === "en"

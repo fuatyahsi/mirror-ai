@@ -1,6 +1,6 @@
 # API Spec
 
-All generation endpoints are Supabase Edge Functions. The mobile app calls these through Supabase once real backend wiring is enabled. The current mobile prototype uses mock local services with matching response shapes.
+All generation endpoints are Supabase Edge Functions. The mobile app calls these through Supabase; development builds can use local mock fallbacks, while production builds require the remote backend, Gemini secrets, RevenueCat validation, and the astrology service.
 
 ## generate-daily-insight
 

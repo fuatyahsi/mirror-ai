@@ -2,6 +2,7 @@ import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
 import { buildSourceContext, normalizeLocale, sourceLabels } from "../shared/sourceContext.ts";
+import { recordCreditSpend, requirePaidAccessForUser } from "../shared/credits.ts";
 
 type TarotDeckCard = {
   card_key: string;
@@ -282,6 +283,7 @@ Deno.serve(async (req) => {
       typeof body.clarifier_question === "string" && body.clarifier_question.trim().length > 0
         ? body.clarifier_question.trim()
         : "";
+    const creditAccess = clarifierQuestion ? await requirePaidAccessForUser("tarot_clarifier", user?.id) : null;
     const positions = clarifierQuestion ? [...basePositions, "clarifier"] : basePositions;
     const fullQuestion = buildTarotQuestion(body.question, clarifierQuestion, locale);
 
@@ -393,7 +395,8 @@ Deno.serve(async (req) => {
         question: fullQuestion ?? null,
         result_json: { ...result, cards: selectedCards, source_context: sourceContext },
         explanation_json: result.explanation,
-        confidence: result.explanation.confidence
+        confidence: result.explanation.confidence,
+        premium_used: Boolean(creditAccess?.isPremium || creditAccess?.shouldSpendCredits)
       })
       .select("id")
       .single();
@@ -409,9 +412,12 @@ Deno.serve(async (req) => {
 
     if (spreadError) throw spreadError;
 
+    const billing = creditAccess ? await recordCreditSpend(user.id, creditAccess, reading.id) : null;
+
     return jsonResponse({
       reading_id: reading.id,
       persisted: true,
+      billing,
       spread_type: spreadType,
       cards: selectedCards,
       ...result,

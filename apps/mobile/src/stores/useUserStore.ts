@@ -74,6 +74,7 @@ type UserState = {
   upsertRelationshipProfile: (profile: Omit<RelationshipProfile, "updated_at">) => void;
   submitFeedback: (feedback: Omit<ReadingFeedback, "id" | "created_at">) => void;
   setDailySkyNotifications: (settings: Partial<UserState["dailySkyNotifications"]>) => void;
+  clearLocalUserData: () => void;
 };
 
 export const useUserStore = create<UserState>()(
@@ -243,6 +244,23 @@ export const useUserStore = create<UserState>()(
             ...state.dailySkyNotifications,
             ...settings,
             updated_at: new Date().toISOString()
+          }
+        })),
+      clearLocalUserData: () =>
+        set((state) => ({
+          profile: {
+            birth: {},
+            onboarding_completed: false,
+            credits: 0
+          },
+          readings: [],
+          feedback: [],
+          memoryEvents: [],
+          relationshipJournalEntries: [],
+          relationshipProfiles: [],
+          dailySkyNotifications: {
+            enabled: false,
+            dailyHour: state.dailySkyNotifications.dailyHour
           }
         }))
     }),

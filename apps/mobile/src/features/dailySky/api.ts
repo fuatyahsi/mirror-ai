@@ -2,7 +2,7 @@ import { buildAstrologyContext } from "@/features/astrology/context";
 import { generateDailyMock } from "@/features/readings/mockReadings";
 import { toReadingOutput } from "@/features/readings/readingMapper";
 import type { Locale } from "@/i18n";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { assertRemoteServicesAvailable, shouldUseMockFallback, supabase } from "@/lib/supabase";
 import type { NatalChart } from "@/types/astrology";
 import type { MysticProfile } from "@/types/profile";
 
@@ -27,7 +27,8 @@ export async function generateDailySkyReading(input: {
       ? "What should I notice in today's sky?"
       : "Bugünün gökyüzünde kendim için neyi fark etmeliyim?");
 
-  if (!isSupabaseConfigured || input.useRemote === false) {
+  assertRemoteServicesAvailable(input.useRemote);
+  if (shouldUseMockFallback(input.useRemote)) {
     return generateDailyMock(topic, mood, question, input.profile, locale);
   }
 

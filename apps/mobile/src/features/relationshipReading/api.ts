@@ -1,7 +1,7 @@
 import { buildAstrologyContext } from "@/features/astrology/context";
 import { generateRelationshipMock } from "@/features/readings/mockReadings";
 import { toReadingOutput } from "@/features/readings/readingMapper";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { assertRemoteServicesAvailable, shouldUseMockFallback, supabase } from "@/lib/supabase";
 import type { Locale } from "@/i18n";
 import type { BirthInfo } from "@/types/profile";
 import type { NatalChart, SynastryReport } from "@/types/astrology";
@@ -39,7 +39,8 @@ export async function generateRelationshipReading(input: {
     question: input.question
   });
 
-  if (!isSupabaseConfigured || input.useRemote === false) {
+  assertRemoteServicesAvailable(input.useRemote);
+  if (shouldUseMockFallback(input.useRemote)) {
     const mock = generateRelationshipMock(
       input.nickname ?? "",
       input.status,

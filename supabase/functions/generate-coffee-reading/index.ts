@@ -1,7 +1,7 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
-import { recordCreditSpend, requirePaidAccess } from "../shared/credits.ts";
+import { recordCreditSpend, requirePaidAccessForUser } from "../shared/credits.ts";
 import { buildSourceContext, normalizeLocale, sourceLabels } from "../shared/sourceContext.ts";
 import { extractCoffeeSymbols } from "../shared/visionProvider.ts";
 
@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const locale = normalizeLocale(body.locale);
     const labels = sourceLabels(locale);
-    const creditAccess = user ? await requirePaidAccess("coffee", user.id) : null;
+    const creditAccess = await requirePaidAccessForUser("coffee", user?.id);
     const cupImageUrl = body.cup_image_url ?? "local-dev-coffee-image-placeholder";
     const shouldStoreImage = body.do_not_store_image !== true;
 

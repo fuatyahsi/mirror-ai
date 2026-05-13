@@ -1,7 +1,7 @@
 import { buildAstrologyContext } from "@/features/astrology/context";
 import { generateDailyMock } from "@/features/readings/mockReadings";
 import { toReadingOutput } from "@/features/readings/readingMapper";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { assertRemoteServicesAvailable, shouldUseMockFallback, supabase } from "@/lib/supabase";
 import type { Locale } from "@/i18n";
 import type { NatalChart } from "@/types/astrology";
 import type { MysticProfile } from "@/types/profile";
@@ -16,7 +16,8 @@ export async function generateDailyInsight(input: {
   locale?: Locale;
   useRemote?: boolean;
 }) {
-  if (!isSupabaseConfigured || input.useRemote === false) {
+  assertRemoteServicesAvailable(input.useRemote);
+  if (shouldUseMockFallback(input.useRemote)) {
     return generateDailyMock(input.topic, input.mood, input.question, input.profile, input.locale);
   }
 

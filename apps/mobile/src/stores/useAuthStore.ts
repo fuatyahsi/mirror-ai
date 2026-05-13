@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { canUseMockFallbacks, isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 type AuthUser = {
   id: string;
@@ -37,8 +37,10 @@ export const useAuthStore = create<AuthState>((set) => ({
           user: data.user ? { id: data.user.id, email: data.user.email || undefined } : null,
           isGuest: false
         });
-      } else {
+      } else if (canUseMockFallbacks) {
         set({ user: { id: "mock-user", email }, isGuest: false });
+      } else {
+        throw new Error("Supabase is not configured for this production build.");
       }
       return true;
     } catch (error) {
@@ -58,8 +60,10 @@ export const useAuthStore = create<AuthState>((set) => ({
           user: data.user ? { id: data.user.id, email: data.user.email || undefined } : null,
           isGuest: false
         });
-      } else {
+      } else if (canUseMockFallbacks) {
         set({ user: { id: "mock-user", email }, isGuest: false });
+      } else {
+        throw new Error("Supabase is not configured for this production build.");
       }
       return true;
     } catch (error) {

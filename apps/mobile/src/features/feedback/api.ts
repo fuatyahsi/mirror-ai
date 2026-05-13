@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { assertRemoteServicesAvailable, isSupabaseConfigured, shouldUseMockFallback, supabase } from "@/lib/supabase";
 import type { FeedbackScore } from "@/types/readings";
 
 export async function submitReadingFeedback(input: {
@@ -8,7 +8,9 @@ export async function submitReadingFeedback(input: {
   emotional_resonance: number;
   comment?: string;
 }) {
+  assertRemoteServicesAvailable();
   if (!isSupabaseConfigured) {
+    if (!shouldUseMockFallback()) throw new Error("Feedback requires Supabase in production.");
     return { feedback: { ...input, id: `local_${Date.now()}`, created_at: new Date().toISOString() } };
   }
 
@@ -19,4 +21,3 @@ export async function submitReadingFeedback(input: {
   if (error) throw error;
   return data;
 }
-

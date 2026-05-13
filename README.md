@@ -1,8 +1,8 @@
 # Mirror AI
 
-Mirror AI is a personal-memory spiritual insight assistant for symbolic readings, tarot, coffee readings, relationship reflection, and profile-aware daily guidance.
+Mirror AI is a personal-memory spiritual insight assistant for symbolic readings, tarot, coffee readings, relationship reflection, synastry-aware relationship guidance, and profile-aware daily sky updates.
 
-The first build is intentionally mock-first: the mobile app, Supabase schema, Edge Function interfaces, feedback loop, and memory model are prepared before real AI provider calls are enabled.
+The current build is wired to Supabase Edge Functions, Gemini, RevenueCat, and the external Swiss Ephemeris astrology service. Local mock fallbacks are restricted to development builds through `EXPO_PUBLIC_ALLOW_MOCKS=true`.
 
 ## Stack
 
@@ -12,8 +12,9 @@ The first build is intentionally mock-first: the mobile app, Supabase schema, Ed
 - Zustand
 - TanStack Query
 - React Hook Form + Zod
-- Mock AI provider abstraction, ready for OpenAI/Gemini/Claude later
+- Gemini-backed AI provider abstraction with development-only mock fallback
 - Isolated Swiss Ephemeris astrology microservice for natal chart calculations
+- RevenueCat subscriptions and credit-pack purchase validation
 
 ## Getting Started
 
@@ -35,6 +36,9 @@ Set these values after creating a Supabase project:
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 EXPO_PUBLIC_ASTROLOGY_SERVICE_URL=http://localhost:8010
+EXPO_PUBLIC_REVENUECAT_API_KEY=
+EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID=mirror_plus
+EXPO_PUBLIC_ALLOW_MOCKS=true
 ```
 
 ## Astrology Service
@@ -59,7 +63,7 @@ Swiss Ephemeris is dual licensed under AGPL or the paid Swiss Ephemeris Professi
 2. Run the SQL files in `supabase/migrations` in order.
 3. Create a private/public policy-aware Storage bucket named `coffee-readings`.
 4. Deploy Edge Functions from `supabase/functions`.
-5. Add function secrets when real providers are enabled:
+5. Add function secrets:
 
 ```bash
 supabase secrets set AI_PROVIDER=gemini
@@ -67,6 +71,10 @@ supabase secrets set GEMINI_API_KEY=...
 supabase secrets set GEMINI_MODEL=gemini-2.5-flash-lite
 supabase secrets set ASTROLOGY_SERVICE_URL=https://your-astrology-service.example.com
 supabase secrets set ASTROLOGY_SERVICE_TOKEN=...
+supabase secrets set REVENUECAT_SECRET_KEY=...
+supabase secrets set REVENUECAT_ENTITLEMENT_ID=mirror_plus
+supabase secrets set REVENUECAT_CREDIT_SMALL_PRODUCT_ID=mirror_credits_10
+supabase secrets set REVENUECAT_CREDIT_SMALL_AMOUNT=10
 ```
 
 Gemini is wired through the Supabase Edge Function provider layer, not the mobile app. The default model is `gemini-2.5-flash-lite` because it has a practical Free Tier quota for prototyping.
@@ -75,14 +83,21 @@ The mobile app now calls these Edge Functions for readings:
 
 ```txt
 generate-daily-insight
+generate-daily-sky
 generate-tarot-reading
 generate-coffee-reading
 generate-relationship-reading
+generate-weekly-relationship-report
+generate-numerology-reading
 submit-feedback
 calculate-natal-chart
+register-push-token
+sync-revenuecat-entitlement
+send-daily-sky-notifications
+delete-user-data
 ```
 
-Until those functions are deployed to Supabase, the app will show an Edge Function error instead of a Gemini reading. Local code is wired; deployment is the next environment step.
+Production builds require Supabase and remote services. If Edge Functions or secrets are missing, the app fails loudly instead of silently serving mock readings.
 
 ## Product Safety
 

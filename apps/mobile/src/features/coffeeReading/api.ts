@@ -1,7 +1,7 @@
 import { buildAstrologyContext } from "@/features/astrology/context";
 import { generateCoffeeMock } from "@/features/readings/mockReadings";
 import { toReadingOutput } from "@/features/readings/readingMapper";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { assertRemoteServicesAvailable, isSupabaseConfigured, shouldUseMockFallback, supabase } from "@/lib/supabase";
 import type { Locale } from "@/i18n";
 import type { NatalChart } from "@/types/astrology";
 import type { MysticProfile } from "@/types/profile";
@@ -19,7 +19,8 @@ export async function generateCoffeeReading(input: {
   locale?: Locale;
   useRemote?: boolean;
 }) {
-  if (!isSupabaseConfigured || input.useRemote === false) {
+  assertRemoteServicesAvailable(input.useRemote);
+  if (shouldUseMockFallback(input.useRemote)) {
     return generateCoffeeMock(input.topic, input.question, input.context ?? "", input.profile, input.locale);
   }
 
@@ -59,6 +60,7 @@ export async function uploadCoffeeImage(input: {
   readingDraftId?: string;
   fileName?: string;
 }) {
+  assertRemoteServicesAvailable();
   if (!isSupabaseConfigured) {
     return {
       storagePath: input.uri,
@@ -94,7 +96,9 @@ export async function uploadCoffeeImage(input: {
 }
 
 export async function deleteCoffeeImage(storagePath?: string) {
-  if (!isSupabaseConfigured || !storagePath || storagePath.startsWith("file:")) return;
+  if (!storagePath || storagePath.startsWith("file:")) return;
+  assertRemoteServicesAvailable();
+  if (!isSupabaseConfigured) return;
 
   await supabase.storage.from("coffee-readings").remove([storagePath]);
 }

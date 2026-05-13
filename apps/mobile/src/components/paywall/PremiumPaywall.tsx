@@ -55,6 +55,14 @@ export function PremiumPaywall({ feature = "relationship_loop", compact, onClose
     : storePreview
       ? copy.creditCtaStore
       : copy.creditCta;
+  const setupWarning =
+    storePreview && !storePreview.configured
+      ? copy.configureNeeded
+      : storePreview && canUsePlus && !storePreview.monthly && !storePreview.yearly
+        ? copy.noOffering
+        : storePreview && canUseCredits && !storePreview.creditSmall
+          ? copy.noCreditProduct
+          : undefined;
 
   useEffect(() => {
     let active = true;
@@ -162,7 +170,13 @@ export function PremiumPaywall({ feature = "relationship_loop", compact, onClose
       <Pressable onPress={restorePurchases} style={styles.restoreButton}>
         <Text style={styles.restoreText}>{copy.restore}</Text>
       </Pressable>
-      {message ? <Text style={styles.message}>{message}</Text> : <Text style={styles.caption}>{offer.trustNote}</Text>}
+      {message ? (
+        <Text style={styles.message}>{message}</Text>
+      ) : setupWarning ? (
+        <Text style={styles.warning}>{setupWarning}</Text>
+      ) : (
+        <Text style={styles.caption}>{offer.trustNote}</Text>
+      )}
     </View>
   );
 }
@@ -224,6 +238,7 @@ const trCopy = {
   revenueCatPending: "Satın alma tamamlanamadı. Ürünleri ve test hesabını kontrol et.",
   configureNeeded: "RevenueCat API key henüz .env içinde tanımlı değil.",
   noOffering: "RevenueCat offering içinde uygun ürün bulunamadı.",
+  noCreditProduct: "RevenueCat offering içinde kredi paketi bulunamadı.",
   cancelled: "Satın alma iptal edildi.",
   creditsUnlocked: "Kredi paketi işlendi.",
   unlocked: "Premium açıldı."
@@ -248,6 +263,7 @@ const enCopy = {
   revenueCatPending: "Purchase could not be completed. Check products and sandbox account.",
   configureNeeded: "RevenueCat API key is not defined in .env yet.",
   noOffering: "No matching product was found in the RevenueCat offering.",
+  noCreditProduct: "No credit pack was found in the RevenueCat offering.",
   cancelled: "Purchase cancelled.",
   creditsUnlocked: "Credit pack processed.",
   unlocked: "Premium unlocked."
@@ -459,6 +475,12 @@ const styles = StyleSheet.create({
   },
   message: {
     color: colors.accentTeal,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "800"
+  },
+  warning: {
+    color: colors.accentGold,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: "800"

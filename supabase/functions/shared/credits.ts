@@ -87,6 +87,26 @@ export async function requirePaidAccess(readingType: string, userId: string): Pr
   return { readingType, required, isPremium: false, shouldSpendCredits: true, balance };
 }
 
+export async function requirePaidAccessForUser(readingType: string, userId?: string | null): Promise<CreditAccess | null> {
+  if (!isPremiumReading(readingType)) return null;
+
+  if (!userId) {
+    throw new Response(
+      JSON.stringify({
+        error: "auth_required",
+        feature: readingType,
+        entitlement: "mirror_plus"
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" }
+      }
+    );
+  }
+
+  return requirePaidAccess(readingType, userId);
+}
+
 export async function recordCreditSpend(userId: string, access: CreditAccess, readingId?: string) {
   if (!access.shouldSpendCredits || access.required <= 0) {
     return {

@@ -2,7 +2,7 @@ import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
 import { buildSourceContext, normalizeLocale, sourceLabels } from "../shared/sourceContext.ts";
-import { recordCreditSpend, requirePaidAccess } from "../shared/credits.ts";
+import { recordCreditSpend, requirePaidAccessForUser } from "../shared/credits.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     const accessMode = body.access_mode === "basic" ? "basic" : body.access_mode === "timing" ? "timing" : "deep";
     const paidReadingType =
       accessMode === "deep" ? "relationship" : accessMode === "timing" ? "relationship_timing" : null;
-    const creditAccess = user && paidReadingType ? await requirePaidAccess(paidReadingType, user.id) : null;
+    const creditAccess = paidReadingType ? await requirePaidAccessForUser(paidReadingType, user?.id) : null;
 
     const [
       { data: dbUserProfile },

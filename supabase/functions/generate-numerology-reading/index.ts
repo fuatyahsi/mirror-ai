@@ -1,7 +1,7 @@
 import { corsHeaders, jsonResponse } from "../shared/cors.ts";
 import { getAIProvider } from "../shared/aiProvider.ts";
 import { getOptionalUser } from "../shared/auth.ts";
-import { recordCreditSpend, requirePaidAccess } from "../shared/credits.ts";
+import { recordCreditSpend, requirePaidAccessForUser } from "../shared/credits.ts";
 import { buildSourceContext, normalizeLocale, sourceLabels } from "../shared/sourceContext.ts";
 
 type NumerologyCard = {
@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const locale = normalizeLocale(body.locale);
     const labels = sourceLabels(locale);
-    const creditAccess = user && body.deep === true ? await requirePaidAccess("deep_numerology", user.id) : null;
+    const creditAccess = body.deep === true ? await requirePaidAccessForUser("deep_numerology", user?.id) : null;
 
     const [{ data: dbProfile }, { data: userProfile }, { data: dbMemory }, { data: chartRow }] = user
       ? await Promise.all([

@@ -9,13 +9,21 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mirrorai.app"
+      "bundleIdentifier": "com.mirrorai.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSUserTrackingUsageDescription": "Mirror AI does not track you across apps. If enabled later, tracking will only be used with your permission."
+      }
     },
     "android": {
       "package": "com.mirrorai.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0A0D14"
-      }
+      },
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "bundler": "metro",
