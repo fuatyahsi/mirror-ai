@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
 
     const { data: reading } = await supabase
       .from("readings")
-      .select("id,reading_type,topic")
+      .select("id,reading_type,topic,result_json")
       .eq("user_id", user.id)
       .eq("id", body.reading_id)
       .single();
@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
     if (feedbackError) throw feedbackError;
 
     const weight = body.score === "accurate" ? 0.9 : body.score === "partial" ? 0.6 : 0.3;
+    const resultJson = (reading.result_json ?? {}) as Record<string, unknown>;
     const { error: memoryError } = await supabase.from("memory_events").insert({
       user_id: user.id,
       event_type: "feedback_submitted",
@@ -43,6 +44,9 @@ Deno.serve(async (req) => {
       memory_value: {
         reading_type: reading.reading_type,
         topic: reading.topic,
+        access_mode: resultJson.access_mode,
+        relationship_key: resultJson.relationship_key,
+        title: resultJson.title,
         score: body.score,
         accuracy_rating: body.accuracy_rating,
         emotional_resonance: body.emotional_resonance
@@ -58,4 +62,3 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: error instanceof Error ? error.message : "Unexpected error" }, 500);
   }
 });
-

@@ -10,11 +10,19 @@ type Locale = "tr" | "en";
 // başlık, bir kanıt chip'i ve örnek mesaj/satır. Alt kısmı redacted block'larla
 // + dim overlay ile örtülü; "açılınca görünür" hissi yaratır.
 
-type MockKind = "relationship" | "weekly" | "coffee" | "tarot" | "numerology" | "birth_chart" | "daily";
+type MockKind =
+  | "relationship"
+  | "message_timing"
+  | "weekly"
+  | "coffee"
+  | "tarot"
+  | "numerology"
+  | "birth_chart"
+  | "daily";
 
 function pickKind(feature: PremiumFeatureKey): MockKind {
-  if (feature === "relationship_loop" || feature === "relationship_timing" || feature === "deep_synastry")
-    return "relationship";
+  if (feature === "relationship_timing") return "message_timing";
+  if (feature === "relationship_loop" || feature === "deep_synastry") return "relationship";
   if (feature === "weekly_relationship_report") return "weekly";
   if (feature === "detailed_coffee") return "coffee";
   if (feature === "premium_tarot") return "tarot";
@@ -34,6 +42,9 @@ type CopyShape = {
   aspectMeaning: string;
   sampleHeader: string;
   sampleLine: string;
+  timingTitle: string;
+  timingHeadline: string;
+  timingChip: string;
   weeklyTitle: string;
   weeklyHeadline: string;
   weeklyTheme: string;
@@ -62,6 +73,9 @@ const copy: Record<Locale, CopyShape> = {
     aspectMeaning: "duygusal güven kanalı, sıcak hissettiriyor",
     sampleHeader: "Örnek mesaj",
     sampleLine: "Aramızdaki durumu daha net anlamak istiyorum.",
+    timingTitle: "Bugün mesaj atmalı mıyım?",
+    timingHeadline: "Bugün tek, sakin ve net bir mesaj yeterli; cevap gelene kadar takip mesajı yok.",
+    timingChip: "Karar: yaz · Ton: sakin",
     weeklyTitle: "Test ile geçen 7 gün",
     weeklyHeadline: "Belirsizlik haftası — ama döngü dengelendi.",
     weeklyTheme: "geç cevap → onarım girişimi",
@@ -88,6 +102,9 @@ const copy: Record<Locale, CopyShape> = {
     aspectMeaning: "emotional safety channel, runs warm",
     sampleHeader: "Sample message",
     sampleLine: "I'd like to understand where we stand.",
+    timingTitle: "Should I message today?",
+    timingHeadline: "A single calm message is enough today; no follow-up until they answer.",
+    timingChip: "Decision: send · Tone: calm",
     weeklyTitle: "Last 7 days with Test",
     weeklyHeadline: "Uncertain week — but the loop steadied by Friday.",
     weeklyTheme: "late replies → small repair gesture",
@@ -122,7 +139,7 @@ export function PaywallMockPreview({
         <Text style={styles.eyebrow}>{t.sample}</Text>
       </View>
       <View style={styles.preview}>
-        {kind === "relationship" || kind === "weekly" ? (
+        {kind === "relationship" || kind === "message_timing" || kind === "weekly" ? (
           <RelationshipMock t={t} kind={kind} />
         ) : kind === "coffee" ? (
           <SimpleMock title={t.coffeeTitle} headline={t.coffeeHeadline} icon="cafe-outline" />
@@ -147,15 +164,16 @@ export function PaywallMockPreview({
   );
 }
 
-function RelationshipMock({ t, kind }: { t: CopyShape; kind: "relationship" | "weekly" }) {
-  const title = kind === "weekly" ? t.weeklyTitle : t.bondTitle;
-  const subtitle = kind === "weekly" ? "" : t.bondSubtitle;
-  const headline = kind === "weekly" ? t.weeklyHeadline : t.bondLine1;
+function RelationshipMock({ t, kind }: { t: CopyShape; kind: "relationship" | "message_timing" | "weekly" }) {
+  const isTiming = kind === "message_timing";
+  const title = isTiming ? t.timingTitle : kind === "weekly" ? t.weeklyTitle : t.bondTitle;
+  const subtitle = kind === "weekly" || isTiming ? "" : t.bondSubtitle;
+  const headline = isTiming ? t.timingHeadline : kind === "weekly" ? t.weeklyHeadline : t.bondLine1;
   return (
     <>
       <View style={styles.titleRow}>
         <Ionicons
-          name={kind === "weekly" ? "calendar-outline" : "git-compare-outline"}
+          name={isTiming ? "send-outline" : kind === "weekly" ? "calendar-outline" : "git-compare-outline"}
           size={16}
           color={featureColors.relationship.accent}
         />
@@ -164,7 +182,12 @@ function RelationshipMock({ t, kind }: { t: CopyShape; kind: "relationship" | "w
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       <ScoreStripMock t={t} />
       <Text style={styles.body}>{headline}</Text>
-      {kind === "relationship" ? (
+      {isTiming ? (
+        <View style={styles.aspectChip}>
+          <Ionicons name="send-outline" size={12} color={colors.accentGold} />
+          <Text style={[styles.aspectLabel, { color: colors.accentGold }]}>{t.timingChip}</Text>
+        </View>
+      ) : kind === "relationship" ? (
         <View style={styles.aspectChip}>
           <Text style={styles.aspectLabel}>{t.aspectLabel}</Text>
           <Text style={styles.aspectMeaning}>{t.aspectMeaning}</Text>

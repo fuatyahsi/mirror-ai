@@ -24,6 +24,8 @@ export type ReadingExplanation = {
 export type ReadingOutput = {
   id: string;
   reading_type: ReadingType;
+  access_mode?: "basic" | "timing" | "deep";
+  relationship_key?: string;
   topic: string;
   question?: string;
   created_at: string;

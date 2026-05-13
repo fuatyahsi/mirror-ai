@@ -6,6 +6,7 @@ import { BackButton } from "@/components/layout/BackButton";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Screen } from "@/components/layout/Screen";
 import { RelationshipDeepReportCard } from "@/components/readings/RelationshipDeepReportCard";
+import { RelationshipTimingCoachCard } from "@/components/readings/RelationshipTimingCoachCard";
 import { WeeklyRelationshipReportCard } from "@/components/readings/WeeklyRelationshipReportCard";
 import { submitReadingFeedback } from "@/features/feedback/api";
 import { useI18n, type Locale } from "@/i18n";
@@ -57,11 +58,13 @@ export default function ReadingDetailScreen() {
       // Local feedback is already saved; remote sync can be retried in a later persistence pass.
     }
 
-    router.push("/tabs/profile");
+    router.push(currentReading.reading_type === "relationship" || currentReading.reading_type === "weekly_relationship" ? "/tabs/relationship" : "/tabs/profile");
   }
 
   const isDeepRelationship =
     currentReading.reading_type === "relationship" && Boolean(currentReading.deep_report);
+  const isRelationshipTiming =
+    currentReading.reading_type === "relationship" && currentReading.access_mode === "timing";
   const isWeeklyRelationship =
     currentReading.reading_type === "weekly_relationship" && Boolean(currentReading.weekly_report);
   const reportLocale: Locale = userLocale === "en" ? "en" : "tr";
@@ -97,6 +100,16 @@ export default function ReadingDetailScreen() {
           <InsightCard title={t("detail.advice")} body={currentReading.advice} />
           <InsightCard title={t("detail.reflection")} body={currentReading.reflection_question} />
           <InsightCard title={t("detail.safety")} body={currentReading.safety_note} />
+        </>
+      ) : isRelationshipTiming ? (
+        <>
+          <PageHeader
+            eyebrow={reportLocale === "en" ? "MESSAGE COACH" : "MESAJ KOÇU"}
+            title={currentReading.title}
+            subtitle={currentReading.summary}
+          />
+          <RelationshipTimingCoachCard reading={currentReading} locale={reportLocale} />
+          <InsightCard title={t("detail.reflection")} body={currentReading.reflection_question} />
         </>
       ) : (
         <>

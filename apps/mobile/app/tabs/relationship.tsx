@@ -465,6 +465,19 @@ export default function RelationshipScreen() {
                   ? "Pulls together your journal entries, readings and the timing window into one weekly review."
                   : "Günlük kayıtların, ilişki yorumların ve gökyüzü tek bir haftalık raporda toplanır."}
               </Text>
+              <View style={styles.weeklyReceiptRow}>
+                <View style={styles.weeklyReceiptPill}>
+                  <Text style={styles.weeklyReceiptText}>
+                    {locale === "en" ? `${recentJournal.length} journal entries` : `${recentJournal.length} günlük kaydı`}
+                  </Text>
+                </View>
+                <View style={styles.weeklyReceiptPill}>
+                  <Text style={styles.weeklyReceiptText}>{loopThemes.slice(0, 2).join(" / ")}</Text>
+                </View>
+                <View style={styles.weeklyReceiptPill}>
+                  <Text style={styles.weeklyReceiptText}>{locale === "en" ? "7-day loop" : "7 günlük döngü"}</Text>
+                </View>
+              </View>
               <Text style={styles.weeklyMeta}>
                 {locale === "en"
                   ? `Plus or 4 credits. Balance: ${userProfile.credits}`
@@ -624,6 +637,16 @@ export default function RelationshipScreen() {
           <Text style={styles.note}>İlk kayıt bu analizle birlikte hafızaya alınır. Sonraki yorumlar aynı döngüyü takip eder.</Text>
         )}
       </Section>
+
+      <RelationshipMemoryPanel
+        locale={localeKey}
+        journalCount={nextLoopEntryCount}
+        recentJournal={recentJournal}
+        loopThemes={loopThemes}
+        qualityScore={activeRelationshipProfile?.quality_score}
+        feedbackCount={activeRelationshipProfile?.feedback_count}
+        lastFeedbackScore={activeRelationshipProfile?.last_feedback_score}
+      />
 
       {showLoopPreview ? (
         <SubtlePremiumOffer feature="relationship_loop" />
@@ -827,6 +850,8 @@ function RelationshipProfileCard({
     synastry?: { overall_score?: number; scores?: Record<string, number>; time_accuracy_note?: string };
     timing_context?: Record<string, unknown>;
     journal_count: number;
+    quality_score?: number;
+    feedback_count?: number;
     updated_at: string;
   };
   locale: LocaleKey;
@@ -849,6 +874,9 @@ function RelationshipProfileCard({
       <View style={styles.relationshipProfileStats}>
         <MiniStat label={locale === "en" ? "Journal" : "Günlük"} value={String(profile.journal_count)} />
         <MiniStat label={locale === "en" ? "Timing" : "Zaman"} value={timing?.sensitivity === "high" ? "yüksek" : "orta"} />
+        {typeof profile.quality_score === "number" ? (
+          <MiniStat label={locale === "en" ? "Fit" : "İsabet"} value={String(profile.quality_score)} />
+        ) : null}
       </View>
       {loop ? <Text style={styles.relationshipLoopText}>{loop}</Text> : null}
     </Pressable>
@@ -864,6 +892,9 @@ function RelationshipIntelligencePanel({
     timing_context?: Record<string, unknown>;
     journal_count: number;
     last_context?: string;
+    quality_score?: number;
+    feedback_count?: number;
+    positive_feedback_count?: number;
   };
   locale: LocaleKey;
 }) {
@@ -883,7 +914,8 @@ function RelationshipIntelligencePanel({
     { label: locale === "en" ? "Emotional" : "Duygusal", value: scores.emotional_harmony },
     { label: locale === "en" ? "Mental" : "Zihinsel", value: scores.mental_flow },
     { label: locale === "en" ? "Romantic" : "Çekim", value: scores.romantic_pull },
-    { label: locale === "en" ? "Long term" : "Uzun vade", value: scores.long_term_potential }
+    { label: locale === "en" ? "Long term" : "Uzun vade", value: scores.long_term_potential },
+    { label: locale === "en" ? "Fit quality" : "İsabet kalitesi", value: profile.quality_score }
   ].filter((item) => typeof item.value === "number");
 
   return (
@@ -940,6 +972,95 @@ function RelationshipIntelligencePanel({
         </Text>
         {profile.last_context ? <Text style={styles.loopLastContext}>{profile.last_context}</Text> : null}
       </View>
+    </Section>
+  );
+}
+
+function RelationshipMemoryPanel({
+  locale,
+  journalCount,
+  recentJournal,
+  loopThemes,
+  qualityScore,
+  feedbackCount,
+  lastFeedbackScore
+}: {
+  locale: LocaleKey;
+  journalCount: number;
+  recentJournal: { id: string; event_text: string; mood?: string; created_at: string }[];
+  loopThemes: string[];
+  qualityScore?: number;
+  feedbackCount?: number;
+  lastFeedbackScore?: string;
+}) {
+  const hasMemory = journalCount > 0;
+  const qualityLabel =
+    typeof qualityScore === "number"
+      ? String(qualityScore)
+      : locale === "en"
+        ? "new"
+        : "yeni";
+  const feedbackLabel =
+    feedbackCount && feedbackCount > 0
+      ? locale === "en"
+        ? `${feedbackCount} signals`
+        : `${feedbackCount} sinyal`
+      : locale === "en"
+        ? "waiting"
+        : "bekliyor";
+
+  return (
+    <Section title={locale === "en" ? "Visible relationship memory" : "Görünen ilişki hafızası"}>
+      <View style={styles.memoryHero}>
+        <View style={styles.memoryMetric}>
+          <Text style={styles.memoryMetricValue}>{journalCount}</Text>
+          <Text style={styles.memoryMetricLabel}>{locale === "en" ? "journal entries" : "günlük kaydı"}</Text>
+        </View>
+        <View style={styles.memoryMetric}>
+          <Text style={styles.memoryMetricValue}>{qualityLabel}</Text>
+          <Text style={styles.memoryMetricLabel}>{locale === "en" ? "quality score" : "isabet skoru"}</Text>
+        </View>
+        <View style={styles.memoryMetric}>
+          <Text style={styles.memoryMetricValue}>{feedbackLabel}</Text>
+          <Text style={styles.memoryMetricLabel}>{locale === "en" ? "feedback" : "feedback"}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.memoryBody}>
+        {hasMemory
+          ? locale === "en"
+            ? "Mirror AI will use these entries to separate a one-day event from a repeating relationship loop."
+            : "Mirror AI bu kayıtlarla tek günlük olayı tekrar eden ilişki döngüsünden ayırır."
+          : locale === "en"
+            ? "Write one recent event to start this bond's memory."
+            : "Bu bağın hafızasını başlatmak için son bir olayı yaz."}
+      </Text>
+
+      <View style={styles.memoryThemeRow}>
+        {loopThemes.slice(0, 3).map((theme) => (
+          <View key={theme} style={styles.memoryThemeChip}>
+            <Ionicons name="repeat-outline" size={12} color={colors.accentGold} />
+            <Text style={styles.memoryThemeText}>{theme}</Text>
+          </View>
+        ))}
+      </View>
+
+      {recentJournal.length ? (
+        <View style={styles.memoryEntryList}>
+          {recentJournal.slice(0, 3).map((entry) => (
+            <View key={entry.id} style={styles.memoryEntry}>
+              <Text style={styles.memoryEntryMood}>{entry.mood || (locale === "en" ? "journal" : "günlük")}</Text>
+              <Text style={styles.memoryEntryText} numberOfLines={2}>{entry.event_text}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {lastFeedbackScore ? (
+        <Text style={styles.memoryFeedback}>
+          {locale === "en" ? `Last reading feedback: ${lastFeedbackScore}` : `Son yorum feedback'i: ${lastFeedbackScore}`}
+        </Text>
+      ) : null}
     </Section>
   );
 }
@@ -1422,6 +1543,7 @@ const styles = StyleSheet.create({
   },
   relationshipProfileStats: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.xs
   },
   miniStat: {
@@ -1590,6 +1712,86 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 12,
     lineHeight: 18
+  },
+  memoryHero: {
+    flexDirection: "row",
+    gap: spacing.xs
+  },
+  memoryMetric: {
+    flex: 1,
+    minHeight: 74,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(94,196,192,0.24)",
+    backgroundColor: "#071A22",
+    padding: spacing.sm,
+    justifyContent: "space-between"
+  },
+  memoryMetricValue: {
+    color: colors.accentGold,
+    fontSize: 21,
+    fontWeight: "900"
+  },
+  memoryMetricLabel: {
+    color: colors.muted,
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  memoryBody: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 20
+  },
+  memoryThemeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  memoryThemeChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(216,181,109,0.28)",
+    backgroundColor: "rgba(216,181,109,0.08)",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5
+  },
+  memoryThemeText: {
+    color: colors.accentGold,
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  memoryEntryList: {
+    gap: spacing.xs
+  },
+  memoryEntry: {
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.035)",
+    padding: spacing.sm,
+    gap: 4
+  },
+  memoryEntryMood: {
+    color: featureColors.relationship.accent,
+    fontSize: 10,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  memoryEntryText: {
+    color: colors.text,
+    fontSize: 12,
+    lineHeight: 18
+  },
+  memoryFeedback: {
+    color: colors.accentTeal,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "800"
   },
   inputRow: {
     gap: spacing.sm
@@ -2035,6 +2237,24 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 13,
     lineHeight: 19
+  },
+  weeklyReceiptRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  weeklyReceiptPill: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(224,122,168,0.28)",
+    backgroundColor: "rgba(224,122,168,0.08)",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5
+  },
+  weeklyReceiptText: {
+    color: featureColors.relationship.accent,
+    fontSize: 11,
+    fontWeight: "900"
   },
   weeklyMeta: {
     color: colors.accentTeal,

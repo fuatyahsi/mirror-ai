@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
           : undefined
       ].filter(Boolean) as string[]
     });
-    const result = await provider.generateReading({
+    let result = await provider.generateReading({
       readingType: "relationship",
       topic: "relationship",
       accessMode,
@@ -190,6 +190,14 @@ Deno.serve(async (req) => {
       locale
     });
 
+    if (accessMode === "timing") {
+      result = finalizeTimingReading(result as Record<string, unknown>, {
+        locale,
+        question: String(body.question ?? ""),
+        timingContext
+      }) as typeof result;
+    }
+
     const finalizedDeepReport =
       accessMode === "deep" && result.deep_report
         ? finalizeDeepReport(result.deep_report, {
@@ -212,6 +220,8 @@ Deno.serve(async (req) => {
       return jsonResponse({
         reading_id: crypto.randomUUID(),
         persisted: false,
+        access_mode: accessMode,
+        relationship_key: relationshipKey,
         scores,
         ...result,
         source_context: sourceContext,
@@ -268,6 +278,8 @@ Deno.serve(async (req) => {
       reading_id: reading.id,
       persisted: true,
       billing,
+      access_mode: accessMode,
+      relationship_key: relationshipKey,
       scores,
       ...result,
       source_context: sourceContext,
@@ -284,6 +296,114 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: error instanceof Error ? error.message : "Unexpected error" }, 500);
   }
 });
+
+function finalizeTimingReading(
+  result: Record<string, unknown>,
+  input: {
+    locale: "tr" | "en";
+    question: string;
+    timingContext: Record<string, unknown>;
+  }
+) {
+  const isEn = input.locale === "en";
+  const sections = Array.isArray(result.sections) ? (result.sections as Record<string, unknown>[]) : [];
+  const suggestedTone = safeText(input.timingContext.suggested_tone, isEn ? "calm, clear and non-pressuring" : "sakin, net ve baskısız");
+  const doNotDo = safeText(input.timingContext.do_not_do, isEn ? "Do not chase hidden certainty from a late reply." : "Geç cevaptan gizli kesinlik çıkarmaya çalışma.");
+  const nextAction = safeText(input.timingContext.next_action, isEn ? "Choose one clear step, then stop checking." : "Tek net adım seç, sonra tekrar kontrol etmeyi bırak.");
+  const sampleMessage = safeText(
+    input.timingContext.sample_message,
+    isEn ? "I want to understand this more calmly. If it works for you, we can talk later." : "Bunu daha sakin anlamak istiyorum. Uygunsa sonra konuşabiliriz."
+  );
+  const fallbackSections = [
+    {
+      title: isEn ? "Should I message today?" : "Bugün mesaj atmalı mıyım?",
+      body: nextAction
+    },
+    {
+      title: isEn ? "What tone?" : "Hangi ton?",
+      body: `${suggestedTone} ${doNotDo}`
+    },
+    {
+      title: isEn ? "Sample message" : "Örnek mesaj",
+      body: sampleMessage
+    }
+  ];
+
+  const normalizedSections = fallbackSections.map((fallback, index) => {
+    const section = sections[index] ?? {};
+    return {
+      title: clampText(safeText(section.title, fallback.title), 72),
+      body: clampText(safeText(section.body, fallback.body), 620),
+      references: Array.isArray(section.references) ? section.references.map(String).slice(0, 4) : undefined
+    };
+  });
+  const explanation = (result.explanation ?? {}) as Record<string, unknown>;
+  const basedOn = Array.isArray(explanation.based_on)
+    ? explanation.based_on.map(String).filter(Boolean).slice(0, 5)
+    : [];
+
+  return {
+    ...result,
+    title: clampText(
+      safeText(result.title, isEn ? "Send, wait or soften?" : "Yaz, bekle veya yumuşat?"),
+      90
+    ),
+    summary: clampText(
+      safeText(result.summary, isEn ? "A focused message decision for today's relationship context." : "Bugünün ilişki bağlamı için net bir mesaj kararı."),
+      220
+    ),
+    sections: normalizedSections,
+    advice: clampText(safeText(result.advice, nextAction), 240),
+    reflection_question: clampText(
+      safeText(
+        result.reflection_question,
+        isEn ? "Can I send this once and then let the answer arrive?" : "Bunu bir kez gönderip cevabın gelmesine alan bırakabilir miyim?"
+      ),
+      160
+    ),
+    explanation: {
+      based_on: basedOn.length
+        ? basedOn
+        : [
+            isEn ? "your relationship question" : "ilişki sorun",
+            isEn ? "recent journal context" : "son ilişki günlüğü",
+            isEn ? "relationship timing signal" : "ilişki zamanlama sinyali"
+          ],
+      confidence: clampNumber(Number(explanation.confidence ?? result.confidence ?? 0.72), 0.45, 0.9),
+      limitations: clampText(
+        safeText(
+          explanation.limitations,
+          isEn
+            ? "This is a reflective timing coach, not certainty about what the other person feels."
+            : "Bu, karşı tarafın ne hissettiğine dair kesinlik değil; farkındalık amaçlı zamanlama koçudur."
+        ),
+        240
+      )
+    },
+    safety_note: clampText(
+      safeText(
+        result.safety_note,
+        isEn
+          ? "It keeps your autonomy central and avoids pressure, obsession or deterministic claims."
+          : "Karar hakkını sende bırakır; baskı, takıntı veya kesin hüküm üretmez."
+      ),
+      220
+    )
+  };
+}
+
+function safeText(value: unknown, fallback: string) {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function clampText(value: string, maxLength: number) {
+  return value.length <= maxLength ? value : `${value.slice(0, maxLength - 1).trim()}…`;
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) return min;
+  return Math.max(min, Math.min(max, value));
+}
 
 function buildRelationshipScores(
   synastry: Record<string, unknown> | null,

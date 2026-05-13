@@ -5,6 +5,8 @@ import { nowIso } from "@/utils/date";
 type RemoteReading = Partial<ReadingOutput> & {
   reading_id?: string;
   persisted?: boolean;
+  access_mode?: "basic" | "timing" | "deep";
+  relationship_key?: string;
 };
 
 export function toReadingOutput(
@@ -19,6 +21,8 @@ export function toReadingOutput(
   return {
     id: data.reading_id || data.id || `${fallback.reading_type}_${Date.now()}`,
     reading_type: fallback.reading_type,
+    access_mode: data.access_mode,
+    relationship_key: data.relationship_key,
     topic: fallback.topic,
     question: fallback.question,
     created_at: data.created_at || nowIso(),

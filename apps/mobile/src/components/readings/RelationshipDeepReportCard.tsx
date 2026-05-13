@@ -63,7 +63,14 @@ const localeText = {
     scoreCommClarity: "İletişim netliği",
     scoreUncertainty: "Belirsizlik",
     scoreProjection: "Senin projeksiyon riskin",
-    scoreSynastry: "Sinastri toplam"
+    scoreSynastry: "Sinastri toplam",
+    receiptTitle: "Bu rapor neyi birleştirdi?",
+    receiptChart: "Senin haritan",
+    receiptPartner: "Onun haritası",
+    receiptSynastry: "Sinastri",
+    receiptMemory: "İlişki hafızası",
+    receiptTiming: "Bugünkü zamanlama",
+    receiptQuestion: "Net soru"
   },
   en: {
     sectionBond: "BOND PROFILE",
@@ -121,7 +128,14 @@ const localeText = {
     scoreCommClarity: "Communication clarity",
     scoreUncertainty: "Uncertainty",
     scoreProjection: "Your projection risk",
-    scoreSynastry: "Synastry total"
+    scoreSynastry: "Synastry total",
+    receiptTitle: "What this report combined",
+    receiptChart: "Your chart",
+    receiptPartner: "Their chart",
+    receiptSynastry: "Synastry",
+    receiptMemory: "Relationship memory",
+    receiptTiming: "Today's timing",
+    receiptQuestion: "Exact question"
   }
 } as const;
 
@@ -160,6 +174,7 @@ export function RelationshipDeepReportCard({
         relationType={relationType}
         question={question}
       />
+      <DeepValueReceipt report={report} locale={locale} question={question} />
       <ScoreStrip report={report} locale={locale} />
       <Section eyebrow={t.sectionBond} accent>
         <Text style={styles.sectionTitle}>{report.bond_profile.title}</Text>
@@ -413,6 +428,40 @@ function DeepHeader({
         <Text style={styles.headerTimeNote}>
           {report.evidence.time_known ? t.timeKnown : t.timeUnknown}
         </Text>
+      </View>
+    </View>
+  );
+}
+
+function DeepValueReceipt({
+  report,
+  locale,
+  question
+}: {
+  report: RelationshipDeepReport;
+  locale: Locale;
+  question?: string;
+}) {
+  const t = localeText[locale];
+  const items = [
+    { label: t.receiptChart, active: true, icon: "person-circle-outline" as const },
+    { label: t.receiptPartner, active: report.evidence.time_known, icon: "person-add-outline" as const },
+    { label: t.receiptSynastry, active: true, icon: "git-compare-outline" as const },
+    { label: t.receiptMemory, active: report.repeated_loop.journal_evidence.length > 0, icon: "bookmarks-outline" as const },
+    { label: t.receiptTiming, active: true, icon: "navigate-circle-outline" as const },
+    { label: t.receiptQuestion, active: Boolean(question), icon: "help-circle-outline" as const }
+  ];
+
+  return (
+    <View style={styles.valueReceipt}>
+      <Text style={styles.valueReceiptTitle}>{t.receiptTitle}</Text>
+      <View style={styles.valueReceiptGrid}>
+        {items.map((item) => (
+          <View key={item.label} style={[styles.valueReceiptChip, !item.active && styles.valueReceiptChipMuted]}>
+            <Ionicons name={item.icon} size={13} color={item.active ? colors.accentTeal : colors.faint} />
+            <Text style={[styles.valueReceiptText, !item.active && styles.valueReceiptTextMuted]}>{item.label}</Text>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -737,6 +786,49 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 12,
     lineHeight: 17
+  },
+  valueReceipt: {
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(94,196,192,0.26)",
+    backgroundColor: "#071A22",
+    padding: spacing.md,
+    gap: spacing.sm
+  },
+  valueReceiptTitle: {
+    color: colors.accentTeal,
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1,
+    textTransform: "uppercase"
+  },
+  valueReceiptGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  valueReceiptChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(94,196,192,0.34)",
+    backgroundColor: "rgba(94,196,192,0.1)",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5
+  },
+  valueReceiptChipMuted: {
+    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255,255,255,0.035)"
+  },
+  valueReceiptText: {
+    color: colors.accentTeal,
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  valueReceiptTextMuted: {
+    color: colors.faint
   },
   confidenceBadge: {
     borderRadius: radii.sm,

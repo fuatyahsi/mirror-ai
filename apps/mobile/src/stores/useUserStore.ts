@@ -41,6 +41,11 @@ type RelationshipProfile = {
   timing_context?: Record<string, unknown>;
   journal_count: number;
   last_context?: string;
+  quality_score?: number;
+  feedback_count?: number;
+  positive_feedback_count?: number;
+  last_feedback_score?: ReadingFeedback["score"];
+  last_feedback_at?: string;
   updated_at: string;
 };
 
@@ -165,7 +170,11 @@ export const useUserStore = create<UserState>()(
       },
       upsertRelationshipProfile: (profileInput) =>
         set((state) => {
+          const current = state.relationshipProfiles.find(
+            (item) => item.relationship_key === profileInput.relationship_key
+          );
           const updatedProfile: RelationshipProfile = {
+            ...current,
             ...profileInput,
             updated_at: new Date().toISOString()
           };
@@ -179,6 +188,7 @@ export const useUserStore = create<UserState>()(
       submitFeedback: (feedbackInput) =>
         set((state) => {
           const createdAt = new Date().toISOString();
+          const reading = state.readings.find((item) => item.id === feedbackInput.reading_id);
           const feedback: ReadingFeedback = {
             ...feedbackInput,
             id: `feedback_${Date.now()}`,
@@ -194,15 +204,37 @@ export const useUserStore = create<UserState>()(
             memory_value: {
               score: feedback.score,
               accuracy_rating: feedback.accuracy_rating,
-              emotional_resonance: feedback.emotional_resonance
+              emotional_resonance: feedback.emotional_resonance,
+              reading_type: reading?.reading_type,
+              access_mode: reading?.access_mode,
+              relationship_key: reading?.relationship_key
             },
             weight: feedback.score === "accurate" ? 0.9 : feedback.score === "partial" ? 0.6 : 0.3,
             created_at: createdAt
           };
+          const feedbackValue = feedback.score === "accurate" ? 92 : feedback.score === "partial" ? 68 : 32;
+          const relationshipProfiles = reading?.relationship_key
+            ? state.relationshipProfiles.map((profile) => {
+                if (profile.relationship_key !== reading.relationship_key) return profile;
+                const previousQuality = typeof profile.quality_score === "number" ? profile.quality_score : 72;
+                const nextQuality = Math.round(previousQuality * 0.72 + feedbackValue * 0.28);
+                return {
+                  ...profile,
+                  quality_score: nextQuality,
+                  feedback_count: (profile.feedback_count ?? 0) + 1,
+                  positive_feedback_count:
+                    (profile.positive_feedback_count ?? 0) + (feedback.score === "accurate" || feedback.score === "partial" ? 1 : 0),
+                  last_feedback_score: feedback.score,
+                  last_feedback_at: createdAt,
+                  updated_at: createdAt
+                };
+              })
+            : state.relationshipProfiles;
 
           return {
             feedback: [feedback, ...state.feedback],
-            memoryEvents: [memoryEvent, ...state.memoryEvents]
+            memoryEvents: [memoryEvent, ...state.memoryEvents],
+            relationshipProfiles
           };
         }),
       setDailySkyNotifications: (settings) =>

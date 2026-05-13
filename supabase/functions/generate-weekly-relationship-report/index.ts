@@ -223,6 +223,8 @@ Deno.serve(async (req) => {
       reading_id: reading.id,
       persisted: true,
       billing,
+      access_mode: "deep",
+      relationship_key: relationshipKey,
       ...result,
       source_context: sourceContext,
       relationship_intelligence: {

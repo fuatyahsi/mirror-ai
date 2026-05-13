@@ -140,15 +140,7 @@ export function featureAccessModel(feature: PremiumFeatureKey): FeatureAccessMod
 }
 
 export function featureAccessLabel(feature: PremiumFeatureKey, locale: "tr" | "en" = "tr") {
-  const model = featureAccessModel(feature);
-  if (locale === "en") {
-    if (model === "credits") return "Credits";
-    if (model === "plus_or_credits") return "Plus or credits";
-    return "Plus";
-  }
-  if (model === "credits") return "Kredi";
-  if (model === "plus_or_credits") return "Plus veya kredi";
-  return "Plus";
+  return featureOffer(feature, locale).accessLabel;
 }
 
 function defaultRequiredPlan(feature: PremiumFeatureKey): "plus" | "credits" {
@@ -219,7 +211,7 @@ const trFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "Uyum puanından fazlasını verir: çekim, iletişim, güven ve kriz alanlarının nasıl çalıştığını açıklar.",
     freePreview: "Ücretsiz katmanda temel ilişki enerjisi ve kısa uyum sinyali verilir.",
     unlockLabel: "Açılacak sinastri raporu",
-    accessLabel: "Plus veya kredi",
+    accessLabel: "Plus veya 4 kredi",
     cta: "Derin raporu aç",
     bullets: [
       "Duygusal, zihinsel, romantik ve uzun vade skorları",
@@ -241,7 +233,7 @@ const trFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "Kullanıcı haftanın sadece ne olduğunu değil, ilişkide hangi temanın tekrar ettiğini görür.",
     freePreview: "Ücretsiz katmanda günlük tekil yorumlar görünür.",
     unlockLabel: "Açılacak haftalık rapor",
-    accessLabel: "Plus veya kredi",
+    accessLabel: "Plus veya 4 kredi",
     cta: "Haftalık raporu aç",
     bullets: [
       "Son 7 gün ilişki günlüğü özeti",
@@ -285,7 +277,7 @@ const trFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "Kullanıcı sadece kart anlamı değil, sorduğu soruya bağlı cevap ve sonraki adımı görür.",
     freePreview: "Ücretsiz katmanda temel açılım ve kısa kart yorumu bulunur.",
     unlockLabel: "Açılacak tarot katmanı",
-    accessLabel: "Plus veya kredi",
+    accessLabel: "Plus veya 2 kredi",
     cta: "Derin tarot aç",
     bullets: [
       "Konu ve ana soruya bağlı yorum",
@@ -307,7 +299,7 @@ const trFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "Kullanıcı sembol listesi yerine, kendi sorusuna bağlanan daha kişisel bir kahve yorumu alır.",
     freePreview: "Ücretsiz katmanda sınırlı kısa kahve yorumu denenebilir.",
     unlockLabel: "Açılacak kahve raporu",
-    accessLabel: "Kredi",
+    accessLabel: "3 kredi",
     cta: "Krediyle kahve raporu aç",
     bullets: [
       "Fincan görüntüsünden sembol çıkarımı",
@@ -329,7 +321,7 @@ const trFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "Kullanıcı sayısal çıktıları değil, bu dönem hangi tema ve seçimle karşılaştığını görür.",
     freePreview: "Ücretsiz katmanda temel yaşam yolu kartı görünür.",
     unlockLabel: "Açılacak numeroloji raporu",
-    accessLabel: "Plus veya kredi",
+    accessLabel: "Plus veya 4 kredi",
     cta: "Numeroloji raporunu aç",
     bullets: [
       "Yaşam yolu ve kişisel yıl yorumu",
@@ -351,7 +343,7 @@ const trFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "Kullanıcı sadece yerleşim listesi değil, kendi ilişki dili, gölge alanı ve gelişim yönünü okur.",
     freePreview: "Ücretsiz katmanda temel natal özet ve gezegen yerleşimleri görünür.",
     unlockLabel: "Açılacak harita raporu",
-    accessLabel: "Plus veya kredi",
+    accessLabel: "Plus veya 10 kredi",
     cta: "Derin haritayı aç",
     bullets: [
       "Kimlik, duygu, iletişim ve çekim dili",
@@ -434,7 +426,7 @@ const enFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "More than a compatibility score: attraction, communication, safety and friction are explained.",
     freePreview: "The free layer gives a basic bond signal and short relationship reading.",
     unlockLabel: "Synastry report unlocked",
-    accessLabel: "Plus or credits",
+    accessLabel: "Plus or 4 credits",
     cta: "Unlock deep report",
     bullets: [
       "Emotional, mental, romantic and long-term scores",
@@ -452,7 +444,7 @@ const enFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "You see not only what happened this week, but which relational theme repeated.",
     freePreview: "The free layer shows single daily readings.",
     unlockLabel: "Weekly report unlocked",
-    accessLabel: "Plus or credits",
+    accessLabel: "Plus or 4 credits",
     cta: "Unlock weekly report",
     bullets: [
       "Last 7 days relationship journal summary",
@@ -488,7 +480,7 @@ const enFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "You get more than card meanings: a question-aware answer and next step.",
     freePreview: "The free layer includes a basic spread and short card interpretation.",
     unlockLabel: "Tarot layer unlocked",
-    accessLabel: "Plus or credits",
+    accessLabel: "Plus or 2 credits",
     cta: "Unlock deep tarot",
     bullets: [
       "Interpretation tied to topic and exact question",
@@ -506,7 +498,7 @@ const enFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "You receive a personal reading tied to your question instead of a symbol list.",
     freePreview: "The free layer can show a limited short coffee reading.",
     unlockLabel: "Coffee report unlocked",
-    accessLabel: "Credits",
+    accessLabel: "3 credits",
     cta: "Unlock with credits",
     bullets: [
       "Symbol extraction from the cup image",
@@ -524,7 +516,7 @@ const enFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "You see the theme and decision pattern of this period, not just numeric outputs.",
     freePreview: "The free layer shows the basic life path card.",
     unlockLabel: "Numerology report unlocked",
-    accessLabel: "Plus or credits",
+    accessLabel: "Plus or 4 credits",
     cta: "Unlock numerology report",
     bullets: [
       "Life path and personal year reading",
@@ -542,7 +534,7 @@ const enFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "You read your relationship language, shadow pattern and growth direction, not only placements.",
     freePreview: "The free layer shows the basic natal summary and planet placements.",
     unlockLabel: "Chart report unlocked",
-    accessLabel: "Plus or credits",
+    accessLabel: "Plus or 10 credits",
     cta: "Unlock deep chart",
     bullets: [
       "Identity, emotion, communication and attraction style",
