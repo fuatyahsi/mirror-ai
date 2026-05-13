@@ -36,10 +36,13 @@ Set these values after creating a Supabase project:
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 EXPO_PUBLIC_ASTROLOGY_SERVICE_URL=http://localhost:8010
-EXPO_PUBLIC_REVENUECAT_API_KEY=
+EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=
+EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=
 EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID=mirror_plus
 EXPO_PUBLIC_ALLOW_MOCKS=true
 ```
+
+RevenueCat `test_...` SDK keys are only safe in development builds. Release APKs must use the Android production SDK key from the RevenueCat Android app configuration; otherwise Mirror AI disables RevenueCat in-app purchases to prevent the native SDK from closing the app.
 
 ## Astrology Service
 

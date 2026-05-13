@@ -2,6 +2,8 @@ import { Platform } from "react-native";
 import Purchases, { LOG_LEVEL, type CustomerInfo, type PurchasesPackage } from "react-native-purchases";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
+export type RevenueCatSetupReason = "missing_key" | "test_key_in_release";
+
 export type EntitlementStatus = {
   isPremium: boolean;
   activeEntitlement?: string;
@@ -10,7 +12,7 @@ export type EntitlementStatus = {
 
 export type PurchaseResult = {
   completed: boolean;
-  reason?: "missing_key" | "no_offering" | "cancelled" | "not_premium" | "purchase_failed";
+  reason?: RevenueCatSetupReason | "no_offering" | "cancelled" | "not_premium" | "purchase_failed";
   entitlement?: EntitlementStatus;
 };
 
@@ -26,6 +28,7 @@ export type StorePackagePreview = {
 export type RevenueCatOfferPreview = {
   configured: boolean;
   hasOffering: boolean;
+  reason?: RevenueCatSetupReason;
   monthly?: StorePackagePreview;
   yearly?: StorePackagePreview;
   creditSmall?: StorePackagePreview;
@@ -53,7 +56,7 @@ export async function getRevenueCatEntitlement(): Promise<EntitlementStatus> {
 
 export async function getRevenueCatOfferPreview(): Promise<RevenueCatOfferPreview> {
   const setup = await configureRevenueCat();
-  if (!setup.configured) return { configured: false, hasOffering: false };
+  if (!setup.configured) return { configured: false, hasOffering: false, reason: setup.reason };
 
   try {
     const offerings = await Purchases.getOfferings();
@@ -74,7 +77,7 @@ export async function getRevenueCatOfferPreview(): Promise<RevenueCatOfferPrevie
 
 export async function purchasePlus(packageIdentifier?: string): Promise<PurchaseResult> {
   const setup = await configureRevenueCat();
-  if (!setup.configured) return { completed: false, reason: "missing_key" };
+  if (!setup.configured) return { completed: false, reason: setup.reason ?? "missing_key" };
 
   try {
     const offeringPackage = await findPackage(packageIdentifier ?? revenueCatConfig.yearlyProductId);
@@ -92,7 +95,7 @@ export async function purchasePlus(packageIdentifier?: string): Promise<Purchase
 
 export async function purchaseCreditPack(): Promise<PurchaseResult> {
   const setup = await configureRevenueCat();
-  if (!setup.configured) return { completed: false, reason: "missing_key" };
+  if (!setup.configured) return { completed: false, reason: setup.reason ?? "missing_key" };
 
   try {
     const offeringPackage = await findPackage(revenueCatConfig.creditSmallProductId);
@@ -109,7 +112,7 @@ export async function purchaseCreditPack(): Promise<PurchaseResult> {
 
 export async function restoreRevenueCatPurchases(): Promise<PurchaseResult> {
   const setup = await configureRevenueCat();
-  if (!setup.configured) return { completed: false, reason: "missing_key" };
+  if (!setup.configured) return { completed: false, reason: setup.reason ?? "missing_key" };
 
   const customerInfo = await Purchases.restorePurchases();
   await syncRevenueCatToSupabase();
@@ -123,7 +126,10 @@ export async function presentPaywallPlaceholder() {
 
 async function configureRevenueCat() {
   const apiKey = Platform.OS === "ios" ? process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY : process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY;
-  if (!apiKey) return { configured: false };
+  if (!apiKey) return { configured: false, reason: "missing_key" as const };
+  if (!__DEV__ && apiKey.startsWith("test_")) {
+    return { configured: false, reason: "test_key_in_release" as const };
+  }
 
   const appUserID = await getCurrentUserId();
   if (!configured) {
