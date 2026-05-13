@@ -9,7 +9,9 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:android:apk": "powershell -NoProfile -ExecutionPolicy Bypass -File ../../scripts/build-android-release.ps1 -Type apk",
+    "build:android:aab": "powershell -NoProfile -ExecutionPolicy Bypass -File ../../scripts/build-android-release.ps1 -Type aab"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",

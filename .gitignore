@@ -10,6 +10,9 @@ web-build/
 coverage/
 *.apk
 *.aab
+*.keystore
+*.jks
+keystore.properties
 
 # native/generated
 apps/mobile/ios/
