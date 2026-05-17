@@ -1,6 +1,8 @@
 param(
   [ValidateSet("apk", "aab")]
-  [string]$Type = "apk"
+  [string]$Type = "apk",
+
+  [switch]$SkipReleaseValidation
 )
 
 $ErrorActionPreference = "Stop"
@@ -9,6 +11,12 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $mobileDir = Join-Path $repoRoot "apps/mobile"
 $androidDir = Join-Path $mobileDir "android"
 $buildGradle = Join-Path $androidDir "app/build.gradle"
+$releaseValidationScript = Join-Path $repoRoot "scripts/validate-release-config.ps1"
+
+if (-not $SkipReleaseValidation) {
+  & powershell -NoProfile -ExecutionPolicy Bypass -File $releaseValidationScript -Platform android
+  if ($LASTEXITCODE -ne 0) { throw "Release configuration validation failed." }
+}
 
 if (-not (Test-Path -LiteralPath $buildGradle)) {
   throw "Android project was not found at $androidDir. Run `npx expo prebuild --platform android` in apps/mobile first."

@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
+    "verify:release": "powershell -NoProfile -ExecutionPolicy Bypass -File ../../scripts/validate-release-config.ps1 -Platform android",
     "build:android:apk": "powershell -NoProfile -ExecutionPolicy Bypass -File ../../scripts/build-android-release.ps1 -Type apk",
     "build:android:aab": "powershell -NoProfile -ExecutionPolicy Bypass -File ../../scripts/build-android-release.ps1 -Type aab"
   },

@@ -25,7 +25,21 @@ apps/mobile/android/keystore.properties
 
 Back these up privately. Do not commit them.
 
-2. Build a Play-ready Android App Bundle:
+2. Validate the production release configuration:
+
+```powershell
+npm run verify:release
+```
+
+This check intentionally fails if:
+
+- `apps/mobile/.env` still uses a RevenueCat `test_...` key.
+- RevenueCat product ids are missing or do not match `mirror_plus_monthly`, `mirror_plus_yearly`, `mirror_credits_10`.
+- `EXPO_PUBLIC_ALLOW_MOCKS=true` is present.
+- Server secrets such as `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, or `REVENUECAT_SECRET_KEY` are placed in the mobile `.env`.
+- Android release signing is missing.
+
+3. Build a Play-ready Android App Bundle:
 
 ```powershell
 .\scripts\build-android-release.ps1 -Type aab
@@ -98,3 +112,5 @@ mirror_plus
 ```
 
 Release APK/AAB builds intentionally disable RevenueCat if a `test_...` SDK key is used, because the native RevenueCat SDK closes release apps that use Test Store keys.
+
+The build script now also runs `scripts/validate-release-config.ps1` before compiling. For quick non-payment debug builds only, you can bypass this with `-SkipReleaseValidation`, but do not use that for Play Console builds.

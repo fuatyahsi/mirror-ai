@@ -157,9 +157,10 @@ Cihazda push tap → addRelationshipFollowUpListener → router.push("/tabs/rela
 1. **Şirket bilgilerini doldur**: `docs/legal/*.md` ve `docs/store/listing.*.md`'deki `{{}}` placeholder'ları (şirket adı, vergi/MERSIS, iletişim e-postası, posta adresi). Bunu yapmadan Play Store başvurusu reddedilir.
 2. **Gizlilik politikasını web'e yükle**: bir public URL'e (örn. `mirror-ai.app/privacy.html`). Play Store, mağaza listing'inde URL ister.
 3. **RevenueCat prod key**: Mevcut `.env`'de `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=test_...`. Google Play app/provider bağlandıktan sonra Android production/public SDK key ile değiştir.
-4. **Release build**: Play Console için APK değil AAB üret: `npm run build:android:aab`. Cihaza direkt kurulum için ayrıca `npm run build:android:apk`.
-5. **Play Store iç test track**: `MirrorAI-release.aab` dosyasını internal testing'e yükle. Güncel rehber: `docs/ANDROID_PLAY_INTERNAL_TEST.md`.
-6. **Ekran görüntüleri ve özellik grafiği**: store listing için 5-8 ekran görüntüsü (deep report, blueprint kartları, weekly rapor, paywall mock, bugün zamanlaması). Boyut: 1080×1920 + 1024×500 feature graphic.
+4. **Release guard**: `npm run verify:release` koştur. Bu komut test RevenueCat key, eksik product id, mock fallback, mobile env içindeki server secret ve eksik Android signing durumunda fail eder.
+5. **Release build**: Play Console için APK değil AAB üret: `npm run build:android:aab`. Cihaza direkt kurulum için ayrıca `npm run build:android:apk`.
+6. **Play Store iç test track**: `MirrorAI-release.aab` dosyasını internal testing'e yükle. Güncel rehber: `docs/ANDROID_PLAY_INTERNAL_TEST.md`.
+7. **Ekran görüntüleri ve özellik grafiği**: store listing için 5-8 ekran görüntüsü (deep report, blueprint kartları, weekly rapor, paywall mock, bugün zamanlaması). Boyut: 1080×1920 + 1024×500 feature graphic.
 
 ### B — Ürün geliştirme (sıradakiler, sen istersen yeni oturum yapar)
 1. **Image share-card** — `react-native-view-shot` ekle, paylaşılabilir görsel kart üret (skor şeridi + bond title + 1 cümle + branded watermark). Viralite için en yüksek beklenen leverage.

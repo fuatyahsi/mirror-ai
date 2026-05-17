@@ -39,10 +39,22 @@ EXPO_PUBLIC_ASTROLOGY_SERVICE_URL=http://localhost:8010
 EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=
 EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=
 EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID=mirror_plus
+EXPO_PUBLIC_REVENUECAT_OFFERING_ID=default
+EXPO_PUBLIC_REVENUECAT_PLUS_MONTHLY_PRODUCT_ID=mirror_plus_monthly
+EXPO_PUBLIC_REVENUECAT_PLUS_YEARLY_PRODUCT_ID=mirror_plus_yearly
+EXPO_PUBLIC_REVENUECAT_CREDIT_SMALL_PRODUCT_ID=mirror_credits_10
 EXPO_PUBLIC_ALLOW_MOCKS=true
 ```
 
 RevenueCat `test_...` SDK keys are only safe in development builds. Release APKs must use the Android production SDK key from the RevenueCat Android app configuration; otherwise Mirror AI disables RevenueCat in-app purchases to prevent the native SDK from closing the app.
+
+Before creating a Play Console build, run:
+
+```bash
+npm run verify:release
+```
+
+The release guard checks RevenueCat production keys/product ids, forbids mock fallback, verifies Android signing, and blocks server secrets from being placed in the mobile `.env`.
 
 ## Astrology Service
 
