@@ -45,25 +45,43 @@ const coffeeVisionSchema = {
 };
 
 export async function extractCoffeeSymbols({
+  cupImageBase64,
+  cupImageMimeType,
+  plateImageBase64,
+  plateImageMimeType,
   cupImageUrl,
   plateImageUrl,
   topic,
   question,
   locale
 }: {
-  cupImageUrl: string;
+  cupImageBase64?: string;
+  cupImageMimeType?: string;
+  plateImageBase64?: string;
+  plateImageMimeType?: string;
+  cupImageUrl?: string;
   plateImageUrl?: string;
   topic?: string;
   question?: string;
   locale: "tr" | "en";
 }): Promise<CoffeeVisionResult> {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!apiKey || cupImageUrl.includes("local-dev-coffee-image-placeholder")) {
+  const hasInlineCup = Boolean(cupImageBase64);
+  const hasUrlCup = Boolean(cupImageUrl && !cupImageUrl.includes("local-dev-coffee-image-placeholder"));
+  if (!apiKey || (!hasInlineCup && !hasUrlCup)) {
     return { detected_symbols: fallbackSymbols[locale], image_quality: "fallback" };
   }
 
-  const cupImage = await fetchImagePart(cupImageUrl);
-  const plateImage = plateImageUrl ? await fetchImagePart(plateImageUrl) : null;
+  // Tercih: inline base64 (storage'a hiç yüklemiyoruz, kahve fotoğrafı sunucuda hiç tutulmuyor).
+  // Geriye dönük uyumluluk: URL geliyorsa fetch et.
+  const cupImage = hasInlineCup
+    ? buildInlinePart(cupImageBase64!, cupImageMimeType)
+    : await fetchImagePart(cupImageUrl!);
+  const plateImage = plateImageBase64
+    ? buildInlinePart(plateImageBase64, plateImageMimeType)
+    : plateImageUrl
+      ? await fetchImagePart(plateImageUrl)
+      : null;
   const model = Deno.env.get("GEMINI_VISION_MODEL") ?? Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash-lite";
   const prompt =
     locale === "en"
@@ -107,6 +125,15 @@ export async function extractCoffeeSymbols({
       Array.isArray(parsed.detected_symbols) && parsed.detected_symbols.length > 0
         ? parsed.detected_symbols.map(normalizeSymbol)
         : fallbackSymbols[locale]
+  };
+}
+
+function buildInlinePart(base64: string, mimeType?: string) {
+  return {
+    inline_data: {
+      mime_type: mimeType && mimeType.length ? mimeType : "image/jpeg",
+      data: base64
+    }
   };
 }
 

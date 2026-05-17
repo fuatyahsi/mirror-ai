@@ -2,7 +2,7 @@ import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { addDailySkyNotificationResponseListener } from "@/features/notifications/dailySkyNotifications";
+import { addRelationshipFollowUpListener } from "@/features/notifications/dailySkyNotifications";
 import { queryClient } from "@/lib/queryClient";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { colors } from "@/theme";
@@ -27,9 +27,16 @@ export default function RootLayout() {
   useEffect(() => {
     ensureAnonymousSession();
 
-    const subscription = addDailySkyNotificationResponseListener(() => {
-      router.push("/tabs/home");
-    });
+    const subscription = addRelationshipFollowUpListener(
+      () => {
+        // Relationship follow-up push'a tıklanırsa ilişki sekmesine yönlendir;
+        // kullanıcı haftalık raporu o ekrandan tetikler (kredi/Plus kontrolü).
+        router.push("/tabs/relationship");
+      },
+      () => {
+        router.push("/tabs/home");
+      }
+    );
 
     return () => subscription.remove();
   }, []);

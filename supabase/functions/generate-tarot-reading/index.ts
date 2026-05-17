@@ -356,6 +356,7 @@ Deno.serve(async (req) => {
     });
     const result = await provider.generateReading({
       readingType: "tarot",
+      userId: user?.id,
       topic: body.topic ?? "general",
       question: fullQuestion,
       context: {

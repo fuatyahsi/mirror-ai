@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
     });
     const result = await provider.generateReading({
       readingType: "daily",
+      userId: user?.id,
       topic: body.topic ?? "general",
       question: body.question,
       context: {

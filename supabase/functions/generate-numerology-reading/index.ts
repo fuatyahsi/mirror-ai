@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
 
     const result = await provider.generateReading({
       readingType: "numerology",
+      userId: user?.id,
       topic: body.topic ?? "numerology",
       question:
         body.question ??

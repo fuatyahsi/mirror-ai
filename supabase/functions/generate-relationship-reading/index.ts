@@ -151,6 +151,7 @@ Deno.serve(async (req) => {
     });
     let result = await provider.generateReading({
       readingType: "relationship",
+      userId: user?.id,
       topic: "relationship",
       accessMode,
       question: body.question,
@@ -273,6 +274,24 @@ Deno.serve(async (req) => {
     }
 
     const billing = creditAccess ? await recordCreditSpend(user.id, creditAccess, reading.id) : null;
+
+    // 1-hafta sonra otomatik takip raporu için enqueue (sadece deep modda).
+    // Partial unique index aynı bağ için ikinci pending satırı engeller, biz
+    // de hata durumunu sessizce yutuyoruz (kullanıcı raporunu okuyabilsin).
+    if (accessMode === "deep") {
+      const dueAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { error: followError } = await supabase.from("relationship_follow_ups").insert({
+        user_id: user.id,
+        relationship_id: persistedRelationship?.id ?? null,
+        relationship_key: relationshipKey,
+        source_reading_id: reading.id,
+        due_at: dueAt,
+        locale
+      });
+      if (followError && !followError.message?.includes("relationship_follow_ups_uniq_pending_idx")) {
+        console.warn("[follow_up] enqueue failed", followError.message);
+      }
+    }
 
     return jsonResponse({
       reading_id: reading.id,

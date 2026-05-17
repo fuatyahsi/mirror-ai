@@ -166,6 +166,7 @@ Deno.serve(async (req) => {
 
     const result = await provider.generateReading({
       readingType: "weekly_relationship",
+      userId: user?.id,
       topic: "weekly_relationship",
       accessMode: "deep",
       question: locale === "en" ? "How was this week with this bond?" : "Bu hafta bu bağda neler oldu?",

@@ -34,6 +34,7 @@ export type GenerateReadingRequest = {
   astrology?: Record<string, unknown> | null;
   locale?: "tr" | "en";
   accessMode?: "basic" | "timing" | "deep";
+  userId?: string;
 };
 
 export type RelationshipDeepReport = {

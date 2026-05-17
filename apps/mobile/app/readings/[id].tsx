@@ -9,6 +9,7 @@ import { RelationshipDeepReportCard } from "@/components/readings/RelationshipDe
 import { RelationshipTimingCoachCard } from "@/components/readings/RelationshipTimingCoachCard";
 import { WeeklyRelationshipReportCard } from "@/components/readings/WeeklyRelationshipReportCard";
 import { submitReadingFeedback } from "@/features/feedback/api";
+import { shareReading } from "@/features/readings/shareReading";
 import { useI18n, type Locale } from "@/i18n";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, radii, spacing } from "@/theme";
@@ -154,6 +155,14 @@ export default function ReadingDetailScreen() {
         </>
       )}
       <View style={styles.feedback}>
+        <PrimaryButton
+          variant="secondary"
+          onPress={() => {
+            void shareReading(currentReading, reportLocale);
+          }}
+        >
+          {reportLocale === "en" ? "Share this reading" : "Bu raporu paylaş"}
+        </PrimaryButton>
         <Text style={styles.feedbackTitle}>{t("detail.feedbackTitle")}</Text>
         <PrimaryButton onPress={() => feedback("accurate")}>{t("detail.accurate")}</PrimaryButton>
         <PrimaryButton variant="secondary" onPress={() => feedback("partial")}>

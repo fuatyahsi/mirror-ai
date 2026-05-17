@@ -109,6 +109,7 @@ Deno.serve(async (req) => {
     const provider = getAIProvider();
     const result = await provider.generateReading({
       readingType: "daily",
+      userId: user?.id,
       topic: body.topic ?? (locale === "en" ? "daily sky" : "günlük gökyüzü"),
       question:
         body.question ??

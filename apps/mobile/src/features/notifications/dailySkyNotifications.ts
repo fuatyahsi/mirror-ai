@@ -97,6 +97,31 @@ export function addDailySkyNotificationResponseListener(onOpen: () => void) {
   });
 }
 
+// Push bildiriminin data payload'una göre yönlendirme yapar:
+// - relationship_follow_up: ilişki sekmesine git, kullanıcı haftalık raporu açsın
+// - daily_sky / diğer: ana ekrana
+export type PushPayload = {
+  type?: string;
+  relationship_key?: string;
+  relationship_id?: string;
+  source_reading_id?: string;
+  follow_up_id?: string;
+};
+
+export function addRelationshipFollowUpListener(
+  onRelationshipFollowUp: (payload: PushPayload) => void,
+  onOther: () => void
+) {
+  return Notifications.addNotificationResponseReceivedListener((response) => {
+    const data = (response?.notification?.request?.content?.data ?? {}) as PushPayload;
+    if (data?.type === "relationship_follow_up") {
+      onRelationshipFollowUp(data);
+    } else {
+      onOther();
+    }
+  });
+}
+
 export async function scheduleRelationshipTimingNotification(input: {
   locale: Locale;
   nickname?: string;
@@ -153,7 +178,7 @@ async function scheduleLocalDailySkyNotification(locale: Locale, dailyHour: numb
       body:
         locale === "en"
           ? "Open Mirror AI for today's personal sky insight."
-          : "Bugünün kişisel gökyüzü içgörüsünü Mirror AI’da aç.",
+          : "Bugünün kişisel gökyüzü içgörüsünü Mirror AI'da aç.",
       data: {
         route: "/tabs/home",
         reading_type: "daily_sky"

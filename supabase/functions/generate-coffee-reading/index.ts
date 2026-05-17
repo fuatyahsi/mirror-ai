@@ -15,8 +15,13 @@ Deno.serve(async (req) => {
     const locale = normalizeLocale(body.locale);
     const labels = sourceLabels(locale);
     const creditAccess = await requirePaidAccessForUser("coffee", user?.id);
-    const cupImageUrl = body.cup_image_url ?? "local-dev-coffee-image-placeholder";
-    const shouldStoreImage = body.do_not_store_image !== true;
+    // Kahve fotoğrafları sunucuda HİÇ saklanmaz. Mobile base64 ile gönderir,
+    // vision API bir kez okur, RAM dışında hiçbir yere yazılmaz.
+    const cupImageBase64 = typeof body.cup_image_base64 === "string" ? body.cup_image_base64 : undefined;
+    const cupImageMimeType = typeof body.cup_image_mime_type === "string" ? body.cup_image_mime_type : undefined;
+    const plateImageBase64 = typeof body.plate_image_base64 === "string" ? body.plate_image_base64 : undefined;
+    const plateImageMimeType = typeof body.plate_image_mime_type === "string" ? body.plate_image_mime_type : undefined;
+    const cupImageUrl = typeof body.cup_image_url === "string" ? body.cup_image_url : undefined;
 
     const { data: dbProfile } = user
       ? await supabase
@@ -30,6 +35,10 @@ Deno.serve(async (req) => {
     const memory = body.memory ?? body.client_memory ?? [];
     const astrology = body.astrology ?? body.astro_context ?? body.natal_chart ?? null;
     const vision = await extractCoffeeSymbols({
+      cupImageBase64,
+      cupImageMimeType,
+      plateImageBase64,
+      plateImageMimeType,
       cupImageUrl,
       plateImageUrl: body.plate_image_url,
       topic: body.topic,
@@ -52,11 +61,12 @@ Deno.serve(async (req) => {
     });
     const result = await provider.generateReading({
       readingType: "coffee",
+      userId: user?.id,
       topic: body.topic ?? "general",
       question: body.question,
       context: {
-        cup_image_url: body.cup_image_url,
-        plate_image_url: body.plate_image_url,
+        cup_image_url: "not_stored",
+        plate_image_url: "not_stored",
         user_context: body.context,
         detected_symbols: detectedSymbols,
         image_quality: vision.image_quality,
@@ -99,14 +109,14 @@ Deno.serve(async (req) => {
     const { error: coffeeError } = await supabase.from("coffee_readings").insert({
       user_id: user.id,
       reading_id: reading.id,
-      cup_image_url: shouldStoreImage ? cupImageUrl : "deleted_after_analysis",
-      plate_image_url: shouldStoreImage ? body.plate_image_url ?? null : null,
+      cup_image_url: "not_stored",
+      plate_image_url: null,
       detected_symbols: detectedSymbols,
       user_context: {
         topic: body.topic,
         context: body.context,
         image_quality: vision.image_quality,
-        image_retention: shouldStoreImage ? "stored" : "deleted_after_analysis"
+        image_retention: "not_stored"
       }
     });
 

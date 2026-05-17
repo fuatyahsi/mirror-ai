@@ -7,9 +7,8 @@ import { TextField } from "@/components/forms/TextField";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Screen } from "@/components/layout/Screen";
 import { SubtlePremiumOffer } from "@/components/paywall/SubtlePremiumOffer";
-import { deleteCoffeeImage, generateCoffeeReading, uploadCoffeeImage } from "@/features/coffeeReading/api";
+import { generateCoffeeReading, readImageAsBase64 } from "@/features/coffeeReading/api";
 import { useI18n } from "@/i18n";
-import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { colors, featureColors, radii, spacing } from "@/theme";
 
@@ -17,8 +16,6 @@ export default function CoffeeScreen() {
   const userProfile = useUserStore((state) => state.profile);
   const memoryEvents = useUserStore((state) => state.memoryEvents);
   const addReading = useUserStore((state) => state.addReading);
-  const authUser = useAuthStore((state) => state.user);
-  const isGuest = useAuthStore((state) => state.isGuest);
   const { locale, t } = useI18n();
   const [cupImage, setCupImage] = useState<string>();
   const [topic, setTopic] = useState("love");
@@ -42,19 +39,13 @@ export default function CoffeeScreen() {
   async function generate() {
     setIsGenerating(true);
     setGenerationError(undefined);
-    let temporaryStoragePath: string | undefined;
     try {
-      const uploadedCup =
-        cupImage && authUser?.id && !isGuest
-          ? await uploadCoffeeImage({
-              uri: cupImage,
-              userId: authUser.id
-            })
-          : undefined;
-      temporaryStoragePath = uploadedCup?.storagePath;
+      // No-store: cihazdaki fotoğrafı sadece base64 olarak gövdede gönder.
+      // Storage'a kaydetmeyiz, edge function'da da kaydedilmez.
+      const cupPayload = cupImage ? await readImageAsBase64(cupImage) : undefined;
       const result = await generateCoffeeReading({
-        cup_image_url: uploadedCup?.signedUrl ?? cupImage,
-        do_not_store_image: true,
+        cup_image_base64: cupPayload?.base64,
+        cup_image_mime_type: cupPayload?.mimeType,
         topic,
         question,
         context,
@@ -68,7 +59,6 @@ export default function CoffeeScreen() {
     } catch (error) {
       setGenerationError(error instanceof Error ? error.message : t("coffee.error"));
     } finally {
-      await deleteCoffeeImage(temporaryStoragePath).catch(() => undefined);
       setIsGenerating(false);
     }
   }

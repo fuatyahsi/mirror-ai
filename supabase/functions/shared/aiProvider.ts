@@ -816,6 +816,48 @@ async function callGemini(
   );
 }
 
+// Gemini fiyatlandırması (per 1M token). Resmi listeden alındı; yeni model
+// eklersen burayı güncelle. Tablo eksikse maliyet 0 kalır.
+const GEMINI_PRICING_PER_1M: Record<string, { input: number; output: number }> = {
+  "gemini-2.5-pro": { input: 1.25, output: 10 },
+  "gemini-2.5-flash": { input: 0.3, output: 2.5 },
+  "gemini-2.5-flash-lite": { input: 0.075, output: 0.3 }
+};
+
+function estimateCostUsd(model: string, promptTokens: number, completionTokens: number): number {
+  const key = Object.keys(GEMINI_PRICING_PER_1M).find((k) => model.includes(k)) ?? model;
+  const rate = GEMINI_PRICING_PER_1M[key];
+  if (!rate) return 0;
+  const inUsd = (promptTokens * rate.input) / 1_000_000;
+  const outUsd = (completionTokens * rate.output) / 1_000_000;
+  return Number((inUsd + outUsd).toFixed(6));
+}
+
+// Fire-and-forget. ai_usage_logs tablosuna doğrudan REST üzerinden yazıyoruz
+// (auth helper'a bağımlı kalmamak için). Hata olursa sessizce yutuyoruz —
+// telemetri raporu kullanıcının okumasını engellemesin.
+function logAiUsage(payload: Record<string, unknown>): void {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) return;
+    void fetch(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/ai_usage_logs`, {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal"
+      },
+      body: JSON.stringify(payload)
+    }).catch((error) => {
+      console.warn("[aiUsage] insert failed", error);
+    });
+  } catch (error) {
+    console.warn("[aiUsage] logger threw", error);
+  }
+}
+
 export const geminiAIProvider: AIProvider = {
   async generateReading(request) {
     const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -826,6 +868,8 @@ export const geminiAIProvider: AIProvider = {
     const prompt = buildReadingPrompt(request);
     const primaryModel = pickGeminiModel(request);
 
+    const startedAt = Date.now();
+    let usedModel = primaryModel;
     let response = await callGemini(apiKey, primaryModel, request, prompt);
 
     // Defensive fallback: if Pro errors out (rate limit, transient 5xx), retry
@@ -834,14 +878,54 @@ export const geminiAIProvider: AIProvider = {
     if (!response.ok && primaryModel.includes("pro")) {
       const fallback = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash-lite";
       console.warn(`[aiProvider] Pro call failed (${response.status}), falling back to ${fallback}`);
+      usedModel = fallback;
       response = await callGemini(apiKey, fallback, request, prompt);
     }
 
     const data = await response.json();
+    const latencyMs = Date.now() - startedAt;
+
     if (!response.ok) {
       const message = data?.error?.message || `Mirror AI provider request failed with status ${response.status}.`;
+      logAiUsage({
+        user_id: request.userId ?? null,
+        reading_type: request.readingType,
+        access_mode: request.accessMode ?? null,
+        model: usedModel,
+        prompt_tokens: null,
+        completion_tokens: null,
+        total_tokens: null,
+        est_cost_usd: 0,
+        latency_ms: latencyMs,
+        success: false,
+        error_code: String(response.status),
+        finish_reason: null
+      });
       throw new Error(message);
     }
+
+    const usage = (data?.usageMetadata ?? {}) as Record<string, unknown>;
+    const promptTokens = Number(usage.promptTokenCount ?? 0);
+    const completionTokens = Number(usage.candidatesTokenCount ?? 0);
+    const totalTokens = Number(usage.totalTokenCount ?? promptTokens + completionTokens);
+    const finishReason =
+      ((data?.candidates as Array<Record<string, unknown>> | undefined)?.[0]?.finishReason as string | undefined) ??
+      null;
+
+    logAiUsage({
+      user_id: request.userId ?? null,
+      reading_type: request.readingType,
+      access_mode: request.accessMode ?? null,
+      model: usedModel,
+      prompt_tokens: promptTokens || null,
+      completion_tokens: completionTokens || null,
+      total_tokens: totalTokens || null,
+      est_cost_usd: estimateCostUsd(usedModel, promptTokens, completionTokens),
+      latency_ms: latencyMs,
+      success: true,
+      error_code: null,
+      finish_reason: finishReason
+    });
 
     const text = parseGeminiText(data);
     return normalizeReadingOutput(JSON.parse(text) as ReadingOutput, request.locale ?? "tr");
