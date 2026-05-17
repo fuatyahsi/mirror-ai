@@ -1,3 +1,9 @@
+import {
+  assertAiBudgetForModel,
+  estimateGeminiCostUsd,
+  logAiUsageEvent
+} from "./aiProvider.ts";
+
 export type CoffeeSymbol = {
   symbol: string;
   label: string;
@@ -53,6 +59,7 @@ export async function extractCoffeeSymbols({
   plateImageUrl,
   topic,
   question,
+  userId,
   locale
 }: {
   cupImageBase64?: string;
@@ -63,6 +70,7 @@ export async function extractCoffeeSymbols({
   plateImageUrl?: string;
   topic?: string;
   question?: string;
+  userId?: string | null;
   locale: "tr" | "en";
 }): Promise<CoffeeVisionResult> {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -94,6 +102,19 @@ export async function extractCoffeeSymbols({
 
   const parts: Array<Record<string, unknown>> = [{ text: prompt }, cupImage];
   if (plateImage) parts.push({ text: locale === "en" ? "Optional plate image:" : "Opsiyonel tabak görseli:" }, plateImage);
+  const costProfile = await assertAiBudgetForModel(
+    {
+      readingType: "coffee",
+      userId: userId ?? undefined,
+      topic: topic ?? "coffee",
+      question,
+      context: { vision: true },
+      locale
+    },
+    model,
+    prompt
+  );
+  const startedAt = Date.now();
 
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
@@ -112,10 +133,57 @@ export async function extractCoffeeSymbols({
   });
 
   const data = await response.json();
+  const latencyMs = Date.now() - startedAt;
   if (!response.ok) {
+    logAiUsageEvent({
+      user_id: userId ?? null,
+      reading_type: "coffee_vision",
+      access_mode: "vision",
+      model,
+      prompt_tokens: null,
+      completion_tokens: null,
+      total_tokens: null,
+      est_cost_usd: 0,
+      preflight_est_cost_usd: costProfile.preflightEstCostUsd,
+      latency_ms: latencyMs,
+      success: false,
+      error_code: String(response.status),
+      finish_reason: null,
+      billing_tier: costProfile.billingTier,
+      is_premium_model: costProfile.isPremiumModel,
+      blocked_reason: null,
+      budget_guard: costProfile.budgetGuard
+    });
     const message = data?.error?.message || `Coffee vision request failed with status ${response.status}.`;
     throw new Error(message);
   }
+
+  const usage = (data?.usageMetadata ?? {}) as Record<string, unknown>;
+  const promptTokens = Number(usage.promptTokenCount ?? 0);
+  const completionTokens = Number(usage.candidatesTokenCount ?? 0);
+  const totalTokens = Number(usage.totalTokenCount ?? promptTokens + completionTokens);
+  const finishReason =
+    ((data?.candidates as Array<Record<string, unknown>> | undefined)?.[0]?.finishReason as string | undefined) ??
+    null;
+  logAiUsageEvent({
+    user_id: userId ?? null,
+    reading_type: "coffee_vision",
+    access_mode: "vision",
+    model,
+    prompt_tokens: promptTokens || null,
+    completion_tokens: completionTokens || null,
+    total_tokens: totalTokens || null,
+    est_cost_usd: estimateGeminiCostUsd(model, promptTokens, completionTokens),
+    preflight_est_cost_usd: costProfile.preflightEstCostUsd,
+    latency_ms: latencyMs,
+    success: true,
+    error_code: null,
+    finish_reason: finishReason,
+    billing_tier: costProfile.billingTier,
+    is_premium_model: costProfile.isPremiumModel,
+    blocked_reason: null,
+    budget_guard: costProfile.budgetGuard
+  });
 
   const text = parseGeminiText(data);
   const parsed = JSON.parse(text) as CoffeeVisionResult;

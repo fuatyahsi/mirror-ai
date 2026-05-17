@@ -55,11 +55,19 @@ export function PremiumPaywall({ feature = "relationship_loop", compact, onClose
     : storePreview
       ? copy.creditCtaStore
       : copy.creditCta;
+  const missingProductIds =
+    storePreview?.missingProductIds?.filter(
+      (id) =>
+        (canUsePlus && [revenueCatConfig.monthlyProductId, revenueCatConfig.yearlyProductId].includes(id)) ||
+        (canUseCredits && id === revenueCatConfig.creditSmallProductId)
+    ) ?? [];
   const setupWarning =
     storePreview && !storePreview.configured
       ? storePreview.reason === "test_key_in_release"
         ? copy.productionKeyNeeded
         : copy.configureNeeded
+      : missingProductIds.length > 0
+        ? copy.missingProducts.replace("{{ids}}", missingProductIds.join(", "))
       : storePreview && canUsePlus && !storePreview.monthly && !storePreview.yearly
         ? copy.noOffering
         : storePreview && canUseCredits && !storePreview.creditSmall
@@ -244,6 +252,7 @@ const trCopy = {
     "Bu release APK Test Store key ile derlenmiş. Uygulamanın kapanmaması için RevenueCat devre dışı bırakıldı; canlı satın alma testi için Android production SDK key gerekir.",
   noOffering: "RevenueCat offering içinde uygun ürün bulunamadı.",
   noCreditProduct: "RevenueCat offering içinde kredi paketi bulunamadı.",
+  missingProducts: "RevenueCat offering eksik ürün içeriyor: {{ids}}",
   cancelled: "Satın alma iptal edildi.",
   creditsUnlocked: "Kredi paketi işlendi.",
   unlocked: "Premium açıldı."
@@ -271,6 +280,7 @@ const enCopy = {
     "This release APK was built with a Test Store key. RevenueCat is disabled to keep the app open; live purchase testing needs the Android production SDK key.",
   noOffering: "No matching product was found in the RevenueCat offering.",
   noCreditProduct: "No credit pack was found in the RevenueCat offering.",
+  missingProducts: "RevenueCat offering is missing expected products: {{ids}}",
   cancelled: "Purchase cancelled.",
   creditsUnlocked: "Credit pack processed.",
   unlocked: "Premium unlocked."

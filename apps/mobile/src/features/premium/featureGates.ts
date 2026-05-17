@@ -125,8 +125,8 @@ export function featureTrustNote(feature: PremiumFeatureKey, locale: "tr" | "en"
 }
 
 export function featureAccessModel(feature: PremiumFeatureKey): FeatureAccessModel {
-  if (feature === "detailed_coffee") return "credits";
   if (
+    feature === "detailed_coffee" ||
     feature === "relationship_timing" ||
     feature === "deep_synastry" ||
     feature === "weekly_relationship_report" ||
@@ -299,8 +299,8 @@ const trFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "Kullanıcı sembol listesi yerine, kendi sorusuna bağlanan daha kişisel bir kahve yorumu alır.",
     freePreview: "Ücretsiz katmanda sınırlı kısa kahve yorumu denenebilir.",
     unlockLabel: "Açılacak kahve raporu",
-    accessLabel: "3 kredi",
-    cta: "Krediyle kahve raporu aç",
+    accessLabel: "Plus veya 3 kredi",
+    cta: "Kahve raporunu aç",
     bullets: [
       "Fincan görüntüsünden sembol çıkarımı",
       "Aşk, iş, para veya aile konusuna özel yorum",
@@ -498,8 +498,8 @@ const enFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "You receive a personal reading tied to your question instead of a symbol list.",
     freePreview: "The free layer can show a limited short coffee reading.",
     unlockLabel: "Coffee report unlocked",
-    accessLabel: "3 credits",
-    cta: "Unlock with credits",
+    accessLabel: "Plus or 3 credits",
+    cta: "Unlock coffee report",
     bullets: [
       "Symbol extraction from the cup image",
       "Topic-specific love, work, money or family reading",

@@ -1,5 +1,5 @@
 import { router, type Href } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { InsightCard } from "@/components/cards/InsightCard";
 import { PrimaryButton } from "@/components/forms/PrimaryButton";
@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Screen } from "@/components/layout/Screen";
 import { PaywallPreview } from "@/components/paywall/PaywallPreview";
 import { deleteUserData } from "@/features/privacy/accountData";
+import { getAiUsageSummary, type AiUsageSummary } from "@/features/profileMemory/aiUsage";
 import { LanguageSwitch } from "@/components/settings/LanguageSwitch";
 import { useI18n } from "@/i18n";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -19,8 +20,21 @@ export default function ProfileScreen() {
   const feedback = useUserStore((state) => state.feedback);
   const memoryEvents = useUserStore((state) => state.memoryEvents);
   const clearLocalUserData = useUserStore((state) => state.clearLocalUserData);
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [isDeletingData, setIsDeletingData] = useState(false);
+  const [usageSummary, setUsageSummary] = useState<AiUsageSummary | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getAiUsageSummary(30)
+      .then((summary) => {
+        if (active) setUsageSummary(summary);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleDeleteData() {
     Alert.alert(t("profile.deleteDataTitle"), t("profile.deleteDataConfirm"), [
@@ -94,6 +108,7 @@ export default function ProfileScreen() {
         <LanguageSwitch />
         <Text style={styles.settingBody}>{t("profile.languageBody")}</Text>
       </View>
+      {usageSummary ? <AiUsageCard summary={usageSummary} locale={locale === "en" ? "en" : "tr"} /> : null}
       <View style={styles.dataControl}>
         <InsightCard title={t("profile.dataControl")} body={t("profile.dataControlBody")} />
         <PrimaryButton variant="secondary" disabled={isDeletingData} onPress={handleDeleteData}>
@@ -113,6 +128,55 @@ export default function ProfileScreen() {
         {t("profile.signOut")}
       </PrimaryButton>
     </Screen>
+  );
+}
+
+function AiUsageCard({ summary, locale }: { summary: AiUsageSummary; locale: "tr" | "en" }) {
+  const copy =
+    locale === "en"
+      ? {
+          title: "AI usage guard",
+          body: "Your readings are measured before and after each AI call so cost spikes can be blocked early.",
+          calls: "30d calls",
+          cost: "Est. cost",
+          blocked: "Blocked",
+          premium: "Pro calls",
+          limit: "Daily free guard"
+        }
+      : {
+          title: "AI maliyet sigortası",
+          body: "Her AI çağrısı öncesi ve sonrası ölçülür; ani maliyet artışı limitte durdurulur.",
+          calls: "30g çağrı",
+          cost: "Tahmini maliyet",
+          blocked: "Bloklanan",
+          premium: "Pro çağrı",
+          limit: "Günlük ücretsiz limit"
+        };
+  const bucket = summary.user;
+
+  return (
+    <View style={styles.usageCard}>
+      <Text style={styles.usageTitle}>{copy.title}</Text>
+      <Text style={styles.usageBody}>{copy.body}</Text>
+      <View style={styles.usageGrid}>
+        <UsageMetric label={copy.calls} value={bucket.successful_calls} />
+        <UsageMetric label={copy.cost} value={`$${bucket.est_cost_usd.toFixed(4)}`} />
+        <UsageMetric label={copy.blocked} value={bucket.blocked_calls} />
+        <UsageMetric label={copy.premium} value={bucket.premium_model_calls} />
+      </View>
+      <Text style={styles.usageLimit}>
+        {copy.limit}: {summary.limits.daily_user_free_calls} / ${summary.limits.daily_user_free_budget_usd}
+      </Text>
+    </View>
+  );
+}
+
+function UsageMetric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <View style={styles.usageMetric}>
+      <Text style={styles.usageMetricValue}>{value}</Text>
+      <Text style={styles.usageMetricLabel}>{label}</Text>
+    </View>
   );
 }
 
@@ -165,5 +229,48 @@ const styles = StyleSheet.create({
   },
   legalLinks: {
     gap: spacing.sm
+  },
+  usageCard: {
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.accentTeal,
+    backgroundColor: "rgba(75, 217, 200, 0.08)",
+    padding: spacing.md,
+    gap: spacing.sm
+  },
+  usageTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900"
+  },
+  usageBody: {
+    color: colors.muted,
+    lineHeight: 21
+  },
+  usageGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  usageMetric: {
+    width: "48%",
+    borderRadius: radii.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.sm
+  },
+  usageMetricValue: {
+    color: colors.accentTeal,
+    fontWeight: "900",
+    fontSize: 18
+  },
+  usageMetricLabel: {
+    color: colors.muted,
+    fontSize: 11
+  },
+  usageLimit: {
+    color: colors.muted,
+    fontSize: 12
   }
 });

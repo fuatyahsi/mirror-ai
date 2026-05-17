@@ -74,6 +74,17 @@ mirror_plus_yearly
 mirror_credits_10
 ```
 
+Policy alignment:
+
+- `mirror_plus_monthly` and `mirror_plus_yearly` unlock the `mirror_plus` entitlement.
+- `mirror_credits_10` grants 10 credits.
+- Paid feature costs in backend:
+  - Message timing coach: 1 credit or Plus
+  - Premium tarot clarifier: 2 credits or Plus
+  - Coffee reading: 3 credits or Plus
+  - Deep synastry / weekly relationship / deep numerology: 4 credits or Plus
+  - Deep birth chart: 10 credits or Plus
+
 4. Keep the default offering identifier:
 
 ```txt

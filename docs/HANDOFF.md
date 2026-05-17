@@ -42,7 +42,8 @@ Mirror AI; doğum haritası + sinastri + ilişki günlüğü + bugünkü gökyü
 ### Gemini Pro + premium quality directive
 - `pickGeminiModel(request)` → premium reading tipleri Pro'ya, free Lite'a. Pro hatasında otomatik Lite fallback.
 - `premiumQualityDirective` prompt'a enjekte edilir: jenerik zodiac yasak, screenshot-worthy cümle zorunlu, evidence-temelli özgüllük şart.
-- Maliyet matematiği: ~$0.035/deep rapor → 4 kredi paketi için %98 marj.
+- `GEMINI_PRICING_PER_1M` Google AI Studio 2026 fiyatlarıyla güncellendi: Gemini 3.1/3/2.5 aileleri, Pro long-context tier ve Flash-Lite maliyetleri izleniyor.
+- Premium kullanıcı/credit harcayan yüzeyler Pro model kullanır; ücretsiz/basic yüzeyler Lite/Flash kalır. `GEMINI_FORCE_MODEL` acil durumda tüm trafiği ucuz modele düşürür.
 
 ### Haftalık ilişki raporu
 - Schema, prompt, edge function (`generate-weekly-relationship-report`), `WeeklyRelationshipReportCard` (mood_arc, recurring themes severity rozetleri, 7 günlük timeline, next week focus + timing anchors, numaralı action plan).
@@ -62,9 +63,11 @@ Mirror AI; doğum haritası + sinastri + ilişki günlüğü + bugünkü gökyü
 - i18n string'i ve gizlilik politikası "fotoğrafın saklanmaz" diyecek şekilde güncellendi.
 
 ### Pro maliyet izleme + telemetri
-- `ai_usage_logs` tablosu: prompt_tokens, completion_tokens, est_cost_usd, latency_ms, success, error_code, finish_reason.
-- `aiProvider.ts` her LLM çağrısı sonrası fire-and-forget insert.
-- `scripts/usage-report.sh` günlük/haftalık özet — `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` env ile çalışır.
+- `ai_usage_logs` tablosu: prompt_tokens, completion_tokens, est_cost_usd, preflight_est_cost_usd, latency_ms, success, error_code, finish_reason, billing_tier, is_premium_model, blocked_reason.
+- `aiProvider.ts` her LLM çağrısından **önce** bütçe guard çalıştırır, sonra gerçek token/maliyet loglar. Kahve vision çağrısı da aynı guard'a bağlı.
+- Guard env'leri: `AI_BUDGET_GUARD_ENABLED`, `AI_DAILY_GLOBAL_BUDGET_USD`, `AI_MONTHLY_GLOBAL_BUDGET_USD`, `AI_DAILY_PREMIUM_MODEL_BUDGET_USD`, `AI_DAILY_USER_FREE_BUDGET_USD`, `AI_DAILY_USER_PAID_BUDGET_USD`, `AI_MONTHLY_USER_PAID_BUDGET_USD`, `AI_DAILY_USER_FREE_CALLS`, `AI_DAILY_USER_PAID_CALLS`.
+- `get-ai-usage-summary` edge function kullanıcıya kendi kullanım/maliyet özetini döner. `AI_USAGE_ADMIN_EMAILS` içinde olan kullanıcı `scope=global` ile global özeti görebilir.
+- `scripts/usage-report.sh` günlük/haftalık özet — blocked çağrılar ve engellenen tahmini maliyet dahil.
 
 ### Paywall mock preview
 - `PaywallMockPreview` component her premium feature için blur'lı bir gerçek-rapor parçası gösterir (bond title + skor şeridi + key aspect chip + sample message snippet + redacted block char'lar + dim overlay + lock badge).

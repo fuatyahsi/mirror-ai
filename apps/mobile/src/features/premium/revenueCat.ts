@@ -32,6 +32,7 @@ export type RevenueCatOfferPreview = {
   monthly?: StorePackagePreview;
   yearly?: StorePackagePreview;
   creditSmall?: StorePackagePreview;
+  missingProductIds?: string[];
 };
 
 export const revenueCatConfig = {
@@ -62,13 +63,22 @@ export async function getRevenueCatOfferPreview(): Promise<RevenueCatOfferPrevie
     const offerings = await Purchases.getOfferings();
     const offering = offerings.all[revenueCatConfig.offeringId] ?? offerings.current;
     const packages = offering?.availablePackages ?? [];
+    const monthly = toStorePackagePreview(findMatchingPackage(packages, revenueCatConfig.monthlyProductId));
+    const yearly = toStorePackagePreview(findMatchingPackage(packages, revenueCatConfig.yearlyProductId));
+    const creditSmall = toStorePackagePreview(findMatchingPackage(packages, revenueCatConfig.creditSmallProductId));
+    const missingProductIds = [
+      monthly ? null : revenueCatConfig.monthlyProductId,
+      yearly ? null : revenueCatConfig.yearlyProductId,
+      creditSmall ? null : revenueCatConfig.creditSmallProductId
+    ].filter(Boolean) as string[];
 
     return {
       configured: true,
       hasOffering: Boolean(offering),
-      monthly: toStorePackagePreview(findMatchingPackage(packages, revenueCatConfig.monthlyProductId)),
-      yearly: toStorePackagePreview(findMatchingPackage(packages, revenueCatConfig.yearlyProductId)),
-      creditSmall: toStorePackagePreview(findMatchingPackage(packages, revenueCatConfig.creditSmallProductId))
+      monthly,
+      yearly,
+      creditSmall,
+      missingProductIds
     };
   } catch {
     return { configured: true, hasOffering: false };
@@ -153,11 +163,7 @@ async function findPackage(preferredProductId: string): Promise<PurchasesPackage
   const offering = offerings.all[revenueCatConfig.offeringId] ?? offerings.current;
   const packages = offering?.availablePackages ?? [];
 
-  return (
-    findMatchingPackage(packages, preferredProductId) ??
-    packages.find((item) => item.product.identifier === revenueCatConfig.yearlyProductId) ??
-    packages[0]
-  );
+  return findMatchingPackage(packages, preferredProductId);
 }
 
 function findMatchingPackage(packages: PurchasesPackage[], preferredProductId: string) {

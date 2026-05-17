@@ -17,7 +17,7 @@ echo
 PAYLOAD=$(curl -sG "${SUPABASE_URL%/}/rest/v1/ai_usage_logs" \
   -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
   -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-  --data-urlencode "select=reading_type,access_mode,model,prompt_tokens,completion_tokens,total_tokens,est_cost_usd,latency_ms,success,created_at" \
+  --data-urlencode "select=reading_type,access_mode,model,prompt_tokens,completion_tokens,total_tokens,est_cost_usd,preflight_est_cost_usd,latency_ms,success,is_premium_model,billing_tier,blocked_reason,created_at" \
   --data-urlencode "created_at=gte.$SINCE" \
   --data-urlencode "order=created_at.desc")
 
@@ -31,11 +31,16 @@ if not rows:
     print("Hiç çağrı yok."); sys.exit()
 
 total_cost = sum(float(r.get("est_cost_usd") or 0) for r in rows)
+blocked_preflight = sum(float(r.get("preflight_est_cost_usd") or 0) for r in rows if r.get("blocked_reason"))
 total_tokens = sum(int(r.get("total_tokens") or 0) for r in rows)
 success_count = sum(1 for r in rows if r.get("success"))
+blocked_count = sum(1 for r in rows if r.get("blocked_reason"))
+premium_model_count = sum(1 for r in rows if r.get("is_premium_model") and r.get("success"))
 avg_latency = sum(int(r.get("latency_ms") or 0) for r in rows) / len(rows)
 
 print(f"Toplam çağrı     : {len(rows)} ({success_count} başarılı / {len(rows)-success_count} hatalı)")
+print(f"Bloklanan çağrı  : {blocked_count} (${blocked_preflight:.4f} tahmini engellendi)")
+print(f"Premium model    : {premium_model_count}")
 print(f"Toplam token     : {total_tokens:,}")
 print(f"Toplam maliyet   : ${total_cost:.4f}")
 print(f"Ortalama gecikme : {avg_latency:.0f} ms")

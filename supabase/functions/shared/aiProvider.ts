@@ -5,6 +5,7 @@ import type {
   WeeklyRelationshipReport
 } from "./schemas.ts";
 import { buildReadingPrompt, systemSafetyPrompt } from "./prompts.ts";
+import { jsonResponse } from "./cors.ts";
 
 export type AIProvider = {
   generateReading: (request: GenerateReadingRequest) => Promise<ReadingOutput>;
@@ -816,46 +817,349 @@ async function callGemini(
   );
 }
 
-// Gemini fiyatlandırması (per 1M token). Resmi listeden alındı; yeni model
-// eklersen burayı güncelle. Tablo eksikse maliyet 0 kalır.
-const GEMINI_PRICING_PER_1M: Record<string, { input: number; output: number }> = {
-  "gemini-2.5-pro": { input: 1.25, output: 10 },
-  "gemini-2.5-flash": { input: 0.3, output: 2.5 },
-  "gemini-2.5-flash-lite": { input: 0.075, output: 0.3 }
+type GeminiPricing = {
+  input: number;
+  output: number;
+  inputLong?: number;
+  outputLong?: number;
+  longContextThreshold?: number;
 };
 
-function estimateCostUsd(model: string, promptTokens: number, completionTokens: number): number {
-  const key = Object.keys(GEMINI_PRICING_PER_1M).find((k) => model.includes(k)) ?? model;
-  const rate = GEMINI_PRICING_PER_1M[key];
+export type CostProfile = {
+  billingTier: "free" | "paid";
+  isPremiumModel: boolean;
+  promptTokensEstimate: number;
+  completionTokensEstimate: number;
+  preflightEstCostUsd: number;
+  budgetGuard: string;
+};
+
+type UsageRow = {
+  est_cost_usd?: number | string | null;
+  preflight_est_cost_usd?: number | string | null;
+  success?: boolean | null;
+  is_premium_model?: boolean | null;
+};
+
+const AI_BUDGET_GUARD_VERSION = "ai-budget-guard-v1";
+
+// Gemini pricing (per 1M token). Source: Google AI Studio pricing,
+// Standard paid tier, 17 Mayis 2026. Long context tier is used when Google
+// prices a model differently above 200k prompt tokens.
+const GEMINI_PRICING_PER_1M: Record<string, GeminiPricing> = {
+  "gemini-3.1-pro-preview": {
+    input: 2,
+    output: 12,
+    inputLong: 4,
+    outputLong: 18,
+    longContextThreshold: 200_000
+  },
+  "gemini-3.1-flash-lite-preview": { input: 0.25, output: 1.5 },
+  "gemini-3.1-flash-live-preview": { input: 0.75, output: 4.5 },
+  "gemini-3.1-flash-image-preview": { input: 0.5, output: 3 },
+  "gemini-3-flash-preview": { input: 0.5, output: 3 },
+  "gemini-2.5-pro": {
+    input: 1.25,
+    output: 10,
+    inputLong: 2.5,
+    outputLong: 15,
+    longContextThreshold: 200_000
+  },
+  "gemini-2.5-flash": { input: 0.3, output: 2.5 },
+  "gemini-2.5-flash-lite-preview": { input: 0.1, output: 0.4 },
+  "gemini-2.5-flash-lite": { input: 0.1, output: 0.4 }
+};
+
+export function estimateGeminiCostUsd(model: string, promptTokens: number, completionTokens: number): number {
+  const rate = getGeminiPricing(model);
   if (!rate) return 0;
-  const inUsd = (promptTokens * rate.input) / 1_000_000;
-  const outUsd = (completionTokens * rate.output) / 1_000_000;
+  const isLong = rate.longContextThreshold ? promptTokens > rate.longContextThreshold : false;
+  const inputRate = isLong && rate.inputLong ? rate.inputLong : rate.input;
+  const outputRate = isLong && rate.outputLong ? rate.outputLong : rate.output;
+  const inUsd = (promptTokens * inputRate) / 1_000_000;
+  const outUsd = (completionTokens * outputRate) / 1_000_000;
   return Number((inUsd + outUsd).toFixed(6));
 }
 
-// Fire-and-forget. ai_usage_logs tablosuna doğrudan REST üzerinden yazıyoruz
-// (auth helper'a bağımlı kalmamak için). Hata olursa sessizce yutuyoruz —
-// telemetri raporu kullanıcının okumasını engellemesin.
+function getGeminiPricing(model: string) {
+  const key = Object.keys(GEMINI_PRICING_PER_1M)
+    .sort((a, b) => b.length - a.length)
+    .find((candidate) => model.includes(candidate));
+  return key ? GEMINI_PRICING_PER_1M[key] : undefined;
+}
+
+function isPremiumModel(model: string) {
+  return /\bpro\b/i.test(model);
+}
+
+function estimatePromptTokens(prompt: string) {
+  // Defensive approximation before Gemini returns usageMetadata.
+  // Turkish text tends to be close enough at 3.6-4 chars/token; this errs high.
+  return Math.max(1, Math.ceil(prompt.length / 3.6));
+}
+
+function estimateCompletionTokens(request: GenerateReadingRequest) {
+  if (request.readingType === "relationship" && request.accessMode === "deep") return 4200;
+  if (request.readingType === "weekly_relationship") return 3400;
+  if (request.readingType === "relationship" && request.accessMode === "timing") return 1200;
+  if (request.readingType === "coffee") return 1800;
+  if (request.readingType === "tarot") return 1700;
+  if (request.readingType === "numerology" && request.accessMode === "deep") return 2200;
+  if (request.readingType === "birth_chart" && request.accessMode === "deep") return 2800;
+  return 1200;
+}
+
+function numberEnv(name: string, fallback: number) {
+  const raw = Deno.env.get(name);
+  if (!raw) return fallback;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function boolEnv(name: string, fallback: boolean) {
+  const raw = Deno.env.get(name);
+  if (!raw) return fallback;
+  return ["1", "true", "yes", "on"].includes(raw.toLowerCase());
+}
+
+function startOfUtcDay(date = new Date()) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function startOfUtcMonth(date = new Date()) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+}
+
+function usageCost(rows: UsageRow[]) {
+  return rows.reduce((sum, row) => {
+    const value = Number(row.est_cost_usd ?? row.preflight_est_cost_usd ?? 0);
+    return sum + (Number.isFinite(value) ? value : 0);
+  }, 0);
+}
+
+function serviceHeaders() {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceKey) return null;
+  return {
+    url: supabaseUrl.replace(/\/$/, ""),
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json"
+    }
+  };
+}
+
+async function fetchUsageRows(input: {
+  since: Date;
+  userId?: string | null;
+  premiumOnly?: boolean;
+  successOnly?: boolean;
+}) {
+  const service = serviceHeaders();
+  if (!service) return [];
+
+  const params = new URLSearchParams();
+  params.set("select", "est_cost_usd,preflight_est_cost_usd,success,is_premium_model");
+  params.set("created_at", `gte.${input.since.toISOString()}`);
+  params.set("limit", "10000");
+  params.set("order", "created_at.desc");
+  if (input.userId) params.set("user_id", `eq.${input.userId}`);
+  if (input.premiumOnly) params.set("is_premium_model", "eq.true");
+  if (input.successOnly) params.set("success", "eq.true");
+
+  const response = await fetch(`${service.url}/rest/v1/ai_usage_logs?${params.toString()}`, {
+    headers: service.headers
+  });
+  if (!response.ok) {
+    console.warn("[aiBudget] usage query failed", response.status);
+    return [];
+  }
+  return (await response.json()) as UsageRow[];
+}
+
+async function insertAiUsage(payload: Record<string, unknown>): Promise<void> {
+  const service = serviceHeaders();
+  if (!service) return;
+  const response = await fetch(`${service.url}/rest/v1/ai_usage_logs`, {
+    method: "POST",
+    headers: {
+      ...service.headers,
+      Prefer: "return=minimal"
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    console.warn("[aiUsage] insert failed", response.status, await response.text().catch(() => ""));
+  }
+}
+
+// Fire-and-forget for successful reads. Budget blocks await insertAiUsage so
+// blocked events are not lost.
 function logAiUsage(payload: Record<string, unknown>): void {
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !serviceKey) return;
-    void fetch(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/ai_usage_logs`, {
-      method: "POST",
-      headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal"
-      },
-      body: JSON.stringify(payload)
-    }).catch((error) => {
+    void insertAiUsage(payload).catch((error) => {
       console.warn("[aiUsage] insert failed", error);
     });
   } catch (error) {
     console.warn("[aiUsage] logger threw", error);
   }
+}
+
+async function assertAiBudget(request: GenerateReadingRequest, model: string, prompt: string): Promise<CostProfile> {
+  const promptTokensEstimate = estimatePromptTokens(prompt);
+  const completionTokensEstimate = estimateCompletionTokens(request);
+  const preflightEstCostUsd = estimateGeminiCostUsd(model, promptTokensEstimate, completionTokensEstimate);
+  const paid = isPremiumReading(request);
+  const profile: CostProfile = {
+    billingTier: paid ? "paid" : "free",
+    isPremiumModel: isPremiumModel(model),
+    promptTokensEstimate,
+    completionTokensEstimate,
+    preflightEstCostUsd,
+    budgetGuard: AI_BUDGET_GUARD_VERSION
+  };
+
+  if (!boolEnv("AI_BUDGET_GUARD_ENABLED", true)) return profile;
+
+  const now = new Date();
+  const dayStart = startOfUtcDay(now);
+  const monthStart = startOfUtcMonth(now);
+  const userId = request.userId ?? null;
+
+  const [
+    globalDaily,
+    globalMonthly,
+    globalPremiumDaily,
+    userDaily,
+    userMonthly
+  ] = await Promise.all([
+    fetchUsageRows({ since: dayStart, successOnly: true }),
+    fetchUsageRows({ since: monthStart, successOnly: true }),
+    fetchUsageRows({ since: dayStart, premiumOnly: true, successOnly: true }),
+    userId ? fetchUsageRows({ since: dayStart, userId }) : Promise.resolve([]),
+    userId ? fetchUsageRows({ since: monthStart, userId, successOnly: true }) : Promise.resolve([])
+  ]);
+
+  const limits = {
+    globalDailyUsd: numberEnv("AI_DAILY_GLOBAL_BUDGET_USD", 10),
+    globalMonthlyUsd: numberEnv("AI_MONTHLY_GLOBAL_BUDGET_USD", 250),
+    globalPremiumDailyUsd: numberEnv("AI_DAILY_PREMIUM_MODEL_BUDGET_USD", 5),
+    userFreeDailyUsd: numberEnv("AI_DAILY_USER_FREE_BUDGET_USD", 0.08),
+    userPaidDailyUsd: numberEnv("AI_DAILY_USER_PAID_BUDGET_USD", 1.25),
+    userPaidMonthlyUsd: numberEnv("AI_MONTHLY_USER_PAID_BUDGET_USD", 20),
+    userFreeDailyCalls: numberEnv("AI_DAILY_USER_FREE_CALLS", 6),
+    userPaidDailyCalls: numberEnv("AI_DAILY_USER_PAID_CALLS", 60)
+  };
+
+  const block = async (reason: string, detail: Record<string, unknown>) => {
+    await insertAiUsage({
+      user_id: userId,
+      reading_type: request.readingType,
+      access_mode: request.accessMode ?? null,
+      model,
+      prompt_tokens: promptTokensEstimate,
+      completion_tokens: null,
+      total_tokens: promptTokensEstimate,
+      est_cost_usd: 0,
+      preflight_est_cost_usd: preflightEstCostUsd,
+      latency_ms: 0,
+      success: false,
+      error_code: "budget_guard",
+      finish_reason: null,
+      billing_tier: profile.billingTier,
+      is_premium_model: profile.isPremiumModel,
+      blocked_reason: reason,
+      budget_guard: AI_BUDGET_GUARD_VERSION
+    });
+    throw jsonResponse(
+      {
+        error: "ai_usage_limit_reached",
+        reason,
+        detail,
+        retry_after: "later"
+      },
+      429
+    );
+  };
+
+  const globalDailyCost = usageCost(globalDaily);
+  if (globalDailyCost + preflightEstCostUsd > limits.globalDailyUsd) {
+    await block("global_daily_budget", {
+      current_usd: Number(globalDailyCost.toFixed(6)),
+      next_est_usd: preflightEstCostUsd,
+      limit_usd: limits.globalDailyUsd
+    });
+  }
+
+  const globalMonthlyCost = usageCost(globalMonthly);
+  if (globalMonthlyCost + preflightEstCostUsd > limits.globalMonthlyUsd) {
+    await block("global_monthly_budget", {
+      current_usd: Number(globalMonthlyCost.toFixed(6)),
+      next_est_usd: preflightEstCostUsd,
+      limit_usd: limits.globalMonthlyUsd
+    });
+  }
+
+  if (profile.isPremiumModel) {
+    const premiumDailyCost = usageCost(globalPremiumDaily);
+    if (premiumDailyCost + preflightEstCostUsd > limits.globalPremiumDailyUsd) {
+      await block("premium_model_daily_budget", {
+        current_usd: Number(premiumDailyCost.toFixed(6)),
+        next_est_usd: preflightEstCostUsd,
+        limit_usd: limits.globalPremiumDailyUsd
+      });
+    }
+  }
+
+  if (userId) {
+    const callLimit = paid ? limits.userPaidDailyCalls : limits.userFreeDailyCalls;
+    if (userDaily.length + 1 > callLimit) {
+      await block("user_daily_call_limit", {
+        current_calls: userDaily.length,
+        next_call: userDaily.length + 1,
+        limit_calls: callLimit,
+        billing_tier: profile.billingTier
+      });
+    }
+
+    const userDailyCost = usageCost(userDaily);
+    const dailyLimit = paid ? limits.userPaidDailyUsd : limits.userFreeDailyUsd;
+    if (userDailyCost + preflightEstCostUsd > dailyLimit) {
+      await block("user_daily_budget", {
+        current_usd: Number(userDailyCost.toFixed(6)),
+        next_est_usd: preflightEstCostUsd,
+        limit_usd: dailyLimit,
+        billing_tier: profile.billingTier
+      });
+    }
+
+    if (paid) {
+      const userMonthlyCost = usageCost(userMonthly);
+      if (userMonthlyCost + preflightEstCostUsd > limits.userPaidMonthlyUsd) {
+        await block("user_monthly_paid_budget", {
+          current_usd: Number(userMonthlyCost.toFixed(6)),
+          next_est_usd: preflightEstCostUsd,
+          limit_usd: limits.userPaidMonthlyUsd
+        });
+      }
+    }
+  }
+
+  return profile;
+}
+
+export function logAiUsageEvent(payload: Record<string, unknown>): void {
+  logAiUsage(payload);
+}
+
+export async function assertAiBudgetForModel(
+  request: GenerateReadingRequest,
+  model: string,
+  prompt: string
+): Promise<CostProfile> {
+  return assertAiBudget(request, model, prompt);
 }
 
 export const geminiAIProvider: AIProvider = {
@@ -867,6 +1171,7 @@ export const geminiAIProvider: AIProvider = {
 
     const prompt = buildReadingPrompt(request);
     const primaryModel = pickGeminiModel(request);
+    let costProfile = await assertAiBudget(request, primaryModel, prompt);
 
     const startedAt = Date.now();
     let usedModel = primaryModel;
@@ -879,6 +1184,7 @@ export const geminiAIProvider: AIProvider = {
       const fallback = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash-lite";
       console.warn(`[aiProvider] Pro call failed (${response.status}), falling back to ${fallback}`);
       usedModel = fallback;
+      costProfile = await assertAiBudget(request, fallback, prompt);
       response = await callGemini(apiKey, fallback, request, prompt);
     }
 
@@ -899,7 +1205,12 @@ export const geminiAIProvider: AIProvider = {
         latency_ms: latencyMs,
         success: false,
         error_code: String(response.status),
-        finish_reason: null
+        finish_reason: null,
+        billing_tier: costProfile.billingTier,
+        is_premium_model: costProfile.isPremiumModel,
+        preflight_est_cost_usd: costProfile.preflightEstCostUsd,
+        blocked_reason: null,
+        budget_guard: costProfile.budgetGuard
       });
       throw new Error(message);
     }
@@ -920,11 +1231,16 @@ export const geminiAIProvider: AIProvider = {
       prompt_tokens: promptTokens || null,
       completion_tokens: completionTokens || null,
       total_tokens: totalTokens || null,
-      est_cost_usd: estimateCostUsd(usedModel, promptTokens, completionTokens),
+      est_cost_usd: estimateGeminiCostUsd(usedModel, promptTokens, completionTokens),
       latency_ms: latencyMs,
       success: true,
       error_code: null,
-      finish_reason: finishReason
+      finish_reason: finishReason,
+      billing_tier: costProfile.billingTier,
+      is_premium_model: isPremiumModel(usedModel),
+      preflight_est_cost_usd: costProfile.preflightEstCostUsd,
+      blocked_reason: null,
+      budget_guard: costProfile.budgetGuard
     });
 
     const text = parseGeminiText(data);

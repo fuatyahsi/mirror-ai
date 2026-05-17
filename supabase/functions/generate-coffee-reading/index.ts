@@ -43,6 +43,7 @@ Deno.serve(async (req) => {
       plateImageUrl: body.plate_image_url,
       topic: body.topic,
       question: body.question,
+      userId: user?.id,
       locale
     });
     const detectedSymbols = vision.detected_symbols;
