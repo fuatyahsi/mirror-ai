@@ -98,7 +98,7 @@ Read your chart, their chart and your relationship journal together. Mirror AI s
 
 ### Keywords
 
-synastry,relationship ai,birth chart,love compatibility,astrology,tarot,numerology
+synastry,love,compatibility,birth chart,astrology,tarot,numerology,horoscope
 
 ### Description
 

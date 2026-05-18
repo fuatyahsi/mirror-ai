@@ -98,7 +98,7 @@ Dogum haritan, onun haritasi ve iliski gunlugun birlikte okunsun. Mirror AI sade
 
 ### Keywords
 
-sinastri,iliski uyumu,dogum haritasi,astroloji,tarot,numeroloji,kahve fali
+sinastri,uyum,ask,dogum haritasi,burc,tarot,numeroloji,kahve fali
 
 ### Description
 
