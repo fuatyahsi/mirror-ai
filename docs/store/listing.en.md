@@ -1,107 +1,129 @@
-# Mirror AI — Play Store Listing (EN)
+# Mirror AI — EN Store Listing
 
-## App name (max 30 chars)
-**Mirror AI: Synastry & Insight**
+This file contains the English metadata for Google Play and App Store Connect. The positioning is relationship intelligence, not deterministic fortune telling.
 
-(Alternatives — for A/B testing)
-- Mirror AI · Relationship AI
-- Mirror AI — Synastry Coach
-- Mirror AI · Astrology + AI
+## Google Play
 
-## Short description (max 80 chars)
-**Deep relationship insight from your chart, synastry & journal. Not a horoscope.**
+### App Name
 
-(Alternatives)
-- AI-powered synastry. See the bond, see the loop. Not fortune telling.
-- Birth chart + AI. Read yourself and your bond with clarity.
-- Synastry, memory, and timing in one premium report.
+Mirror AI: Synastry Coach
 
-## Long description (max 4000 chars)
+Alternatives:
 
-**What is Mirror AI?**
-Mirror AI is an AI-assisted insight app that reads your birth chart, your partner's chart, your relationship journal, and today's sky as one continuous story. Not fortune telling — relationship intelligence.
+- Mirror AI: Relationship AI
+- Mirror AI: Birth Chart
+- Mirror AI: Love Insight
 
-**What you get**
-🪞 **Your blueprint**
-From your natal chart and mystic profile, Mirror AI extracts your attachment style and defense strategy. Real psychological language — "Intuitive Thinker", "Anxious-Avoidant / Withdrawal" — not "Cancers be like…".
+### Short Description
 
-💞 **Their blueprint**
-From the partner's chart, a separate character portrait: their likely triggers, soft spots, defense style. Leaves you with "I get them better now", not just "we're a 7 out of 10".
+Synastry, birth charts and AI insights for relationship patterns.
 
-🔁 **Interaction choreography**
-What happens when the two blueprints touch. Trigger chains (You X → They Y → You again Z) and a repair window. So you see the loop, not just the score.
+Alternatives:
 
-📅 **Today's timing**
-Today's sky, the pulse in your bond, the suggested tone for a message. And a "do not do" note for the over-thinkers.
+- Understand the relationship loop, not just the compatibility score.
+- Birth chart, synastry and relationship memory in one app.
+- AI-powered synastry, timing and personal relationship insight.
 
-📊 **Synastry scores**
-Emotional pull, communication clarity, uncertainty, projection risk + the key synastry aspects (Mars-Venus trine 0.8° — real astrology evidence, not vibes).
+### Full Description
 
-🪐 **Weekly relationship report**
-Last 7 days of journal entries + readings + sky woven into one weekly review, with recurring themes and a focus for next week.
+Mirror AI is an AI-assisted relationship insight app that reads your birth chart, their chart, synastry data and your relationship journal together.
 
-📜 **Other modules**
-Daily sky, tarot, coffee reading, numerology, personal birth chart analysis.
+It is not built to claim certainty about the future. Mirror AI is built to help you understand:
 
-**What makes it different**
-- No generic zodiac filler. Every section carries an anchor from your profile or your own journal.
-- Generated with Gemini 2.5 Pro — fewer "you might feel…", more "this is what's actually happening".
-- Real astrology engine (Swiss Ephemeris): planet positions, aspects, houses.
-- If your partner's birth time is unknown, the app says so and adjusts confidence accordingly.
-- Every report ships with a "why we trust this" panel: evidence, confidence score, systems used.
+- Where the attraction between you may come from
+- Why the same uncertainty keeps repeating
+- When you tend to move closer or pull back
+- What tone may be healthier if you want to send a message today
+- Which relationship themes are repeating in your recent journal entries
 
-**Is it free?**
-Yes — the basic relationship mirror, daily sky, and daily reflection are free.
-Deep synastry, weekly reports, coffee reading and other premium layers unlock with **Plus** subscription or a **credit pack**. Each paywall ships with a blur preview so you can see what you're paying for.
+Mirror AI is built around three layers:
 
-**Privacy & safety**
-- Your birth data is only used for your personal reports.
-- No ad targeting. No third-party data sale.
-- Coffee photos auto-delete after 30 days.
-- All traffic is TLS-encrypted, the database uses row-level security.
-- You can delete your account in-app with one tap.
+1. Your chart and profile
+Your birth details, profile answers and feedback are read together. This layer helps Mirror AI understand how you respond to clarity, distance, emotional safety, closeness, control and intuitive meaning-making.
 
-**Disclaimer**
-Mirror AI is an entertainment and reflection tool. Interpretations are not certainty, not medical or legal advice, not prediction. If you're in crisis, please call your local helpline.
+2. Their chart and relationship profile
+Add the other person's birth date, birth place and birth time if known. If birth time is unknown, Mirror AI clearly lowers confidence for houses and rising sign and focuses on planet-to-planet relationship dynamics.
 
----
+3. The loop between you
+Synastry, journal entries, question intent and today's sky are read together. The result is not just "you are compatible"; it tries to show attraction, friction, misunderstanding patterns and possible repair windows.
 
-## Keyword list (non-overlapping, < 100 chars)
+Core features:
 
-| Priority | Keyword |
-|---|---|
-| High | synastry |
-| High | relationship compatibility |
-| High | birth chart |
-| High | astrology ai |
-| High | love compatibility |
-| Mid | tarot ai |
-| Mid | coffee reading |
-| Mid | numerology |
-| Mid | rising sign |
-| Mid | daily horoscope |
-| Low | astrologer |
-| Low | dream |
-| Low | mystical |
+- Personal birth chart and natal interpretation
+- Synastry and relationship compatibility
+- Deep relationship report
+- "Should I message today?" message coach
+- Weekly relationship cycle report
+- Relationship journal and memory signals
+- Daily sky insight
+- Tarot spreads
+- Coffee symbol reading
+- Numerology analysis
+- Evidence and explanation cards in readings
 
-## Category suggestion
-- **Primary:** Lifestyle
-- **Secondary:** Health & Fitness — for reflection use case
+Mirror AI is not a list of technical astrology placements. It uses planets, aspects, signs and profile data, then translates them into simpler, personal and actionable language.
 
-## Age rating
-**18+** (due to privacy policy and Plus subscription mechanics)
+Example tone:
 
-## Target markets
-- US, UK, DE, NL, FR, IE, AU, CA (English listing)
-- TR (separate Turkish listing)
+"There may be attraction here, but uncertainty seems to activate your need to search for meaning. If you want clarity today, a calm emotional check-in may work better than asking for reassurance under pressure."
 
-## Screenshot captions (EN)
-1. **"Not just compatibility. The loop."** — synastry screen
-2. **"Your blueprint, their blueprint."** — deep report blueprint cards
-3. **"The right tone, the right moment."** — today's timing card
-4. **"Should I message? Depth, not just yes/no."** — sample message + action kind
-5. **"Not a one-shot — track the loop over time."** — weekly report + history compare
-6. **"Relationship intelligence, not fortune telling."** — paywall mock preview
+Premium and credits:
 
-## Promo text (max 170 chars)
-"Mirror AI doesn't stop at a compatibility number. See your blueprint, their blueprint, the loop you run, and today's move. AI + real astrology, side by side."
+Basic daily insight, a short relationship mirror and selected profile views are free. Deep synastry, weekly relationship reports, the message coach, detailed coffee readings, deep numerology and deep birth chart reports unlock with Mirror AI Plus or credits. Each paywall includes a preview so you can see what you are unlocking before you purchase.
+
+Privacy:
+
+- Coffee photos are not permanently stored on our servers.
+- Birth and relationship data are used to generate your personal readings.
+- You can delete your Mirror AI data in the app.
+- Mirror AI does not store card details. Purchases are handled through Google Play, App Store and RevenueCat.
+
+Disclaimer:
+
+Mirror AI is for entertainment and personal reflection. It does not provide medical, legal, financial or psychological diagnosis/advice. You remain responsible for your decisions.
+
+## App Store
+
+### App Name
+
+Mirror AI
+
+### Subtitle
+
+Synastry & relationship AI
+
+### Promotional Text
+
+Read your chart, their chart and your relationship journal together. Mirror AI shows the pattern behind the bond, not just a score.
+
+### Keywords
+
+synastry,relationship ai,birth chart,love compatibility,astrology,tarot,numerology
+
+### Description
+
+For App Store Connect, use the Google Play full description as the base and keep the first paragraph focused:
+
+"Mirror AI is an AI-assisted relationship insight app that reads your birth chart, their chart, synastry data and your relationship journal together."
+
+## Screenshot Storyboard
+
+1. "Not just compatibility. The loop." — Synastry screen
+2. "Your chart + their chart." — Two-person chart input
+3. "Should I message today?" — Message coach
+4. "The theme that repeated this week." — Weekly relationship report
+5. "Your birth chart, translated." — Natal report
+6. "Tarot, coffee and numerology with memory." — Module grid
+7. "See what unlocks before you pay." — Paywall preview
+
+## Forbidden Language
+
+Do not use in store metadata:
+
+- They will definitely come back
+- They definitely love you
+- Find your destined soulmate
+- Learn if they are cheating
+- Know your future for certain
+- Psychological diagnosis
+- Replaces therapy

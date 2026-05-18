@@ -312,7 +312,7 @@ const trFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "Kişisel bağlam",
       "Tek rapor kullanımı"
     ],
-    trustNote: "Fotoğrafı gereksiz saklamadan, sadece yorum üretmek için kullanmayı hedefler."
+    trustNote: "Fotoğrafı saklamadan, sadece bu yorum için analiz etmeyi hedefler."
   },
   deep_numerology: {
     title: "Derin numeroloji raporu",
@@ -507,7 +507,7 @@ const enFeatureCopy: Record<PremiumFeatureKey, FeatureOfferCopy> = {
       "Photo-minimizing approach after analysis"
     ],
     receipt: ["Detailed symbol analysis", "Personal context", "One report use"],
-    trustNote: "The product is designed to avoid storing photos unless needed for analysis."
+    trustNote: "Photos are not stored by default; the image is used only for this reading."
   },
   deep_numerology: {
     title: "Deep numerology report",

@@ -23,7 +23,7 @@ For deletion, access, or correction requests use the email above. Requests are a
 | Mystic profile signals | Scores computed from the profile test (uncertainty tolerance, need for clarity, etc.) | Automatic (from your answers) | Contract performance |
 | Relationship journal | Free-text mood/event entries you write, relationship type and status | You enter | Explicit consent |
 | Partner data | Nickname, birth date/city you enter for synastry | You enter | Explicit consent |
-| Coffee photo | The cup/saucer image selected from your device for the coffee reading feature — **never stored on our servers**, sent once to Gemini vision for the reading and discarded | You select | Explicit consent |
+| Coffee photo | The cup/saucer image selected from your device for the coffee reading feature — **never stored on our servers**, sent once to the AI vision service for the reading and discarded | You select | Explicit consent |
 | AI readings | Generated reports and insights tied to your account | Automatic (service-generated and stored) | Contract performance |
 | Device/session data | OS version, app version, anonymous usage logs (ai_usage_logs: model, tokens, latency) | Automatic | Legitimate interest (service quality + cost monitoring) |
 | Notification permission | Push token, notification preferences | By your action | Explicit consent |
@@ -33,7 +33,7 @@ For deletion, access, or correction requests use the email above. Requests are a
 
 ## 3. How we use the data
 
-- **Personalised readings:** birth data, mystic profile and journal entries are combined into astrological data (via Swiss Ephemeris) and AI-generated interpretation (via Gemini).
+- **Personalised readings:** birth data, mystic profile and journal entries are combined into astrological data (via Swiss Ephemeris) and AI-generated interpretation.
 - **Historical comparison:** for the same relationship, prior readings are compared to surface the loop.
 - **Service quality improvement:** we anonymously track AI performance, latency, and error rates.
 - **Notifications (if you allow):** daily sky, relationship timing, etc.
@@ -59,7 +59,7 @@ LLM calls **never include your full name, email, or financial data.** What is se
 
 - **Account data:** until you delete the account.
 - **Journal entries and reports:** until account deletion (you can also delete individual items).
-- **Coffee photo:** **never stored on our servers.** It is sent once to Gemini vision for the reading and discarded immediately after the vision response returns. The interpretation text is kept with your account.
+- **Coffee photo:** **never stored on our servers.** It is sent once to the AI vision service for the reading and discarded immediately after the vision response returns. The interpretation text is kept with your account.
 - **AI usage logs:** 12 months, then archived.
 - **After deletion request:** all personal data is permanently deleted or irreversibly anonymised within 30 days.
 

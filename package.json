@@ -12,6 +12,7 @@
     "web": "npm --workspace apps/mobile run web",
     "typecheck": "npm --workspace apps/mobile run typecheck",
     "lint": "npm --workspace apps/mobile run lint",
+    "check:store": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-store-metadata.ps1",
     "verify:release": "npm --workspace apps/mobile run verify:release"
   }
 }

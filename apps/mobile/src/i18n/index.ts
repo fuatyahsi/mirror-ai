@@ -125,7 +125,7 @@ const translations = {
     "coffee.subtitle":
       "Sembol çıkarımı örnek veriyle başlar; yorum Mirror AI tarafından profil, hafıza ve doğum haritasıyla yapılır.",
     "coffee.pickImage": "Fincan fotoğrafı seç",
-    "coffee.photoNote": "Fotoğrafın sunucumuzda saklanmaz. Sadece bu yorum için Gemini görüntü analizine gönderilir, sonra unutulur.",
+    "coffee.photoNote": "Fotoğrafın sunucumuzda saklanmaz. Sadece bu yorum için AI görüntü analizine gönderilir, sonra unutulur.",
     "coffee.topicPlaceholder": "love, career, family",
     "coffee.questionPlaceholder": "Aklımdaki kişiyle aramızdaki enerji ne söylüyor?",
     "coffee.contextPlaceholder": "Son günlerde biraz uzaklaştı.",
@@ -383,7 +383,7 @@ const translations = {
     "coffee.subtitle":
       "Symbol detection starts with sample data for now; Mirror AI interprets it with profile, memory, and birth-chart context.",
     "coffee.pickImage": "Choose cup photo",
-    "coffee.photoNote": "Your photo is never stored on our servers. It is sent once to Gemini vision for this reading and forgotten right after.",
+    "coffee.photoNote": "Your photo is never stored on our servers. It is sent once to AI vision for this reading and forgotten right after.",
     "coffee.topicPlaceholder": "love, career, family",
     "coffee.questionPlaceholder": "What does the energy between us say?",
     "coffee.contextPlaceholder": "They have felt a little distant lately.",

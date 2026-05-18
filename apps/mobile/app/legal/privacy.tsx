@@ -23,8 +23,8 @@ export default function PrivacyPolicyScreen() {
       />
       <Text style={{ color: colors.muted, lineHeight: 22 }}>
         {isEn
-          ? "We process birth details, profile answers, readings, feedback, relationship journal entries, push tokens, and purchase status. Coffee photos are uploaded only for analysis and are deleted after processing. We do not use your photos for model training. You can delete your Mirror AI data from the Profile tab. Readings are for entertainment and personal reflection only."
-          : "Doğum bilgileri, profil cevapları, yorumlar, feedback, ilişki günlükleri, push tokenları ve satın alma durumunu işleriz. Kahve fotoğrafları yalnızca analiz için yüklenir ve işlemden sonra silinir. Fotoğrafların model eğitimi için kullanılmaz. Mirror AI verilerini Profil sekmesinden silebilirsin. Yorumlar eğlence ve kişisel farkındalık amaçlıdır."}
+          ? "We process birth details, profile answers, readings, feedback, relationship journal entries, push tokens, and purchase status. Coffee photos are sent only for one-time analysis and are not permanently stored by Mirror AI. We do not use your photos for model training. You can delete your Mirror AI data from the Profile tab. Readings are for entertainment and personal reflection only."
+          : "Doğum bilgileri, profil cevapları, yorumlar, feedback, ilişki günlükleri, push tokenları ve satın alma durumunu işleriz. Kahve fotoğrafları yalnızca tek seferlik analiz için gönderilir ve Mirror AI tarafından kalıcı olarak saklanmaz. Fotoğrafların model eğitimi için kullanılmaz. Mirror AI verilerini Profil sekmesinden silebilirsin. Yorumlar eğlence ve kişisel farkındalık amaçlıdır."}
       </Text>
     </Screen>
   );

@@ -1,107 +1,129 @@
-# Mirror AI — Play Store Listing (TR)
+# Mirror AI — TR Store Listing
 
-## App adı (max 30 karakter)
-**Mirror AI: İlişki ve Sinastri**
+Bu dosya Google Play ve App Store Connect'e girilecek Turkce metadata icindir. Dil bilincli olarak "kesin kehanet" degil, "iliski dongusu ve kisisel icgoru" uzerine kuruludur.
 
-(Alternatifler — A/B test için)
-- Mirror AI · Sinastri & İçgörü
-- Mirror AI — İlişki Zekası
-- Mirror AI · Astroloji + AI
+## Google Play
 
-## Kısa açıklama (max 80 karakter)
-**Doğum haritası, sinastri ve AI ile derin ilişki içgörüleri. Fal değil.**
+### Uygulama Adi
 
-(Alternatifler)
-- AI destekli sinastri raporu. Bağın profilini ve döngüsünü gör.
-- Doğum haritası + AI. Kendini ve ilişkini daha net oku.
-- Sinastri, hafıza ve zamanlamayı tek raporda birleştirir.
+Mirror AI: Iliski Zekasi
 
-## Uzun açıklama (max 4000 karakter)
+Alternatifler:
 
-**Mirror AI nedir?**
-Mirror AI; doğum haritan, partnerin haritası, ilişki günlüğün ve bugünkü gökyüzünü tek bir akışta yorumlayan AI destekli içgörü uygulamasıdır. Fal değil — ilişki zekası.
+- Mirror AI: Sinastri Coach
+- Mirror AI: Ask Haritasi
+- Mirror AI: Dogum Haritasi
 
-**Ne yapar?**
-🪞 **Senin blueprint'in**
-Doğum haritan ve mistik profilinden hangi bağlanma stiline, hangi savunma stratejisine eğilimli olduğunu çıkarır. "Sezgili Düşünür", "Anksiyöz-Kaçınmacı / İçe Kapanma" gibi gerçek psikolojik diller kullanır.
+### Kisa Aciklama
 
-💞 **Onun blueprint'i**
-Karşı kişinin haritasından kendi karakter portresini çıkarır: tetikleyicileri, yumuşak noktaları, savunma stilini. "Onu daha iyi anladım" hissini yaratır.
+Sinastri, dogum haritasi ve AI ile iliski dongunu anla.
 
-🔁 **Etkileşim koreografisi**
-İki blueprint birbirine değdiğinde ne oluyor — trigger zincirleri (Sen X → O Y → Sen yine Z) ve onarım penceresi. Döngünüzü görmek için.
+Alternatifler:
 
-📅 **Bugünkü zamanlama**
-Bugün gökyüzü, ilişkinizdeki nabız ve önerilen mesaj tonu. "Şunu yapma" notu ile.
+- Sadece uyumu degil, iliskindeki tekrar eden donguyu oku.
+- Dogum haritasi, sinastri ve gunluk iliski hafizasi.
+- AI destekli sinastri ve kisisel iliski icgoruleri.
 
-📊 **Sinastri skorları**
-Duygusal çekim, iletişim netliği, belirsizlik, projeksiyon riski + ana sinastri temaları (Mars-Venüs üçgeni 0.8° gibi gerçek astroloji kanıtı).
+### Uzun Aciklama
 
-🪐 **Haftalık ilişki raporu**
-Son 7 günün günlük kayıtları + ilişki yorumları + gökyüzü tek bir özet, recurring temalar ve önümüzdeki hafta odağı.
+Mirror AI, dogum haritani, karsi tarafin haritasini, sinastri verilerini ve iliski gunlugunu birlikte okuyan AI destekli bir iliski icgoru uygulamasidir.
 
-📜 **Diğer içgörü modülleri**
-Günlük gökyüzü, tarot, kahve falı, numeroloji, kişisel doğum haritası analizi.
+Ama amaci "gelecegi kesin soylemek" degildir. Mirror AI sana sunu gostermeye calisir:
 
-**Neden farklı?**
-- Generic zodiac yorumu yapmaz. Her bölüm senin profilinden veya günlüğünden bir kanıt taşır.
-- Gemini 2.5 Pro ile yazılır; "şöyle olabilir" yerine "şu gerçekleşiyor" der.
-- Swiss Ephemeris ile gerçek astroloji hesapları (yıldız konumları, açılar, evler).
-- Karşı kişinin doğum saati bilinmiyorsa açıkça söyler; abartmaz.
-- Her raporda "neden buna güveniyoruz" paneli: kanıt + güven skoru + sistem listesi.
+- Bu kisiyle arandaki temel cekim nereden geliyor?
+- Iletisimde neden ayni belirsizlik tekrar ediyor?
+- Sen hangi durumda daha cok yaklasiyor, hangi durumda geri cekiliyorsun?
+- Bugun mesaj atmak istiyorsan hangi ton daha saglikli olur?
+- Son gunlerdeki kayitlarinda hangi iliski temasi tekrar ediyor?
 
-**Ücretsiz mi?**
-Evet — temel ilişki aynası, günlük gökyüzü ve günlük yorum ücretsiz.
-Derin sinastri raporu, haftalık ilişki raporu, kahve falı ve diğer premium katmanlar **Plus aboneliği** veya **kredi paketi** ile açılır. Satın almadan önce ne alacağını görebilmek için her paywall'da örnek önizleme bulunur.
+Mirror AI'nin merkezinde uc katman vardir:
 
-**Güvenlik ve gizlilik**
-- Doğum verin sadece kişisel raporun için kullanılır.
-- Reklam hedeflemesi yok, üçüncü tarafa veri satışı yok.
-- Kahve fotoğrafı 30 gün sonra otomatik silinir.
-- Tüm yorumlar TLS ile şifrelenir, veritabanı RLS ile korunur.
-- Hesabını uygulama içinde tek tıkla silebilirsin.
+1. Senin haritan ve profilin
+Dogum bilgilerin, profil cevaplarin ve geri bildirimlerin birlikte okunur. Bu katman senin iliskide netlik, guven, yakinlik, mesafe, kontrol veya sezgisel anlam arama gibi temalara nasil tepki verdigini anlamaya calisir.
 
-**Uyarı**
-Mirror AI bir eğlence ve yansıtma aracıdır. Yorumlar kesin gerçek, tıbbi/hukuki tavsiye veya kehanet değildir. Kriz anlarında 112 veya bir uzmana başvur.
+2. Onun haritasi ve iliski profili
+Karsi tarafin dogum tarihi, dogum yeri ve biliniyorsa dogum saatiyle iliski dili yorumlanir. Dogum saati bilinmiyorsa evler ve yukselen icin kesinlik iddia edilmez; analiz gezegenler arasi temel dinamikler uzerinden yapilir.
 
----
+3. Aranizdaki dongu
+Sinastri, gunluk kayitlar, soru niyeti ve bugunku gokyuzu birlikte okunur. Boylece rapor sadece "uyumlusunuz" demez; aradaki cekim, gerilim, yanlis anlasilma ve onarim penceresini daha acik gostermeye calisir.
 
-## Anahtar kelime listesi (örtüşmeyen, 100 char altı)
+Ana ozellikler:
 
-| Öncelik | Anahtar kelime |
-|---|---|
-| Yüksek | sinastri |
-| Yüksek | ilişki uyumu |
-| Yüksek | doğum haritası |
-| Yüksek | astroloji yapay zeka |
-| Yüksek | aşk uyum |
-| Orta | tarot ai |
-| Orta | kahve falı |
-| Orta | numeroloji |
-| Orta | yükselen burç |
-| Orta | gökyüzü |
-| Düşük | astrolog |
-| Düşük | rüya |
-| Düşük | mistik |
+- Kisisel dogum haritasi ve natal yorum
+- Sinastri ve iliski uyumu
+- Derin iliski raporu
+- "Bugun mesaj atmali miyim?" mesaj kocu
+- Haftalik iliski dongusu raporu
+- Iliski gunlugu ve hafiza sinyalleri
+- Gunluk gokyuzu yorumu
+- Tarot acilimlari
+- Kahve sembol yorumu
+- Numeroloji analizi
+- Yorumlarda referans ve aciklama kartlari
 
-## Kategori önerisi
-- **Birincil:** Yaşam Tarzı (Lifestyle)
-- **İkincil:** Sağlık ve Fitness (Health & Fitness) — refleksiyon için
+Mirror AI yorumlari teknik astroloji listesinden ibaret degildir. Gezegen, aci, burc ve profil verilerini kullanir; ama kullaniciya daha sade, uygulanabilir ve kisisel bir dille aktarir.
 
-## Yaş sınıflandırması
-**18+** (gizlilik politikası ve Plus aboneliği nedeniyle)
+Ornek yaklasim:
 
-## Hedef ülke
-- TR (primary)
-- EN-language ülkeler (US, UK, DE, NL, FR — İngilizce listing ile)
+"Bu iliskide cekim var, ama belirsizlik sende daha fazla anlam arama dongusunu tetikliyor olabilir. Bugun netlik istemek istiyorsan bunu hesap sorma gibi degil, duygu paylasimi gibi kurman daha saglikli olur."
 
-## Ekran görüntüsü altyazıları (TR)
-1. **"Sadece uyum değil, döngü."** — sinastri ekranı
-2. **"Senin blueprint'in, onun blueprint'i."** — deep report blueprint kartları
-3. **"Bugün için doğru ton, doğru zaman."** — bugünkü zamanlama kartı
-4. **"Mesaj atmalı mıyım? Aynı sorunun derinliği."** — sample message + action kind
-5. **"Tek seferlik değil — döngünü takip et."** — haftalık rapor + tarihsel karşılaştırma
-6. **"Fal değil, ilişki zekası."** — paywall mock preview
+Premium ve kredi:
 
-## Promosyon metni (max 170 karakter)
-"Mirror AI ile sadece ilişki uyum skoru değil; ikinizin blueprint'ini, etkileşim döngünüzü ve bugün için doğru hamleyi öğren. AI + gerçek astroloji."
+Temel gunluk icgoru, kisa iliski aynasi ve bazi profil ekranlari ucretsizdir. Derin sinastri, haftalik iliski raporu, mesaj kocu, detayli kahve yorumu, derin numeroloji ve derin dogum haritasi raporlari Mirror AI Plus veya kredi ile acilir. Satin almadan once ne alacagini gosteren onizleme kartlari bulunur.
+
+Gizlilik:
+
+- Kahve fotograflari sunucuda kalici olarak saklanmaz.
+- Dogum ve iliski verilerin kisisel yorum uretmek icin kullanilir.
+- Verilerini uygulama icinden silebilirsin.
+- Odeme bilgileri Mirror AI tarafindan saklanmaz; satin almalar Google Play, App Store ve RevenueCat uzerinden islenir.
+
+Uyari:
+
+Mirror AI eglence ve kisisel farkindalik amacli bir uygulamadir. Tibbi, hukuki, finansal veya psikolojik tani/tavsiye vermez. Iliski kararlarinda nihai sorumluluk kullaniciya aittir.
+
+## App Store
+
+### App Name
+
+Mirror AI
+
+### Subtitle
+
+Sinastri ve iliski zekasi
+
+### Promotional Text
+
+Dogum haritan, onun haritasi ve iliski gunlugun birlikte okunsun. Mirror AI sadece uyumu degil, aranizdaki donguyu gosterir.
+
+### Keywords
+
+sinastri,iliski uyumu,dogum haritasi,astroloji,tarot,numeroloji,kahve fali
+
+### Description
+
+App Store aciklamasi icin Google Play uzun aciklamasinin daha kisa versiyonu kullanilabilir. Ilk paragraf mutlaka su konumlandirmayla baslamali:
+
+"Mirror AI, dogum haritani, karsi tarafin haritasini, sinastri verilerini ve iliski gunlugunu birlikte okuyan AI destekli bir iliski icgoru uygulamasidir."
+
+## Screenshot Storyboard
+
+1. "Sadece uyum degil, dongu." — Sinastri ana ekrani
+2. "Senin haritan + onun haritasi." — Iki kisilik harita girişi
+3. "Bugun mesaj atmali miyim?" — Mesaj kocu
+4. "Son 7 gunde tekrar eden tema." — Haftalik iliski raporu
+5. "Dogum haritan sade dille yorumlanir." — Natal rapor
+6. "Tarot, kahve ve numeroloji ayni hafizayla calisir." — Modul ekrani
+7. "Ne alacagini satin almadan gor." — Paywall onizleme
+
+## Yasakli Dil
+
+Store metinlerinde kullanma:
+
+- Kesin geri donecek
+- Seni kesin seviyor
+- Kader esini bul
+- Aldatiyor mu ogren
+- Gelecegini kesin ogren
+- Psikolojik tani koyar
+- Terapi yerine gecer

@@ -1,0 +1,26 @@
+{
+  "google_play": {
+    "tr": {
+      "app_name": "Mirror AI: İlişki Zekası",
+      "short_description": "Sinastri, doğum haritası ve AI ile ilişki döngünü anla."
+    },
+    "en": {
+      "app_name": "Mirror AI: Synastry Coach",
+      "short_description": "Synastry, birth charts and AI insights for relationship patterns."
+    }
+  },
+  "app_store": {
+    "tr": {
+      "app_name": "Mirror AI",
+      "subtitle": "Sinastri ve ilişki zekası",
+      "promotional_text": "Doğum haritan, onun haritası ve ilişki günlüğün birlikte okunsun. Mirror AI sadece uyumu değil, aranızdaki döngüyü gösterir.",
+      "keywords": "sinastri,ilişki uyumu,doğum haritası,astroloji,tarot,numeroloji,kahve falı"
+    },
+    "en": {
+      "app_name": "Mirror AI",
+      "subtitle": "Synastry & relationship AI",
+      "promotional_text": "Read your chart, their chart and your relationship journal together. Mirror AI shows the pattern behind the bond, not just a score.",
+      "keywords": "synastry,relationship ai,birth chart,love compatibility,astrology,tarot,numerology"
+    }
+  }
+}

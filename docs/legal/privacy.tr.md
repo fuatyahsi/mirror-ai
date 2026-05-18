@@ -23,7 +23,7 @@ Veri silme, erişim veya düzeltme talepleri için yukarıdaki e-postayı kullan
 | Mistik profil çıkarımları | Profil testinden hesaplanan skorlar (belirsizlik toleransı, netlik ihtiyacı vb.) | Otomatik (test cevaplarından üretilir) | Sözleşme yürütümü |
 | İlişki günlüğü | Kullanıcının elle yazdığı duygu/olay kayıtları, ilişki türü ve durumu | Kullanıcı girer | Açık rıza |
 | Karşı kişi verisi | İlişki analizi için girilen takma ad, doğum tarihi/şehri | Kullanıcı girer | Açık rıza |
-| Kahve fotoğrafı | Yalnızca kahve falı özelliği için cihazdan seçilen fincan/tabak görseli — **sunucumuzda saklanmaz**, tek seferde Gemini görüntü analizine iletilir | Kullanıcı isteğiyle | Açık rıza |
+| Kahve fotoğrafı | Yalnızca kahve falı özelliği için cihazdan seçilen fincan/tabak görseli — **sunucumuzda saklanmaz**, tek seferde AI görüntü analiz servisine iletilir | Kullanıcı isteğiyle | Açık rıza |
 | AI yorumları | Üretilen rapor ve içgörüler (kullanıcının hesabına bağlıdır) | Otomatik (servis tarafından üretilir ve saklanır) | Sözleşme yürütümü |
 | Cihaz/oturum verisi | İşletim sistemi sürümü, uygulama sürümü, anonim kullanım kayıtları (ai_usage_logs: model, token, gecikme) | Otomatik | Meşru menfaat (servis kalitesi + maliyet izleme) |
 | Bildirim izni | Push token, bildirim tercihleri | Kullanıcı isteğiyle | Açık rıza |
@@ -33,7 +33,7 @@ Veri silme, erişim veya düzeltme talepleri için yukarıdaki e-postayı kullan
 
 ## 3. Verileri ne için kullanırız
 
-- **Kişiselleştirilmiş okuma üretmek:** Doğum verisi, mistik profil ve günlük kayıtların; Swiss Ephemeris ile astrolojik veriye, Gemini AI ile metin yorumuna çevrilir.
+- **Kişiselleştirilmiş okuma üretmek:** Doğum verisi, mistik profil ve günlük kayıtların; Swiss Ephemeris ile astrolojik veriye ve AI destekli yoruma çevrilir.
 - **Tarihsel karşılaştırma:** Aynı ilişki için geçmiş raporlar karşılaştırılır, döngü gözlemlenir.
 - **Hizmet kalitesini iyileştirmek:** AI model performansı, gecikme, hata oranlarını anonim biçimde izleriz.
 - **Bildirim göndermek (kullanıcı izin verdiyse):** Günlük gökyüzü, ilişki zamanlaması vb.
@@ -59,7 +59,7 @@ LLM çağrılarında **kullanıcının tam ismi, e-posta adresi veya finansal ve
 
 - **Hesap verisi:** Hesap silinene kadar.
 - **İlişki günlüğü ve raporlar:** Hesap silinene kadar (kullanıcı kendisi de tek tek silebilir).
-- **Kahve fotoğrafı:** **Sunucumuzda hiç saklanmaz.** Sadece o anki yorum üretimi için tek seferde Gemini görüntü analizine iletilir, vision yanıtı döndükten sonra silinir. Üretilen yorum metni hesabınla birlikte saklanır.
+- **Kahve fotoğrafı:** **Sunucumuzda hiç saklanmaz.** Sadece o anki yorum üretimi için tek seferde AI görüntü analiz servisine iletilir, yanıt döndükten sonra silinir. Üretilen yorum metni hesabınla birlikte saklanır.
 - **AI kullanım kayıtları (ai_usage_logs):** 12 ay, sonra arşivlenir.
 - **Hesap silme talebi sonrası:** 30 gün içinde tüm kişisel veri kalıcı olarak silinir veya geri döndürülemez biçimde anonimleştirilir.
 
